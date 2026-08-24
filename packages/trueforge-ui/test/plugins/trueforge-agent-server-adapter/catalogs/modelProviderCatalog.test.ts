@@ -88,6 +88,27 @@ describe('modelProviderCatalog mappers', () => {
     );
   });
 
+  it('reads base_url when the SDK returns snake_case manifests', () => {
+    assert.deepEqual(
+      toUiModelProvider({
+        name: 'local-llama',
+        manifest: {
+          type: 'custom',
+          base_url: 'http://127.0.0.1:11434/v1',
+          auth: { apiKey: 'sk-local' },
+          models: [{ modelId: 'llama3', name: 'llama3', properties: {} }],
+        },
+      }),
+      {
+        id: 'local-llama',
+        type: 'custom',
+        name: 'local-llama',
+        baseUrl: 'http://127.0.0.1:11434/v1',
+        models: [{ id: 'llama3', name: 'llama3', properties: {} }],
+      },
+    );
+  });
+
   it('maps catalog presets and names them after their type', () => {
     assert.deepEqual(
       toUiCatalogModelProviderEntry({

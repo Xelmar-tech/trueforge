@@ -1036,6 +1036,10 @@
         "properties": {},
         "type": "object"
       },
+      "DeleteModelProviderResponse": {
+        "properties": {},
+        "type": "object"
+      },
       "DynamicSubAgentsConfig": {
         "default": {
           "enabled": true
@@ -6661,6 +6665,70 @@
           "modelProviders"
         ],
         "x-fern-sdk-method-name": "create_or_update"
+      }
+    },
+    "/api/v1/settings/model-providers/{name}": {
+      "delete": {
+        "description": "Delete a configured model provider by name. Idempotent if already gone.",
+        "parameters": [
+          {
+            "description": "Model provider name.",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ResourceName"
+                },
+                {
+                  "description": "Model provider name."
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteModelProviderResponse"
+                }
+              }
+            },
+            "description": "Model provider deleted."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "OIDC is configured and the request has no valid session cookie."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "OIDC is configured and the caller is authenticated but not an admin."
+          }
+        },
+        "summary": "Delete a model provider",
+        "tags": [
+          "Models"
+        ],
+        "x-fern-sdk-group-name": [
+          "settings",
+          "modelProviders"
+        ],
+        "x-fern-sdk-method-name": "delete"
       }
     },
     "/api/v1/settings/sandbox-providers": {

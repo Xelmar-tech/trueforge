@@ -121,6 +121,15 @@ export class SqliteModelProviderStore implements IModelProviderStore<Transaction
       .executeTakeFirstOrThrow();
   }
 
+  async deleteProvider(input: GetModelProviderInput, transaction?: Transaction<Database>): Promise<void> {
+    const db = transaction ?? this.#db;
+    await db
+      .deleteFrom('model_provider')
+      .where('tenant_id', '=', input.tenant_id)
+      .where('name', '=', input.name)
+      .execute();
+  }
+
   async listModels(tenantId: string, transaction?: Transaction<Database>): Promise<AvailableModel[]> {
     return flattenProviderModels(await this.listProviders(tenantId, transaction));
   }

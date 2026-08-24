@@ -60,6 +60,8 @@ export interface IModelProviderStore<TTransaction = never> {
   createProvider(input: CreateModelProviderInput, transaction?: TTransaction): Promise<ModelProviderRecord>;
   /** Single-row write: creates the provider or replaces the whole manifest (models included). */
   upsertProvider(input: UpsertModelProviderInput, transaction?: TTransaction): Promise<ModelProviderRecord>;
+  /** Idempotent when the provider is already gone. */
+  deleteProvider(input: GetModelProviderInput, transaction?: TTransaction): Promise<void>;
   /** Flattens manifests into the FQN read view for GET /models. */
   listModels(tenantId: string, transaction?: TTransaction): Promise<AvailableModel[]>;
 }

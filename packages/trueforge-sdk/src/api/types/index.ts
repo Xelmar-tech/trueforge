@@ -42,6 +42,7 @@ export * from "./CreateSessionAgent.js";
 export * from "./CustomModelProvider.js";
 export * from "./DaytonaSandboxProviderAuth.js";
 export * from "./DeleteAgentResponse.js";
+export * from "./DeleteModelProviderResponse.js";
 export * from "./DynamicSubAgentsConfig.js";
 export * from "./ExtendedChunkDeltaToolCall.js";
 export * from "./FileContent.js";

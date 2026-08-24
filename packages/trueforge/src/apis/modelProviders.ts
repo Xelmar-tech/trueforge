@@ -7,6 +7,7 @@ import {
 import type { WithTransaction } from '../db/transaction';
 import {
   createModelProviderRoute,
+  deleteModelProviderRoute,
   listModelProvidersRoute,
   putModelProviderRoute,
 } from '../routes/modelProviderRoutes';
@@ -35,6 +36,15 @@ function redactModelProvider(manifest: ModelProviderManifest): ModelProviderMani
   };
 }
 
+/** Custom manifests may omit the duplicated row name; include it on the wire for SDK clients. */
+function toWireManifest(record: ModelProviderRecord): ModelProviderManifest {
+  const manifest = redactModelProvider(record.manifest);
+  if (manifest.type !== 'custom') {
+    return manifest;
+  }
+  return { ...manifest, name: record.name };
+}
+
 function resolveModelProviderManifestForWrite({
   incoming,
   existing,
@@ -59,7 +69,7 @@ function resolveModelProviderManifestForWrite({
 function toWireProvider(record: ModelProviderRecord): ConfiguredModelProvider {
   return {
     name: record.name,
-    manifest: redactModelProvider(record.manifest),
+    manifest: toWireManifest(record),
   };
 }
 
@@ -116,9 +126,16 @@ export function createModelProvidersRouter<TTransaction>(deps: ModelProvidersRou
     }
   };
 
+  const deleteHandler: RouteHandler<typeof deleteModelProviderRoute> = async c => {
+    const { name } = c.req.valid('param');
+    await deps.modelProviderStore.deleteProvider({ tenant_id: TENANT_ID, name });
+    return c.json({}, 200);
+  };
+
   const router = new OpenAPIHono();
   router.openapi(listModelProvidersRoute, listHandler);
   router.openapi(createModelProviderRoute, createHandler);
   router.openapi(putModelProviderRoute, putHandler);
+  router.openapi(deleteModelProviderRoute, deleteHandler);
   return router;
 }

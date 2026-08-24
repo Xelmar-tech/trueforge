@@ -134,4 +134,15 @@ export function runModelProviderStoreContractSuite(getStore: () => IModelProvide
       },
     ]);
   });
+
+  it('deleteProvider removes the row and is idempotent', async () => {
+    const store = getStore();
+    await store.upsertProvider({ tenant_id: TENANT, name: 'anthropic', manifest: anthropic });
+
+    await store.deleteProvider({ tenant_id: TENANT, name: 'anthropic' });
+    expect(await store.getProvider({ tenant_id: TENANT, name: 'anthropic' })).toBeUndefined();
+    expect(await store.listProviders(TENANT)).toEqual([]);
+
+    await expect(store.deleteProvider({ tenant_id: TENANT, name: 'anthropic' })).resolves.toBeUndefined();
+  });
 }

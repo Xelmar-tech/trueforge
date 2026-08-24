@@ -15,6 +15,7 @@ import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/Sq
 import { SqliteModelProviderStore } from '../../../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxProviderStore } from '../../../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
 import { SqliteSkillStore } from '../../../src/db/sqlite/skill-store/SqliteSkillStore';
+import { jsonbBind } from '../../../src/db/sqlite/sqlExpressions';
 import { SqliteOAuthTokenStore } from '../../../src/db/sqlite/token-store/SqliteOAuthTokenStore';
 import { toRedactedSecretValue } from '../../../src/utils/secretRedaction';
 
@@ -88,6 +89,7 @@ async function createRouters(): Promise<{
   catalogRouter: ReturnType<typeof createCatalogRouter>;
   modelsRouter: ReturnType<typeof createModelsRouter>;
   modelProviderStore: IModelProviderStore;
+  db: ReturnType<typeof createSqliteDb>;
 }> {
   const db = createSqliteDb(':memory:');
   await migrateSqliteToLatest(db);
@@ -114,6 +116,7 @@ async function createRouters(): Promise<{
       withTransaction: callback => db.transaction().execute(callback),
     }),
     modelProviderStore,
+    db,
   };
 }
 
@@ -320,6 +323,46 @@ describe('well-known types are limited to one provider', () => {
     const list = await settingsRouter.request('/model-providers');
     expect(await list.json()).toEqual({
       data: [configured('internal', customBodyWire), configured('internal-eu', withRedactedApiKey(second))],
+    });
+  });
+
+  it('DELETE /model-providers/{name} removes a provider and is idempotent', async () => {
+    const { settingsRouter } = await createRouters();
+    expect((await settingsRouter.request('/model-providers', putInit(customBody))).status).toBe(200);
+
+    const deleted = await settingsRouter.request('/model-providers/internal', { method: 'DELETE' });
+    expect(deleted.status).toBe(200);
+    expect(await deleted.json()).toEqual({});
+
+    const list = await settingsRouter.request('/model-providers');
+    expect(await list.json()).toEqual({ data: [] });
+
+    const again = await settingsRouter.request('/model-providers/internal', { method: 'DELETE' });
+    expect(again.status).toBe(200);
+  });
+
+  it('lists custom providers with manifest.name hydrated from the row key', async () => {
+    const { settingsRouter, db } = await createRouters();
+    const timestamp = new Date().toISOString();
+    await db
+      .insertInto('model_provider')
+      .values({
+        tenant_id: TENANT_ID,
+        name: 'internal',
+        manifest: jsonbBind({
+          type: 'custom',
+          base_url: customBody.base_url,
+          auth: customBody.auth,
+          models: customBody.models,
+        }),
+        created_at: timestamp,
+        updated_at: timestamp,
+      })
+      .execute();
+
+    const list = await settingsRouter.request('/model-providers');
+    expect(await list.json()).toEqual({
+      data: [configured('internal', withRedactedApiKey({ ...customBody }))],
     });
   });
 });

@@ -41,11 +41,12 @@ export function toHarnessModelEntry(model: UiModelEntry): TrueForgeApi.Configure
 
 export function toUiModelProvider(provider: TrueForgeApi.ConfiguredModelProvider): UiModelProvider {
   const { name, manifest } = provider;
+  const baseUrl = manifestBaseUrl(manifest);
   return {
     id: name,
     type: manifest.type,
     name,
-    ...(manifest.baseUrl === undefined ? {} : { baseUrl: manifest.baseUrl }),
+    ...(baseUrl === undefined ? {} : { baseUrl }),
     models: manifest.models.map(toUiModelEntry),
   };
 }
@@ -73,6 +74,16 @@ const PROVIDER_TYPES: readonly string[] = [...Object.values(TrueForgeApi.Catalog
 
 function isProviderType(type: string): type is TrueForgeApi.ModelProviderManifest['type'] {
   return PROVIDER_TYPES.includes(type);
+}
+
+function manifestBaseUrl(manifest: TrueForgeApi.ModelProviderManifest): string | undefined {
+  if ('baseUrl' in manifest && typeof manifest.baseUrl === 'string') {
+    return manifest.baseUrl;
+  }
+  if ('base_url' in manifest && typeof manifest.base_url === 'string') {
+    return manifest.base_url;
+  }
+  return undefined;
 }
 
 export function toHarnessModelProvider(req: {
@@ -108,7 +119,7 @@ export function toHarnessModelProvider(req: {
   return { type: req.type, auth, models };
 }
 
-/** Settings model-catalog port for `createTrueFoundryServer`. Delete is omitted (no BE route). */
+/** Settings model-catalog port for `createTrueFoundryServer`. */
 export function createModelProviderCatalog(
   client: TrueForge,
 ): ModelCatalogServer<
@@ -164,16 +175,25 @@ export function createModelProviderCatalog(
     updateModelProvider: async req => {
       // UI sends apiKey: "" when only models change; reuse the stored key.
       const apiKey = await resolveApiKey({ id: req.id, type: req.type, apiKey: req.apiKey });
+      let baseUrl = req.baseUrl;
+      if (req.type === 'custom' && (baseUrl === undefined || baseUrl.trim() === '')) {
+        const listed = await client.settings.modelProviders.list();
+        const existing = listed.data.find(provider => provider.name === req.id);
+        baseUrl = existing === undefined ? undefined : manifestBaseUrl(existing.manifest);
+      }
       const body = await client.settings.modelProviders.createOrUpdate({
         manifest: toHarnessModelProvider({
           type: req.type,
           name: req.id,
           apiKey,
-          ...(req.baseUrl === undefined ? {} : { baseUrl: req.baseUrl }),
+          ...(baseUrl === undefined ? {} : { baseUrl }),
           models: req.models,
         }),
       });
       return toUiModelProvider(body.data);
+    },
+    deleteModelProvider: async req => {
+      await client.settings.modelProviders.delete(req.id);
     },
   };
 }
