@@ -9,6 +9,7 @@
 // with your API. That is the only change needed. Everything from buildServer()
 // down is reusable unchanged.
 
+/* global fetch, AbortSignal, URLSearchParams */
 import express from "express";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
