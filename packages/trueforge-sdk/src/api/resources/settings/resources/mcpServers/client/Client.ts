@@ -243,7 +243,7 @@ export class McpServersClient {
     /**
      * Create or replace by `name`. Does not start DCR or change oauth client columns. Header secrets: real value sets/rotates; redacted keeps existing (400 if none).
      *
-     * @param {TrueForge.settings.PutMcpServerRequest} request
+     * @param {TrueForge.settings.UpdateMcpServerRequest} request
      * @param {McpServersClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link TrueForge.BadRequestError}
@@ -252,7 +252,7 @@ export class McpServersClient {
      * @throws {@link errors.TrueForgeTimeoutError}
      *
      * @example
-     *     await client.settings.mcpServers.upsert({
+     *     await client.settings.mcpServers.createOrUpdate({
      *         manifest: {
      *             description: "description",
      *             name: "name",
@@ -261,15 +261,15 @@ export class McpServersClient {
      *         }
      *     })
      */
-    public upsert(
-        request: TrueForge.settings.PutMcpServerRequest,
+    public createOrUpdate(
+        request: TrueForge.settings.UpdateMcpServerRequest,
         requestOptions?: McpServersClient.RequestOptions,
     ): core.HttpResponsePromise<TrueForge.GetMcpServerResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__upsert(request, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__createOrUpdate(request, requestOptions));
     }
 
-    private async __upsert(
-        request: TrueForge.settings.PutMcpServerRequest,
+    private async __createOrUpdate(
+        request: TrueForge.settings.UpdateMcpServerRequest,
         requestOptions?: McpServersClient.RequestOptions,
     ): Promise<core.WithRawResponse<TrueForge.GetMcpServerResponse>> {
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
@@ -290,7 +290,7 @@ export class McpServersClient {
             queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
             requestType: "json",
             body: mergeAdditionalBodyParameters(
-                serializers.settings.PutMcpServerRequest.jsonOrThrow(request, {
+                serializers.settings.UpdateMcpServerRequest.jsonOrThrow(request, {
                     unrecognizedObjectKeys: "passthrough",
                     allowUnrecognizedUnionMembers: true,
                     allowUnrecognizedEnumValues: true,
@@ -438,130 +438,6 @@ export class McpServersClient {
             _response.rawResponse,
             "GET",
             "/api/v1/settings/mcp-servers/{name}",
-        );
-    }
-
-    /**
-     * All tools exposed by the given MCP server (non-paginated), as returned by the MCP `tools/list` call.
-     *
-     * @param {string} name - MCP server name.
-     * @param {McpServersClient.RequestOptions} requestOptions - Request-specific configuration.
-     *
-     * @throws {@link TrueForge.UnauthorizedError}
-     * @throws {@link TrueForge.NotFoundError}
-     * @throws {@link TrueForge.UnprocessableEntityError}
-     * @throws {@link TrueForge.BadGatewayError}
-     * @throws {@link errors.TrueForgeError}
-     * @throws {@link errors.TrueForgeTimeoutError}
-     *
-     * @example
-     *     await client.settings.mcpServers.listTools("name")
-     */
-    public listTools(
-        name: string,
-        requestOptions?: McpServersClient.RequestOptions,
-    ): core.HttpResponsePromise<TrueForge.ListMcpServerToolsResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__listTools(name, requestOptions));
-    }
-
-    private async __listTools(
-        name: string,
-        requestOptions?: McpServersClient.RequestOptions,
-    ): Promise<core.WithRawResponse<TrueForge.ListMcpServerToolsResponse>> {
-        const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
-        const _headers: core.Fetcher.Args["headers"] = mergeHeaders(
-            _authRequest.headers,
-            this._options?.headers,
-            requestOptions?.headers,
-        );
-        const _response = await (this._options.fetcher ?? core.fetcher)({
-            url: core.url.join(
-                (await core.Supplier.get(this._options.baseUrl)) ??
-                    (await core.Supplier.get(this._options.environment)),
-                `api/v1/settings/mcp-servers/${core.url.encodePathParam(name)}/tools`,
-            ),
-            method: "GET",
-            headers: _headers,
-            queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
-            timeoutMs: (requestOptions?.timeoutInSeconds ?? this._options?.timeoutInSeconds ?? 60) * 1000,
-            maxRetries: requestOptions?.maxRetries ?? this._options?.maxRetries,
-            abortSignal: requestOptions?.abortSignal,
-            fetchFn: this._options?.fetch,
-            logging: this._options.logging,
-        });
-        if (_response.ok) {
-            return {
-                data: serializers.ListMcpServerToolsResponse.parseOrThrow(_response.body, {
-                    unrecognizedObjectKeys: "passthrough",
-                    allowUnrecognizedUnionMembers: true,
-                    allowUnrecognizedEnumValues: true,
-                    skipValidation: true,
-                    breadcrumbsPrefix: ["response"],
-                }),
-                rawResponse: _response.rawResponse,
-            };
-        }
-
-        if (_response.error.reason === "status-code") {
-            switch (_response.error.statusCode) {
-                case 401:
-                    throw new TrueForge.UnauthorizedError(
-                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
-                            unrecognizedObjectKeys: "passthrough",
-                            allowUnrecognizedUnionMembers: true,
-                            allowUnrecognizedEnumValues: true,
-                            skipValidation: true,
-                            breadcrumbsPrefix: ["response"],
-                        }),
-                        _response.rawResponse,
-                    );
-                case 404:
-                    throw new TrueForge.NotFoundError(
-                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
-                            unrecognizedObjectKeys: "passthrough",
-                            allowUnrecognizedUnionMembers: true,
-                            allowUnrecognizedEnumValues: true,
-                            skipValidation: true,
-                            breadcrumbsPrefix: ["response"],
-                        }),
-                        _response.rawResponse,
-                    );
-                case 422:
-                    throw new TrueForge.UnprocessableEntityError(
-                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
-                            unrecognizedObjectKeys: "passthrough",
-                            allowUnrecognizedUnionMembers: true,
-                            allowUnrecognizedEnumValues: true,
-                            skipValidation: true,
-                            breadcrumbsPrefix: ["response"],
-                        }),
-                        _response.rawResponse,
-                    );
-                case 502:
-                    throw new TrueForge.BadGatewayError(
-                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
-                            unrecognizedObjectKeys: "passthrough",
-                            allowUnrecognizedUnionMembers: true,
-                            allowUnrecognizedEnumValues: true,
-                            skipValidation: true,
-                            breadcrumbsPrefix: ["response"],
-                        }),
-                        _response.rawResponse,
-                    );
-                default:
-                    throw new errors.TrueForgeError({
-                        statusCode: _response.error.statusCode,
-                        body: _response.error.body,
-                        rawResponse: _response.rawResponse,
-                    });
-            }
-        }
-
-        return handleNonStatusCodeError(
-            _response.error,
-            _response.rawResponse,
-            "GET",
-            "/api/v1/settings/mcp-servers/{name}/tools",
         );
     }
 }

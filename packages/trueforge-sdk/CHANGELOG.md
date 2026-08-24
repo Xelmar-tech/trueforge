@@ -1,4 +1,37 @@
+## [0.1.3] - 2026-08-19
+
+## [0.1.3-rc.0] - 2026-08-19
+
+## 0.1.3
+
+### Patch Changes
+
+- cc49d4a: Regenerate SDK from updated OpenAPI spec.
+
+## [0.1.2] - 2026-08-18
+
+## 0.1.3-rc.0
+
+### Patch Changes
+
+- cc49d4a: Regenerate SDK from updated OpenAPI spec.
+
+## [0.1.1] - 2026-08-17
+
+## 0.1.2
+
+### Patch Changes
+
+- 3113aa4: Regenerate SDK from updated OpenAPI spec.
+- 45dc6cd: Replace MCP authorize `redirect_url` with a same-origin `return_to` path to prevent open redirects after OAuth.
+
 ## [0.1.0] - 2026-08-16
+
+## 0.1.1
+
+### Patch Changes
+
+- 5100c59: Regenerate SDK from updated OpenAPI spec.
 
 ## [0.1.0-rc.1] - 2026-08-14
 

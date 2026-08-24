@@ -12,12 +12,17 @@
  *   `redis://localhost:6379`).
  */
 import { existsSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import envPaths from 'env-paths';
 
 const DEFAULT_PORT = 8790;
+/** Loopback default; container images set HOST=0.0.0.0 so probes and Service traffic reach the process. */
+const DEFAULT_HOST = 'localhost';
+/** Default HTTP request body ceiling: 30 MB. */
+const DEFAULT_MAX_REQUEST_BODY_BYTES = 30 * 1024 * 1024;
 /**
  * Package root whether this module runs as `src/config.ts` (tsx) or is bundled
  * into `dist/main.js` / `dist/cli.js` (`import.meta` → `dist/` → parent).
@@ -112,8 +117,12 @@ function parseBoolean(options: { envKey: string; raw: string | undefined; defaul
     return defaultValue;
   }
   const value = raw.trim().toLowerCase();
-  if (value === 'true') return true;
-  if (value === 'false') return false;
+  if (value === 'true') {
+    return true;
+  }
+  if (value === 'false') {
+    return false;
+  }
   throw new Error(`Environment variable ${envKey} must be "true" or "false", got "${raw}"`);
 }
 
@@ -157,6 +166,16 @@ function resolveSqlitePath(): string {
   }
   const paths = envPaths(ENV_PATHS_APP_NAME, { suffix: '' });
   return path.join(paths.data, 'db', 'db.sqlite');
+}
+
+/** Parent for local sandbox roots. Same env-paths data dir as SQLite (`{suffix:''}`). */
+function resolveLocalSandboxRootParent(): string {
+  return path.join(envPaths(ENV_PATHS_APP_NAME, { suffix: '' }).data, 'sandboxes');
+}
+
+/** Short tmp parent for Code Mode UDS socks (≤65 bytes after realpath). */
+function resolveCodeModeSocketParent(): string {
+  return path.join(os.tmpdir(), 'tf_cms');
 }
 
 /** Redis peering URL for distributed mode. Env: `REDIS_URL`. */
@@ -276,29 +295,31 @@ export interface SharedServerConfiguration {
   NODE_ENV: string | undefined;
   /** HTTP port the server listens on. Env: `PORT`. */
   PORT: number;
+  /** HTTP bind address. Env: `HOST`. Default `localhost`; production images use `0.0.0.0`. */
+  HOST: string;
   /** Peering identity embedded in the turn ids this process mints; `local` in standalone mode. */
   EXECUTOR_ID: string;
   /**
    * Optional override for the model catalog YAML (discovery presets for
-   * GET /catalog/model-providers). When unset, the catalog inlined at build
+   * GET /catalogs/model-providers). When unset, the catalog inlined at build
    * time is used. Env: `MODEL_CATALOG_PATH`.
    */
   MODEL_CATALOG_PATH: string | undefined;
   /**
    * Optional override for the MCP catalog YAML (discovery presets for
-   * GET /catalog/mcp-servers). When unset, the catalog inlined at build
+   * GET /catalogs/mcp-servers). When unset, the catalog inlined at build
    * time is used. Env: `MCP_CATALOG_PATH`.
    */
   MCP_CATALOG_PATH: string | undefined;
   /**
    * Optional override for the skill catalog YAML (discovery presets for
-   * GET /catalog/skills). When unset, the catalog inlined at build
+   * GET /catalogs/skills). When unset, the catalog inlined at build
    * time is used. Env: `SKILL_CATALOG_PATH`.
    */
   SKILL_CATALOG_PATH: string | undefined;
   /**
    * Optional override for the sandbox catalog YAML (discovery presets for
-   * GET /catalog/sandbox-providers). When unset, the catalog inlined at build
+   * GET /catalogs/sandbox-providers). When unset, the catalog inlined at build
    * time is used. Env: `SANDBOX_CATALOG_PATH`.
    */
   SANDBOX_CATALOG_PATH: string | undefined;
@@ -323,6 +344,10 @@ export interface SharedServerConfiguration {
    * Env: `SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD`. Default 20 MB (same as gateway).
    */
   SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD: number;
+  /**
+   * Max bytes for an HTTP request body. Env: `MAX_REQUEST_BODY_BYTES`. Default 30 MB.
+   */
+  MAX_REQUEST_BODY_BYTES: number;
   /**
    * Max seconds to wait for turn cancellation + connection drain on SIGTERM/SIGINT.
    * Env: `GRACEFUL_TIMEOUT_SECONDS`. Default 30.
@@ -372,6 +397,12 @@ export interface SharedServerConfiguration {
    * Only used when a Redis client is wired (distributed mode).
    */
   REDIS_REQUEST_REPLY_POLL_INTERVAL_MS: number;
+  /**
+   * Public base URL used as the origin of MCP OAuth and OIDC callbacks.
+   * Optional at boot; MCP OAuth and OIDC callback construction fail if empty
+   * outside standalone development. Env: `PUBLIC_BASE_URL`.
+   */
+  PUBLIC_BASE_URL: string;
 }
 
 export type StandaloneServerConfiguration = SharedServerConfiguration & {
@@ -385,6 +416,16 @@ export type StandaloneServerConfiguration = SharedServerConfiguration & {
    * Env: `SQLITE_PATH` (optional). Default: env-paths data dir + `db/db.sqlite`.
    */
   SQLITE_PATH: string;
+  /**
+   * Parent directory for local sandbox roots (ULID children).
+   * Derived: `{env-paths data}/sandboxes`.
+   */
+  LOCAL_SANDBOX_ROOT_PARENT: string;
+  /**
+   * Parent directory for Code Mode UDS sockets (`tf_cms` under os.tmpdir()).
+   * Caller prepares/removes this directory; must stay ≤65 bytes after realpath.
+   */
+  CODE_MODE_SOCKET_PARENT: string;
 };
 
 export type DistributedServerConfiguration = SharedServerConfiguration & {
@@ -393,12 +434,6 @@ export type DistributedServerConfiguration = SharedServerConfiguration & {
    * Env: `STANDALONE`. Default: true (so this branch requires an explicit `false`).
    */
   STANDALONE: false;
-  /**
-   * Public base URL of this server used as the origin of MCP OAuth and OIDC
-   * callbacks. Optional at boot; MCP OAuth and OIDC callback construction fail
-   * if empty.
-   */
-  PUBLIC_BASE_URL: string;
   /**
    * Postgres connection string derived from `POSTGRES_*` (not read from env directly).
    * Form: `postgres://USER:PASSWORD@HOST:PORT/DB` with user/password URL-encoded.
@@ -444,11 +479,13 @@ const standalone = parseBoolean({
 });
 
 const port = parsePort(getEnv('PORT'));
+const host = getEnv('HOST', { defaultValue: DEFAULT_HOST }) ?? DEFAULT_HOST;
 
 const shared: SharedServerConfiguration = {
   LOG_LEVEL: getEnv('LOG_LEVEL', { defaultValue: 'info' }) ?? 'info',
   NODE_ENV: getEnv('NODE_ENV'),
   PORT: port,
+  HOST: host,
   EXECUTOR_ID: standalone ? LOCAL_EXECUTOR_ID : randomAlphanumeric(6),
   MODEL_CATALOG_PATH: resolveOptionalPathEnv('MODEL_CATALOG_PATH'),
   MCP_CATALOG_PATH: resolveOptionalPathEnv('MCP_CATALOG_PATH'),
@@ -472,6 +509,11 @@ const shared: SharedServerConfiguration = {
     envKey: 'SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD',
     raw: getEnv('SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD'),
     defaultValue: 20_971_520,
+  }),
+  MAX_REQUEST_BODY_BYTES: parsePositiveInt({
+    envKey: 'MAX_REQUEST_BODY_BYTES',
+    raw: getEnv('MAX_REQUEST_BODY_BYTES'),
+    defaultValue: DEFAULT_MAX_REQUEST_BODY_BYTES,
   }),
   GRACEFUL_TIMEOUT_SECONDS: parsePositiveInt({
     envKey: 'GRACEFUL_TIMEOUT_SECONDS',
@@ -514,6 +556,7 @@ const shared: SharedServerConfiguration = {
     raw: getEnv('REDIS_REQUEST_REPLY_POLL_INTERVAL_MS'),
     defaultValue: 500,
   }),
+  PUBLIC_BASE_URL: getEnv('PUBLIC_BASE_URL', { defaultValue: '' }) ?? '',
 };
 
 const configuration: ServerConfiguration = standalone
@@ -521,11 +564,12 @@ const configuration: ServerConfiguration = standalone
       ...shared,
       STANDALONE: true,
       SQLITE_PATH: resolveSqlitePath(),
+      LOCAL_SANDBOX_ROOT_PARENT: resolveLocalSandboxRootParent(),
+      CODE_MODE_SOCKET_PARENT: resolveCodeModeSocketParent(),
     }
   : {
       ...shared,
       STANDALONE: false,
-      PUBLIC_BASE_URL: getEnv('PUBLIC_BASE_URL', { defaultValue: '' }) ?? '',
       DATABASE_URL: resolvePostgresDatabaseUrl(),
       DATABASE_POOL_MAX: parsePositiveInt({
         envKey: 'DATABASE_POOL_MAX',
@@ -554,10 +598,11 @@ export function isOidcConfigured(
 
 /**
  * Public origin for OAuth callbacks.
- * Standalone → `http://localhost:$PORT`; distributed → `PUBLIC_BASE_URL` (may be `''`).
+ * Standalone (non-development) → `http://localhost:$PORT`; otherwise `PUBLIC_BASE_URL`
+ * (required in development and distributed; throws if empty).
  */
 export function getPublicBaseUrl(config: ServerConfiguration = configuration): string {
-  if (config.STANDALONE) {
+  if (config.STANDALONE && config.NODE_ENV !== 'development') {
     return `http://localhost:${String(config.PORT)}`;
   }
   if (config.PUBLIC_BASE_URL === '') {

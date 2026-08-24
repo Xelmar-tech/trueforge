@@ -25,10 +25,10 @@ export const OAuthCallbackQuerySchema = z.object({
 });
 
 export const OAuthCallbackSuccessSchema = z.object({
-  success: z.literal(true).describe('Present when the OAuth callback completed without a redirect_url.'),
+  success: z.literal(true).describe('Present when the OAuth callback completed without a return_to.'),
 });
 
-export const MeResponseSchema = z
+export const GetMeResponseSchema = z
   .object({
     type: z
       .enum(['default', 'oidc-connected'])
@@ -38,6 +38,6 @@ export const MeResponseSchema = z
     email: z.string().describe('User email from the ID token when connected; `"default"` when anonymous.'),
     role: z.string().describe('Caller role.'),
   })
-  .openapi('MeResponse');
+  .openapi('GetMeResponse');
 
-export type MeResponse = z.infer<typeof MeResponseSchema>;
+export type GetMeResponse = z.infer<typeof GetMeResponseSchema>;

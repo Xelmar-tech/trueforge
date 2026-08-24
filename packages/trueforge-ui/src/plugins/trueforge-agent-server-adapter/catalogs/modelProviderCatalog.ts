@@ -23,7 +23,7 @@ export type UiModelEntry = ModelEntry & {
 export type UiModelProvider = ModelProviderBase<UiModelEntry>;
 export type UiModelProviderCatalogEntry = ModelProviderCatalogEntry<UiModelEntry>;
 
-export function toUiModelEntry(model: TrueForgeApi.ModelEntry): UiModelEntry {
+export function toUiModelEntry(model: TrueForgeApi.ConfiguredModel): UiModelEntry {
   return {
     id: model.modelId,
     name: model.name,
@@ -31,7 +31,7 @@ export function toUiModelEntry(model: TrueForgeApi.ModelEntry): UiModelEntry {
   };
 }
 
-export function toHarnessModelEntry(model: UiModelEntry): TrueForgeApi.ModelEntry {
+export function toHarnessModelEntry(model: UiModelEntry): TrueForgeApi.ConfiguredModel {
   return {
     modelId: model.id,
     name: model.name,
@@ -39,7 +39,7 @@ export function toHarnessModelEntry(model: UiModelEntry): TrueForgeApi.ModelEntr
   };
 }
 
-export function toUiModelProvider(provider: TrueForgeApi.ModelProvider): UiModelProvider {
+export function toUiModelProvider(provider: TrueForgeApi.ConfiguredModelProvider): UiModelProvider {
   const { name, manifest } = provider;
   return {
     id: name,
@@ -141,7 +141,7 @@ export function createModelProviderCatalog(
 
   return {
     getModelProviderCatalog: async () => {
-      const body = await client.catalog.modelProviders.list();
+      const body = await client.catalogs.modelProviders.list();
       return body.data.map(toUiCatalogModelProviderEntry);
     },
     listModelProviders: async () => {
@@ -164,7 +164,7 @@ export function createModelProviderCatalog(
     updateModelProvider: async req => {
       // UI sends apiKey: "" when only models change; reuse the stored key.
       const apiKey = await resolveApiKey({ id: req.id, type: req.type, apiKey: req.apiKey });
-      const body = await client.settings.modelProviders.upsert({
+      const body = await client.settings.modelProviders.createOrUpdate({
         manifest: toHarnessModelProvider({
           type: req.type,
           name: req.id,

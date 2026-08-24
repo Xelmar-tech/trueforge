@@ -12,6 +12,12 @@
 import { extractErrorLogFields } from '@truefoundry/trueforge-core/core';
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
+import {
+  ensureLocalSandboxRootParent,
+  prepareCodeModeSocketParent,
+  removeCodeModeSocketParent,
+} from './sandbox/localLifecycle';
+import { setCachedLocalSandboxSupport } from './sandbox/localRuntime';
 
 let configuration: typeof import('./config').default;
 let isOidcConfigured: typeof import('./config').isOidcConfigured;
@@ -248,6 +254,26 @@ try {
 
   if (configuration.STANDALONE) {
     printStandaloneStartupBanner({ version: PACKAGE_VERSION, color: shouldColorize() });
+    await prepareCodeModeSocketParent({ path: configuration.CODE_MODE_SOCKET_PARENT, logger });
+    await ensureLocalSandboxRootParent(configuration.LOCAL_SANDBOX_ROOT_PARENT);
+    const { LocalSandboxProvider } = await import('./sandbox/local/provider/LocalSandboxProvider');
+    const support = await LocalSandboxProvider.isSupported({
+      codeModeSocketParentPath: configuration.CODE_MODE_SOCKET_PARENT,
+    });
+    setCachedLocalSandboxSupport(support);
+    if (support.supported) {
+      logger.info('Local sandbox fallback is available', {
+        platform: support.platform,
+        shell: support.shell,
+        python: support.python,
+      });
+    } else {
+      logger.warn('Local sandbox fallback is unavailable', {
+        reason: support.reason,
+        ...(support.platform === undefined ? {} : { platform: support.platform }),
+        ...(support.attempts === undefined ? {} : { attempts: support.attempts }),
+      });
+    }
   } else {
     logger.info('TrueForge starting', { mode: 'distributed' });
   }
@@ -296,8 +322,8 @@ try {
     await requestReplyExecutor.init();
   }
 
-  const server = serve({ fetch: app.fetch, port: configuration.PORT }, info => {
-    logger.info(`Agent server listening on http://localhost:${String(info.port)} (docs at /api/v1/docs)`);
+  const server = serve({ fetch: app.fetch, port: configuration.PORT, hostname: configuration.HOST }, info => {
+    logger.info(`Agent server listening on http://${configuration.HOST}:${String(info.port)} (docs at /api/v1/docs)`);
   });
 
   server.on('error', (error: unknown) => {
@@ -310,7 +336,9 @@ try {
   if (configuration.NODE_ENV !== 'development') {
     let shuttingDown = false;
     const shutdown = async (signal: NodeJS.Signals) => {
-      if (shuttingDown) return;
+      if (shuttingDown) {
+        return;
+      }
       shuttingDown = true;
       logger.info(`Received ${signal}, draining connections before shutdown`);
 
@@ -340,6 +368,11 @@ try {
       await redis?.close().catch((error: unknown) => {
         logger.warn('[Redis] Error closing client during shutdown', extractErrorLogFields(error));
       });
+      if (configuration.STANDALONE) {
+        await removeCodeModeSocketParent(configuration.CODE_MODE_SOCKET_PARENT).catch((error: unknown) => {
+          logger.warn('Error removing Code Mode socket parent during shutdown', extractErrorLogFields(error));
+        });
+      }
       await destroyDb();
       process.exit(0);
     };

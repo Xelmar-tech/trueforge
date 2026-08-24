@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.2.4
+
+### Patch Changes
+
+- f1c5c6b: Fall back to the pending MCP authorization URL when the UI server does not expose a catalog.
+
+## 0.2.3
+
+### Patch Changes
+
+- abd9e38: Agents Library rows: show connectors before skills, use the composer's lightbulb icon for skills, and reveal the connector/skill names in a tooltip on hover.
+- cc49d4a: Rename catalog, sandbox-file download, and MCP tools paths; Fern upsert becomes create_or_update. Sessions and turns default and max 25; session and turn event lists default and max 100.
+- d7a640f: Align OpenAPI type names across AgentSpec, settings, catalogs, and chat pickers: Catalog/Configured/Available resource views, AgentSpec nested Model/Skill/InitialUserMessage, Put*Request → Update*Request, MCP acronym casing, GetMeResponse, and explicit names for nested AgentSpec/capabilities schemas.
+- 7e2e02c: Refresh composer catalogs whenever settings close, including navigating to a chat or named agent.
+- Updated dependencies [cc49d4a]
+  - @truefoundry/trueforge-sdk@0.1.3
+
+## 0.2.3-rc.0
+
+### Patch Changes
+
+- abd9e38: Agents Library rows: show connectors before skills, use the composer's lightbulb icon for skills, and reveal the connector/skill names in a tooltip on hover.
+- cc49d4a: Rename catalog, sandbox-file download, and MCP tools paths; Fern upsert becomes create_or_update. Sessions and turns default and max 25; session and turn event lists default and max 100.
+- d7a640f: Align OpenAPI type names across AgentSpec, settings, catalogs, and chat pickers: Catalog/Configured/Available resource views, AgentSpec nested Model/Skill/InitialUserMessage, Put*Request → Update*Request, MCP acronym casing, GetMeResponse, and explicit names for nested AgentSpec/capabilities schemas.
+- 7e2e02c: Refresh composer catalogs whenever settings close, including navigating to a chat or named agent.
+- Updated dependencies [cc49d4a]
+  - @truefoundry/trueforge-sdk@0.1.3-rc.0
+
+## 0.2.2
+
+### Patch Changes
+
+- 3113aa4: Rename the MCP servers SDK method from `deleteAuthorize` to `deleteAuthorization`.
+- 45dc6cd: Replace MCP authorize `redirect_url` with a same-origin `return_to` path to prevent open redirects after OAuth.
+- Updated dependencies [3113aa4]
+- Updated dependencies [45dc6cd]
+  - @truefoundry/trueforge-sdk@0.1.2
+
+## 0.2.1
+
+### Patch Changes
+
+- c5223ad: Ship `react-dom` and `react-router-dom` as package dependencies instead of peers so consumers no longer need to install them separately.
+- 92ee970: Decode common escape sequences (`\n`, `\t`, `\r`, `\uXXXX`, …) in user-facing API error messages and render them with `whitespace-pre-wrap` so multi-line Zod validation output displays correctly.
+- 53104b1: Keep active and remembered draft sandbox settings synchronized with server capabilities.
+
+## 0.2.0
+
+### Minor Changes
+
+- 9a4d1a7: Add opt-in `withRouter` URL sync for shell places (`/`, `/agents/:agentName`, `/sessions/:sessionId`, `/settings`), with path customization via `routes` and `react-router-dom` as an optional peer. Serve the app shell for client-side deep links from the TrueForge server.
+
+### Patch Changes
+
+- Updated dependencies [5100c59]
+  - @truefoundry/trueforge-sdk@0.1.1
+
 ## 0.1.0
 
 ### Minor Changes

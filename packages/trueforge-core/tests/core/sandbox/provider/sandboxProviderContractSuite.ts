@@ -25,6 +25,19 @@ export function runSandboxProviderContractSuite(
       await fixture.dispose();
     }, 60_000);
 
+    it('exec cwd is the sandbox root so relative layout paths work', async () => {
+      const { sandboxId } = await fixture.provider.createSandbox();
+      const result = await fixture.provider.exec({
+        sandboxId,
+        command: 'pwd && mkdir -p skills && test -d skills',
+      });
+      ensureExecSuccess(result);
+      if (!result.success) {
+        throw new Error('unreachable');
+      }
+      expect(result.response.result.trim().split('\n')[0]).toBe(sandboxId);
+    });
+
     it('exec is stateful across calls in the same sandbox', async () => {
       const { sandboxId } = await fixture.provider.createSandbox();
       const write = await fixture.provider.exec({
@@ -37,7 +50,9 @@ export function runSandboxProviderContractSuite(
         command: 'cat persist.txt',
       });
       ensureExecSuccess(read);
-      if (!read.success) throw new Error('unreachable');
+      if (!read.success) {
+        throw new Error('unreachable');
+      }
       expect(read.response.result).toBe('persist-ok\n');
     });
 
@@ -57,7 +72,9 @@ export function runSandboxProviderContractSuite(
         command: 'cat secret.txt',
       });
       expect(readRelative.success).toBe(true);
-      if (!readRelative.success) throw new Error('unreachable');
+      if (!readRelative.success) {
+        throw new Error('unreachable');
+      }
       expect(readRelative.response.exitCode).not.toBe(0);
       expect(readRelative.response.result).not.toMatch(/only-in-a/);
 
@@ -69,7 +86,9 @@ export function runSandboxProviderContractSuite(
           command: `cat ${JSON.stringify(siblingRelative)}`,
         });
         expect(readSiblingRelative.success).toBe(true);
-        if (!readSiblingRelative.success) throw new Error('unreachable');
+        if (!readSiblingRelative.success) {
+          throw new Error('unreachable');
+        }
         expect(readSiblingRelative.response.exitCode).not.toBe(0);
         expect(readSiblingRelative.response.result).not.toMatch(/only-in-a/);
 
@@ -78,7 +97,9 @@ export function runSandboxProviderContractSuite(
           command: `cat ${JSON.stringify(join(a.sandboxId, 'secret.txt'))}`,
         });
         expect(readAbsolute.success).toBe(true);
-        if (!readAbsolute.success) throw new Error('unreachable');
+        if (!readAbsolute.success) {
+          throw new Error('unreachable');
+        }
         expect(readAbsolute.response.exitCode).not.toBe(0);
         expect(readAbsolute.response.result).not.toMatch(/only-in-a/);
 
@@ -87,7 +108,9 @@ export function runSandboxProviderContractSuite(
           command: `printf 'cross-write\\n' > ${JSON.stringify(join(a.sandboxId, 'cross-write.txt'))}`,
         });
         expect(writeAbsolute.success).toBe(true);
-        if (!writeAbsolute.success) throw new Error('unreachable');
+        if (!writeAbsolute.success) {
+          throw new Error('unreachable');
+        }
         expect(writeAbsolute.response.exitCode).not.toBe(0);
 
         const writeSiblingRelative = await fixture.provider.exec({
@@ -95,7 +118,9 @@ export function runSandboxProviderContractSuite(
           command: `printf 'cross-write\\n' > ${JSON.stringify(join('..', basename(a.sandboxId), 'cross-write.txt'))}`,
         });
         expect(writeSiblingRelative.success).toBe(true);
-        if (!writeSiblingRelative.success) throw new Error('unreachable');
+        if (!writeSiblingRelative.success) {
+          throw new Error('unreachable');
+        }
         expect(writeSiblingRelative.response.exitCode).not.toBe(0);
 
         const leaked = await fixture.provider.exec({
@@ -103,7 +128,9 @@ export function runSandboxProviderContractSuite(
           command: 'test -e cross-write.txt',
         });
         expect(leaked.success).toBe(true);
-        if (!leaked.success) throw new Error('unreachable');
+        if (!leaked.success) {
+          throw new Error('unreachable');
+        }
         expect(leaked.response.exitCode).not.toBe(0);
       }
     });

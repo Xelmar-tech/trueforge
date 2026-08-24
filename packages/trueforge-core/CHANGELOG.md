@@ -1,5 +1,48 @@
 # @truefoundry/trueforge-core
 
+## 0.1.4
+
+### Patch Changes
+
+- 42eee39: Enable a standalone in-memory local sandbox fallback (no settings row), persist fancy `v1:type:raw` sandbox ids, drop tenant-prefix ownership checks, keep TFY sandbox writes cwd-relative (no `/opt` / `/usr/local`), let each sandbox provider own PATH (no hardcoded Daytona tail in Sandbox), and grant only the Code Mode socket parent in SRT (not host `/tmp`).
+- d7a640f: Align OpenAPI type names across AgentSpec, settings, catalogs, and chat pickers: Catalog/Configured/Available resource views, AgentSpec nested Model/Skill/InitialUserMessage, Put*Request → Update*Request, MCP acronym casing, GetMeResponse, and explicit names for nested AgentSpec/capabilities schemas.
+- 7ae5376: Update SANDBOX_IMAGE_URI to the image pushed by CI.
+- 889caca: Persist `model.message` with omitted null content and deferred `call_tool` wrapper `tool_info`, matching the live stream.
+- 2ca7fb2: Remove unused `config.sandbox.network_policy` (git auth inject) from the public AgentSpec.
+- 43d780e: Load SANDBOX_IMAGE_URI from sandboxImage.json so CI can rewrite the pin.
+
+## 0.1.4-rc.0
+
+### Patch Changes
+
+- 42eee39: Enable a standalone in-memory local sandbox fallback (no settings row), persist fancy `v1:type:raw` sandbox ids, drop tenant-prefix ownership checks, keep TFY sandbox writes cwd-relative (no `/opt` / `/usr/local`), let each sandbox provider own PATH (no hardcoded Daytona tail in Sandbox), and grant only the Code Mode socket parent in SRT (not host `/tmp`).
+- d7a640f: Align OpenAPI type names across AgentSpec, settings, catalogs, and chat pickers: Catalog/Configured/Available resource views, AgentSpec nested Model/Skill/InitialUserMessage, Put*Request → Update*Request, MCP acronym casing, GetMeResponse, and explicit names for nested AgentSpec/capabilities schemas.
+- 7ae5376: Update SANDBOX_IMAGE_URI to the image pushed by CI.
+- 889caca: Persist `model.message` with omitted null content and deferred `call_tool` wrapper `tool_info`, matching the live stream.
+- 2ca7fb2: Remove unused `config.sandbox.network_policy` (git auth inject) from the public AgentSpec.
+- 43d780e: Load SANDBOX_IMAGE_URI from sandboxImage.json so CI can rewrite the pin.
+
+## 0.1.3
+
+### Patch Changes
+
+- 08700d1: Pin `mcp==1.29.0` in the sandbox image so Code Mode can import `mcp.types`.
+- c546350: Pass `tenantName` on `SandboxOptions` instead of injecting `TFY_TENANT_NAME` via exec env.
+
+## 0.1.2
+
+### Patch Changes
+
+- 363a522: Wire shared sandbox Code Mode once in SessionHandle from main toolSets before building threads.
+- 5b981ab: Cancel a session even when the owning executor is gone (restart) or Redis cannot confirm abort. Freeze the running turn in the store so a new turn can start. `freezeAndGetTurn` now takes the cancellation reason (barge-in stays `cancelled-for-next-turn`; explicit cancel stays `client-cancelled`). Redis timeout and transport failures still freeze, with a warning that the cancel is not clean.
+
+## 0.1.1
+
+### Patch Changes
+
+- 69237db: Await Daytona snapshot registration on sandbox provider configure so auth failures return 422 instead of a false pending status, and keep GET status refreshes persisted.
+- 7783fc0: Instruct ask_user_question to mark a first option as (Recommended) when context clearly favors one.
+
 ## 0.1.0
 
 ### Minor Changes

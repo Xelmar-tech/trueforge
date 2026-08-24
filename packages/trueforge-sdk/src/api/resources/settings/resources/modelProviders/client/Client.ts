@@ -246,7 +246,7 @@ export class ModelProvidersClient {
     /**
      * Create or replace a provider (models included). Well-known types use `type` as `name` (one each); `custom` is named by the caller. `auth.api_key`: real value sets/rotates; redacted keeps existing (400 if none).
      *
-     * @param {TrueForge.settings.PutModelProviderRequest} request
+     * @param {TrueForge.settings.UpdateModelProviderRequest} request
      * @param {ModelProvidersClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link TrueForge.BadRequestError}
@@ -254,7 +254,7 @@ export class ModelProvidersClient {
      * @throws {@link errors.TrueForgeTimeoutError}
      *
      * @example
-     *     await client.settings.modelProviders.upsert({
+     *     await client.settings.modelProviders.createOrUpdate({
      *         manifest: {
      *             auth: {
      *                 apiKey: "api_key"
@@ -268,15 +268,15 @@ export class ModelProvidersClient {
      *         }
      *     })
      */
-    public upsert(
-        request: TrueForge.settings.PutModelProviderRequest,
+    public createOrUpdate(
+        request: TrueForge.settings.UpdateModelProviderRequest,
         requestOptions?: ModelProvidersClient.RequestOptions,
     ): core.HttpResponsePromise<TrueForge.GetModelProviderResponse> {
-        return core.HttpResponsePromise.fromPromise(this.__upsert(request, requestOptions));
+        return core.HttpResponsePromise.fromPromise(this.__createOrUpdate(request, requestOptions));
     }
 
-    private async __upsert(
-        request: TrueForge.settings.PutModelProviderRequest,
+    private async __createOrUpdate(
+        request: TrueForge.settings.UpdateModelProviderRequest,
         requestOptions?: ModelProvidersClient.RequestOptions,
     ): Promise<core.WithRawResponse<TrueForge.GetModelProviderResponse>> {
         const _authRequest: core.AuthRequest = await this._options.authProvider.getAuthRequest();
@@ -297,7 +297,7 @@ export class ModelProvidersClient {
             queryString: core.url.queryBuilder().mergeAdditional(requestOptions?.queryParams).build(),
             requestType: "json",
             body: mergeAdditionalBodyParameters(
-                serializers.settings.PutModelProviderRequest.jsonOrThrow(request, {
+                serializers.settings.UpdateModelProviderRequest.jsonOrThrow(request, {
                     unrecognizedObjectKeys: "passthrough",
                     allowUnrecognizedUnionMembers: true,
                     allowUnrecognizedEnumValues: true,

@@ -2,7 +2,8 @@ import type { Sandbox, Snapshot } from '@daytona/sdk';
 import { Daytona, DaytonaError } from '@daytona/sdk';
 import { context } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
-import { randomUUID } from 'crypto';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path/posix';
 import type { Logger } from 'winston';
 import { extractErrorLogFields } from '../../util/errorLogFields';
 import {
@@ -10,6 +11,7 @@ import {
   SandboxFileTooLargeError,
   SandboxNotAvailableError,
   SandboxPathIsDirectoryError,
+  validateSandboxOwnedByTenant,
 } from '../SandboxErrors';
 import type { CodeModeTransport } from '../codeMode/CodeModeTransport';
 import { CodeModeNatsTransport } from '../codeMode/nats/CodeModeNatsTransport';
@@ -60,8 +62,11 @@ function isFailedBuildState(state: Snapshot['state']): boolean {
 /** Convert Daytona https preview URLs to wss for the NATS client. */
 function httpUrlToWsUrl(url: string): string {
   const parsed = new URL(url);
-  if (parsed.protocol === 'https:') parsed.protocol = 'wss:';
-  else if (parsed.protocol === 'http:') parsed.protocol = 'ws:';
+  if (parsed.protocol === 'https:') {
+    parsed.protocol = 'wss:';
+  } else if (parsed.protocol === 'http:') {
+    parsed.protocol = 'ws:';
+  }
   return parsed.toString();
 }
 
@@ -97,6 +102,7 @@ export interface DaytonaSandboxProviderOptions {
 }
 
 export class DaytonaSandboxProvider implements SandboxProvider {
+  readonly type = 'daytona';
   private readonly tenantName: string;
   /** Release-owned sandbox image reference; built into a Daytona snapshot and cloned per sandbox. */
   private readonly imageUri: string;
@@ -136,8 +142,11 @@ export class DaytonaSandboxProvider implements SandboxProvider {
 
   private async getOrCreateSandbox(sandboxId?: string): Promise<{ sandbox: Sandbox; defaultTimeoutMs: number }> {
     if (sandboxId) {
+      validateSandboxOwnedByTenant({ sandboxId, tenantName: this.tenantName });
       const cached = DaytonaSandboxProvider.cachedSandboxes.get(sandboxId);
-      if (cached) return cached;
+      if (cached) {
+        return cached;
+      }
     }
 
     const sandbox = sandboxId
@@ -158,15 +167,21 @@ export class DaytonaSandboxProvider implements SandboxProvider {
   // Returns true iff the caller should retry: either we restarted a stopped sandbox, or the cache entry is missing and the retry will rebuild it via the cold path.
   private static recoverSandboxIfStopped(sandboxId: string): Promise<boolean> {
     const existing = DaytonaSandboxProvider.inFlightRecoveries.get(sandboxId);
-    if (existing) return existing;
+    if (existing) {
+      return existing;
+    }
 
     const cached = DaytonaSandboxProvider.cachedSandboxes.get(sandboxId);
     // Cache may have been evicted by a concurrent error path; signal retry so getOrCreateSandbox rebuilds via restoreExistingSandbox.
-    if (!cached) return Promise.resolve(true);
+    if (!cached) {
+      return Promise.resolve(true);
+    }
 
     const recovery = (async () => {
       await cached.sandbox.refreshData();
-      if (cached.sandbox.state === SANDBOX_STATE_STARTED) return false;
+      if (cached.sandbox.state === SANDBOX_STATE_STARTED) {
+        return false;
+      }
       // start() covers both stopped and archived per Daytona; throws on unrecoverable states (error/destroyed).
       await cached.sandbox.start();
       return true;
@@ -183,7 +198,9 @@ export class DaytonaSandboxProvider implements SandboxProvider {
       return await operation();
     } catch (originalError) {
       // TODO: Narrow to a specific Daytona error code once @daytona/sdk exposes one for "sandbox not running".
-      if (!(originalError instanceof DaytonaError)) throw originalError;
+      if (!(originalError instanceof DaytonaError)) {
+        throw originalError;
+      }
 
       let recovered: boolean;
       try {
@@ -196,7 +213,9 @@ export class DaytonaSandboxProvider implements SandboxProvider {
         throw new Error('Sandbox is unavailable; recovery attempt failed.', { cause: recoveryError });
       }
 
-      if (!recovered) throw originalError;
+      if (!recovered) {
+        throw originalError;
+      }
 
       try {
         return await operation();
@@ -381,6 +400,9 @@ export class DaytonaSandboxProvider implements SandboxProvider {
         });
       } catch (e: unknown) {
         DaytonaSandboxProvider.cachedSandboxes.delete(params.sandboxId);
+        if (e instanceof SandboxNotAvailableError) {
+          throw e;
+        }
         this.logger.error('Sandbox execution error', extractErrorLogFields(e));
         const message = e instanceof Error ? e.message : 'Unknown error';
         return { success: false, error: message };
@@ -410,7 +432,9 @@ export class DaytonaSandboxProvider implements SandboxProvider {
           return await sandbox.fs.downloadFile(params.path);
         });
       } catch (e: unknown) {
-        if (e instanceof SandboxPathIsDirectoryError || e instanceof SandboxFileTooLargeError) throw e;
+        if (e instanceof SandboxPathIsDirectoryError || e instanceof SandboxFileTooLargeError) {
+          throw e;
+        }
         if (e instanceof DaytonaError && e.statusCode === SANDBOX_NOT_FOUND_STATUS) {
           throw new SandboxFileNotFoundError(params.path);
         }
@@ -463,6 +487,10 @@ export class DaytonaSandboxProvider implements SandboxProvider {
       },
       sandboxClientNatsUrl: `ws://localhost:${String(this.natsBridgePort)}`,
       logger: this.logger,
+      mcpClientInstall: {
+        remotePath: join('/opt', 'tf', 'mcp-client', 'mcp_client.py'),
+        pathBinSymlink: join('/usr', 'local', 'bin', 'mcp-client'),
+      },
     });
   }
 
@@ -470,12 +498,26 @@ export class DaytonaSandboxProvider implements SandboxProvider {
     return undefined;
   }
 
+  // Isolated container: image-absolute layout. GIT_CONFIG store --file needs an absolute path.
+  //   /opt/tf/{uploads,skills,tool-results,git_downloader.py,.git-credentials}
+  //   /opt/tfy/mcp-client/mcp_client.py  +  /usr/local/bin/mcp-client (image PATH; no layout bin)
   getToolResultDumpDir(): string {
-    return '/tmp/tool-results';
+    return join('/opt', 'tf', 'tool-results');
   }
 
   getGitCredentialsPath(): string {
-    // Isolated container per sandbox; absolute path so GIT_CONFIG_* needs no $HOME expansion.
-    return '/tmp/.git-credentials';
+    return join('/opt', 'tf', '.git-credentials');
+  }
+
+  getFileUploadsDir(): string {
+    return join('/opt', 'tf', 'uploads');
+  }
+
+  getSkillsDir(): string {
+    return join('/opt', 'tf', 'skills');
+  }
+
+  getGitDownloaderPath(): string {
+    return join('/opt', 'tf', 'git_downloader.py');
   }
 }

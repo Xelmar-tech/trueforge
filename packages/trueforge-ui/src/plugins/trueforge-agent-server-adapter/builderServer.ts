@@ -29,7 +29,13 @@ export function modelProviderLogosByName(
 }
 
 /** Map harness model rows onto the UI picker shape (nested provider + properties + optional logo). */
-export function toModelSelection({ model, logo }: { model: TrueForgeApi.Model; logo?: string }): ModelSelection {
+export function toModelSelection({
+  model,
+  logo,
+}: {
+  model: TrueForgeApi.AvailableModel;
+  logo?: string;
+}): ModelSelection {
   const efforts = model.properties.reasoningEfforts;
   return {
     id: model.modelId,
@@ -63,7 +69,7 @@ export function createHarnessBuilderServer(
       // Catalog logos are optional UI enrichment — a catalog failure must not blank the picker.
       const [modelsBody, catalogEntries] = await Promise.all([
         client.models.list(),
-        client.catalog.modelProviders.list().then(
+        client.catalogs.modelProviders.list().then(
           body => body.data,
           () => [],
         ),

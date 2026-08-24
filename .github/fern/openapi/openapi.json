@@ -110,14 +110,14 @@
             "type": "array"
           },
           "messages": {
-            "description": "Optional seed user messages injected at the start of every session.",
+            "description": "Optional initial user messages injected at the start of every session.",
             "items": {
-              "$ref": "#/components/schemas/AgentSpecUserMessage"
+              "$ref": "#/components/schemas/InitialUserMessage"
             },
             "type": "array"
           },
           "model": {
-            "$ref": "#/components/schemas/AgentSpecModel"
+            "$ref": "#/components/schemas/Model"
           },
           "response_format": {
             "$ref": "#/components/schemas/ResponseFormat"
@@ -125,50 +125,13 @@
           "skills": {
             "description": "Optional name-only skill references. Requires `config.sandbox.enabled: true`.",
             "items": {
-              "$ref": "#/components/schemas/SkillNameRef"
+              "$ref": "#/components/schemas/Skill"
             },
             "type": "array"
           }
         },
         "required": [
           "model"
-        ],
-        "type": "object"
-      },
-      "AgentSpecModel": {
-        "properties": {
-          "name": {
-            "description": "Model FQN: `provider/model`, e.g. `openai/gpt-5.2`.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "params": {
-            "$ref": "#/components/schemas/ModelParams"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "type": "object"
-      },
-      "AgentSpecUserMessage": {
-        "properties": {
-          "content": {
-            "description": "Seed user message content injected at the start of every session.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "type": {
-            "description": "Seed message type.",
-            "enum": [
-              "user.message"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "content"
         ],
         "type": "object"
       },
@@ -187,7 +150,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -221,7 +184,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -304,6 +267,90 @@
         },
         "type": "object"
       },
+      "AvailableMCPServer": {
+        "additionalProperties": false,
+        "properties": {
+          "auth": {
+            "$ref": "#/components/schemas/MCPServerAuthPublic"
+          },
+          "auth_status": {
+            "$ref": "#/components/schemas/MCPAuthStatus"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "url": {
+            "description": "URL of the remote MCP server.",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "url",
+          "auth_status"
+        ],
+        "type": "object"
+      },
+      "AvailableModel": {
+        "additionalProperties": false,
+        "properties": {
+          "model_id": {
+            "description": "Upstream, provider-specific identifier sent to the provider API.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Fully qualified name `provider_name/model_name`, e.g. \"openai/gpt-5-6-sol\". Unique within a tenant.",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ModelProperties"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/AvailableModelProvider"
+          }
+        },
+        "required": [
+          "name",
+          "model_id",
+          "provider",
+          "properties"
+        ],
+        "type": "object"
+      },
+      "AvailableModelProvider": {
+        "additionalProperties": false,
+        "description": "Owning configured provider.",
+        "properties": {
+          "name": {
+            "description": "Configured provider resource name; matches the FQN prefix of `name`.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "AvailableSkill": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "description": "Concise guidance for when the agent should use the skill.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          }
+        },
+        "required": [
+          "name",
+          "description"
+        ],
+        "type": "object"
+      },
       "BaseMCPAuthRequiredEvent": {
         "properties": {
           "created_at": {
@@ -359,6 +406,25 @@
         "properties": {},
         "type": "object"
       },
+      "CapabilitiesData": {
+        "properties": {
+          "sandbox": {
+            "$ref": "#/components/schemas/SandboxCapability"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/SettingsCapability"
+          },
+          "skill": {
+            "$ref": "#/components/schemas/SkillCapability"
+          }
+        },
+        "required": [
+          "sandbox",
+          "skill",
+          "settings"
+        ],
+        "type": "object"
+      },
       "CatalogCustomModelProvider": {
         "additionalProperties": false,
         "properties": {
@@ -382,7 +448,75 @@
         ],
         "type": "object"
       },
-      "CatalogDaytonaSandboxProvider": {
+      "CatalogMCPServer": {
+        "additionalProperties": false,
+        "properties": {
+          "auth": {
+            "$ref": "#/components/schemas/MCPServerManifestAuth"
+          },
+          "description": {
+            "description": "Concise summary of what this MCP server provides.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "logo": {
+            "description": "URL of the MCP server logo asset.",
+            "format": "uri",
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MCPServerType"
+          },
+          "url": {
+            "description": "URL of the remote MCP server.",
+            "format": "uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "name",
+          "url",
+          "description"
+        ],
+        "type": "object"
+      },
+      "CatalogModel": {
+        "additionalProperties": false,
+        "properties": {
+          "model_id": {
+            "description": "Upstream, provider-specific identifier sent to the provider API.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ModelProperties"
+          }
+        },
+        "required": [
+          "model_id",
+          "name",
+          "properties"
+        ],
+        "type": "object"
+      },
+      "CatalogModelProvider": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/CatalogWellKnownModelProvider"
+          },
+          {
+            "$ref": "#/components/schemas/CatalogCustomModelProvider"
+          }
+        ]
+      },
+      "CatalogSandboxProvider": {
         "additionalProperties": false,
         "properties": {
           "auto_archive_interval_in_minutes": {
@@ -421,52 +555,6 @@
           "auto_delete_interval_in_minutes"
         ],
         "type": "object"
-      },
-      "CatalogMcpServer": {
-        "additionalProperties": false,
-        "properties": {
-          "auth": {
-            "$ref": "#/components/schemas/McpServerManifestAuth"
-          },
-          "description": {
-            "description": "Concise summary of what this MCP server provides.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "logo": {
-            "description": "URL of the MCP server logo asset.",
-            "format": "uri",
-            "type": "string"
-          },
-          "name": {
-            "$ref": "#/components/schemas/ResourceName"
-          },
-          "type": {
-            "$ref": "#/components/schemas/McpServerType"
-          },
-          "url": {
-            "description": "URL of the remote MCP server.",
-            "format": "uri",
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "name",
-          "url",
-          "description"
-        ],
-        "type": "object"
-      },
-      "CatalogModelProvider": {
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/CatalogWellKnownModelProvider"
-          },
-          {
-            "$ref": "#/components/schemas/CatalogCustomModelProvider"
-          }
-        ]
       },
       "CatalogSkill": {
         "additionalProperties": false,
@@ -521,7 +609,7 @@
           "models": {
             "description": "Preset models",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/CatalogModel"
             },
             "type": "array"
           },
@@ -663,14 +751,32 @@
         ],
         "type": "object"
       },
-      "ConfiguredMcpServer": {
+      "CompactionConfig": {
+        "default": {
+          "enabled": true
+        },
+        "properties": {
+          "compaction_threshold_tokens": {
+            "description": "Context size in tokens that triggers compaction. Default: 50000.",
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "enabled": {
+            "default": true,
+            "description": "Summarize older history when context grows too large. Default: true.",
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "ConfiguredMCPServer": {
         "additionalProperties": false,
         "properties": {
           "auth_status": {
-            "$ref": "#/components/schemas/McpAuthStatus"
+            "$ref": "#/components/schemas/MCPAuthStatus"
           },
           "manifest": {
-            "$ref": "#/components/schemas/McpServerManifest"
+            "$ref": "#/components/schemas/MCPServerManifest"
           },
           "name": {
             "$ref": "#/components/schemas/ResourceName"
@@ -680,6 +786,68 @@
           "name",
           "manifest",
           "auth_status"
+        ],
+        "type": "object"
+      },
+      "ConfiguredModel": {
+        "additionalProperties": false,
+        "properties": {
+          "model_id": {
+            "description": "Upstream, provider-specific identifier sent to the provider API.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/ModelProperties"
+          }
+        },
+        "required": [
+          "model_id",
+          "name",
+          "properties"
+        ],
+        "type": "object"
+      },
+      "ConfiguredModelProvider": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/ModelProviderManifest"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          }
+        },
+        "required": [
+          "name",
+          "manifest"
+        ],
+        "type": "object"
+      },
+      "ConfiguredSandboxProvider": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/SandboxProviderManifest"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SandboxBuildStatus"
+          },
+          "status_reason": {
+            "description": "Human-readable detail for the current status; null when ready.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "manifest",
+          "status",
+          "status_reason"
         ],
         "type": "object"
       },
@@ -710,22 +878,7 @@
         },
         "properties": {
           "compaction": {
-            "default": {
-              "enabled": true
-            },
-            "properties": {
-              "compaction_threshold_tokens": {
-                "description": "Context size in tokens that triggers compaction. Default: 50000.",
-                "exclusiveMinimum": 0,
-                "type": "integer"
-              },
-              "enabled": {
-                "default": true,
-                "description": "Summarize older history when context grows too large. Default: true.",
-                "type": "boolean"
-              }
-            },
-            "type": "object"
+            "$ref": "#/components/schemas/CompactionConfig"
           },
           "large_tool_response": {
             "$ref": "#/components/schemas/LargeToolResponseConfig"
@@ -749,11 +902,11 @@
         ],
         "type": "object"
       },
-      "CreateMcpServerRequest": {
+      "CreateMCPServerRequest": {
         "additionalProperties": false,
         "properties": {
           "manifest": {
-            "$ref": "#/components/schemas/McpServerManifest"
+            "$ref": "#/components/schemas/MCPServerManifest"
           }
         },
         "required": [
@@ -841,7 +994,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -966,7 +1119,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -1012,54 +1165,7 @@
       "GetCapabilitiesResponse": {
         "properties": {
           "data": {
-            "properties": {
-              "sandbox": {
-                "properties": {
-                  "enabled": {
-                    "description": "Whether a sandbox provider is configured for this tenant.",
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "enabled"
-                ],
-                "type": "object"
-              },
-              "settings": {
-                "properties": {
-                  "enabled": {
-                    "description": "Whether the settings UI/API is enabled.",
-                    "type": "boolean"
-                  }
-                },
-                "required": [
-                  "enabled"
-                ],
-                "type": "object"
-              },
-              "skill": {
-                "properties": {
-                  "enabled": {
-                    "description": "Whether skills are available. False when sandbox is not enabled (skills require a sandbox).",
-                    "type": "boolean"
-                  },
-                  "reason": {
-                    "description": "Present when skills are disabled. Explains why.",
-                    "type": "string"
-                  }
-                },
-                "required": [
-                  "enabled"
-                ],
-                "type": "object"
-              }
-            },
-            "required": [
-              "sandbox",
-              "skill",
-              "settings"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/CapabilitiesData"
           }
         },
         "required": [
@@ -1067,11 +1173,11 @@
         ],
         "type": "object"
       },
-      "GetMcpServerCatalogResponse": {
+      "GetMCPServerCatalogResponse": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/CatalogMcpServer"
+              "$ref": "#/components/schemas/CatalogMCPServer"
             },
             "type": "array"
           }
@@ -1081,14 +1187,40 @@
         ],
         "type": "object"
       },
-      "GetMcpServerResponse": {
+      "GetMCPServerResponse": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/ConfiguredMcpServer"
+            "$ref": "#/components/schemas/ConfiguredMCPServer"
           }
         },
         "required": [
           "data"
+        ],
+        "type": "object"
+      },
+      "GetMeResponse": {
+        "properties": {
+          "email": {
+            "description": "User email from the ID token when connected; `\"default\"` when anonymous.",
+            "type": "string"
+          },
+          "role": {
+            "description": "Caller role.",
+            "type": "string"
+          },
+          "type": {
+            "description": "Session kind: `default` when no valid OIDC session; `oidc-connected` after a successful browser login.",
+            "enum": [
+              "default",
+              "oidc-connected"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "email",
+          "role"
         ],
         "type": "object"
       },
@@ -1109,7 +1241,7 @@
       "GetModelProviderResponse": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/ModelProvider"
+            "$ref": "#/components/schemas/ConfiguredModelProvider"
           }
         },
         "required": [
@@ -1121,7 +1253,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/CatalogDaytonaSandboxProvider"
+              "$ref": "#/components/schemas/CatalogSandboxProvider"
             },
             "type": "array"
           }
@@ -1134,7 +1266,7 @@
       "GetSandboxProviderResponse": {
         "properties": {
           "data": {
-            "$ref": "#/components/schemas/SandboxProvider"
+            "$ref": "#/components/schemas/ConfiguredSandboxProvider"
           }
         },
         "required": [
@@ -1204,7 +1336,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -1220,6 +1352,27 @@
           "auth",
           "models",
           "type"
+        ],
+        "type": "object"
+      },
+      "InitialUserMessage": {
+        "properties": {
+          "content": {
+            "description": "Initial user message content injected at the start of every session.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "Initial message type.",
+            "enum": [
+              "user.message"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "content"
         ],
         "type": "object"
       },
@@ -1250,11 +1403,25 @@
         ],
         "type": "object"
       },
-      "ListAvailableMcpServersResponse": {
+      "ListAvailableMCPServersResponse": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/McpServerReadEntry"
+              "$ref": "#/components/schemas/AvailableMCPServer"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "ListAvailableModelsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AvailableModel"
             },
             "type": "array"
           }
@@ -1268,7 +1435,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/SkillReadEntry"
+              "$ref": "#/components/schemas/AvailableSkill"
             },
             "type": "array"
           }
@@ -1278,7 +1445,7 @@
         ],
         "type": "object"
       },
-      "ListMcpServerToolsResponse": {
+      "ListMCPServerToolsResponse": {
         "properties": {
           "data": {
             "description": "MCP `tools/list` entries, passed through verbatim from the MCP server.",
@@ -1294,11 +1461,11 @@
         ],
         "type": "object"
       },
-      "ListMcpServersResponse": {
+      "ListMCPServersResponse": {
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/ConfiguredMcpServer"
+              "$ref": "#/components/schemas/ConfiguredMCPServer"
             },
             "type": "array"
           }
@@ -1312,21 +1479,7 @@
         "properties": {
           "data": {
             "items": {
-              "$ref": "#/components/schemas/ModelProvider"
-            },
-            "type": "array"
-          }
-        },
-        "required": [
-          "data"
-        ],
-        "type": "object"
-      },
-      "ListModelsResponse": {
-        "properties": {
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/Model"
+              "$ref": "#/components/schemas/ConfiguredModelProvider"
             },
             "type": "array"
           }
@@ -1470,6 +1623,30 @@
           }
         ]
       },
+      "MCPAuthStatus": {
+        "additionalProperties": false,
+        "description": "Current auth state.",
+        "properties": {
+          "authorization_url": {
+            "description": "When auth is required, this contains the URL to redirect the user to for authorization.",
+            "format": "uri",
+            "type": "string"
+          },
+          "status": {
+            "description": "Current auth state for this MCP server.",
+            "enum": [
+              "authenticated",
+              "auth_required",
+              "not_required"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "type": "object"
+      },
       "MCPInitializeEvent": {
         "properties": {
           "created_at": {
@@ -1514,19 +1691,7 @@
             "default": [],
             "description": "Tools subtracted from the enabled set. Default: none.",
             "items": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "@all",
-                    "@read-only"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "minLength": 1,
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MCPServerToolSelector"
             },
             "type": "array"
           },
@@ -1536,19 +1701,7 @@
             ],
             "description": "Tools exposed to the agent: `@all`, `@read-only`, or literal tool names. Default: `[\"@all\"]`.",
             "items": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "@all",
-                    "@read-only"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "minLength": 1,
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MCPServerToolSelector"
             },
             "type": "array"
           },
@@ -1566,19 +1719,7 @@
             "default": [],
             "description": "Tools loaded eagerly into context while the rest stay deferred. A non-empty list implies `preload: false`.",
             "items": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "@all",
-                    "@read-only"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "minLength": 1,
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MCPServerToolSelector"
             },
             "type": "array"
           },
@@ -1589,20 +1730,7 @@
             ],
             "description": "Tools that pause for human approval: `@all`, `@write`, `@destructive`, or literal names. Default: `[\"@write\", \"@destructive\"]`.",
             "items": {
-              "anyOf": [
-                {
-                  "enum": [
-                    "@all",
-                    "@write",
-                    "@destructive"
-                  ],
-                  "type": "string"
-                },
-                {
-                  "minLength": 1,
-                  "type": "string"
-                }
-              ]
+              "$ref": "#/components/schemas/MCPServerApprovalToolSelector"
             },
             "type": "array"
           }
@@ -1611,6 +1739,22 @@
           "name"
         ],
         "type": "object"
+      },
+      "MCPServerApprovalToolSelector": {
+        "anyOf": [
+          {
+            "enum": [
+              "@all",
+              "@write",
+              "@destructive"
+            ],
+            "type": "string"
+          },
+          {
+            "minLength": 1,
+            "type": "string"
+          }
+        ]
       },
       "MCPServerAuthInfo": {
         "properties": {
@@ -1634,90 +1778,7 @@
         ],
         "type": "object"
       },
-      "MCPServerInitInfo": {
-        "properties": {
-          "id": {
-            "description": "Internal MCP server id.",
-            "type": "string"
-          },
-          "name": {
-            "description": "Configured MCP server name.",
-            "type": "string"
-          },
-          "session_id": {
-            "description": "Optional MCP session id from the transport.",
-            "type": "string"
-          },
-          "transport_type": {
-            "description": "Transport used to connect to the MCP server.",
-            "enum": [
-              "streamable-http",
-              "sse"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ],
-        "type": "object"
-      },
-      "MCPToolInfo": {
-        "properties": {
-          "name": {
-            "description": "Tool name on the MCP server.",
-            "type": "string"
-          },
-          "server_id": {
-            "description": "Internal MCP server id.",
-            "type": "string"
-          },
-          "server_name": {
-            "description": "Configured MCP server name.",
-            "type": "string"
-          },
-          "type": {
-            "description": "Tool hosted on an MCP server.",
-            "enum": [
-              "mcp"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "type",
-          "server_id",
-          "server_name",
-          "name"
-        ],
-        "type": "object"
-      },
-      "McpAuthStatus": {
-        "additionalProperties": false,
-        "description": "Current auth state.",
-        "properties": {
-          "authorization_url": {
-            "description": "When auth is required, this contains the URL to redirect the user to for authorization.",
-            "format": "uri",
-            "type": "string"
-          },
-          "status": {
-            "description": "Current auth state for this MCP server.",
-            "enum": [
-              "authenticated",
-              "auth_required",
-              "not_required"
-            ],
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "type": "object"
-      },
-      "McpServerAuthPublic": {
+      "MCPServerAuthPublic": {
         "description": "Auth mechanism when configured (no secrets). Omit when the server needs no credentials.",
         "oneOf": [
           {
@@ -1752,7 +1813,7 @@
           }
         ]
       },
-      "McpServerDcrAuth": {
+      "MCPServerDcrAuth": {
         "additionalProperties": false,
         "properties": {
           "type": {
@@ -1768,7 +1829,7 @@
         ],
         "type": "object"
       },
-      "McpServerHeaderAuth": {
+      "MCPServerHeaderAuth": {
         "additionalProperties": false,
         "properties": {
           "headers": {
@@ -1793,11 +1854,40 @@
         ],
         "type": "object"
       },
-      "McpServerManifest": {
+      "MCPServerInitInfo": {
+        "properties": {
+          "id": {
+            "description": "Internal MCP server id.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Configured MCP server name.",
+            "type": "string"
+          },
+          "session_id": {
+            "description": "Optional MCP session id from the transport.",
+            "type": "string"
+          },
+          "transport_type": {
+            "description": "Transport used to connect to the MCP server.",
+            "enum": [
+              "streamable-http",
+              "sse"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object"
+      },
+      "MCPServerManifest": {
         "additionalProperties": false,
         "properties": {
           "auth": {
-            "$ref": "#/components/schemas/McpServerManifestAuth"
+            "$ref": "#/components/schemas/MCPServerManifestAuth"
           },
           "description": {
             "description": "Concise summary of what this MCP server provides.",
@@ -1808,7 +1898,7 @@
             "$ref": "#/components/schemas/ResourceName"
           },
           "type": {
-            "$ref": "#/components/schemas/McpServerType"
+            "$ref": "#/components/schemas/MCPServerType"
           },
           "url": {
             "description": "URL of the remote MCP server.",
@@ -1824,137 +1914,84 @@
         ],
         "type": "object"
       },
-      "McpServerManifestAuth": {
+      "MCPServerManifestAuth": {
         "description": "Optional auth settings. Omit when the server needs no credentials.",
         "discriminator": {
           "mapping": {
-            "dcr": "#/components/schemas/McpServerDcrAuth",
-            "header": "#/components/schemas/McpServerHeaderAuth"
+            "dcr": "#/components/schemas/MCPServerDcrAuth",
+            "header": "#/components/schemas/MCPServerHeaderAuth"
           },
           "propertyName": "type"
         },
         "oneOf": [
           {
-            "$ref": "#/components/schemas/McpServerHeaderAuth"
+            "$ref": "#/components/schemas/MCPServerHeaderAuth"
           },
           {
-            "$ref": "#/components/schemas/McpServerDcrAuth"
+            "$ref": "#/components/schemas/MCPServerDcrAuth"
           }
         ]
       },
-      "McpServerReadEntry": {
-        "additionalProperties": false,
-        "properties": {
-          "auth": {
-            "$ref": "#/components/schemas/McpServerAuthPublic"
+      "MCPServerToolSelector": {
+        "anyOf": [
+          {
+            "enum": [
+              "@all",
+              "@read-only"
+            ],
+            "type": "string"
           },
-          "auth_status": {
-            "$ref": "#/components/schemas/McpAuthStatus"
-          },
-          "name": {
-            "$ref": "#/components/schemas/ResourceName"
-          },
-          "url": {
-            "description": "URL of the remote MCP server.",
-            "format": "uri",
+          {
+            "minLength": 1,
             "type": "string"
           }
-        },
-        "required": [
-          "name",
-          "url",
-          "auth_status"
-        ],
-        "type": "object"
+        ]
       },
-      "McpServerType": {
+      "MCPServerType": {
         "enum": [
           "remote"
         ],
         "type": "string"
       },
-      "MeResponse": {
+      "MCPToolInfo": {
         "properties": {
-          "email": {
-            "description": "User email from the ID token when connected; `\"default\"` when anonymous.",
+          "name": {
+            "description": "Tool name on the MCP server.",
             "type": "string"
           },
-          "role": {
-            "description": "Caller role.",
+          "server_id": {
+            "description": "Internal MCP server id.",
+            "type": "string"
+          },
+          "server_name": {
+            "description": "Configured MCP server name.",
             "type": "string"
           },
           "type": {
-            "description": "Session kind: `default` when no valid OIDC session; `oidc-connected` after a successful browser login.",
+            "description": "Tool hosted on an MCP server.",
             "enum": [
-              "default",
-              "oidc-connected"
+              "mcp"
             ],
             "type": "string"
           }
         },
         "required": [
           "type",
-          "email",
-          "role"
+          "server_id",
+          "server_name",
+          "name"
         ],
         "type": "object"
       },
       "Model": {
-        "additionalProperties": false,
         "properties": {
-          "model_id": {
-            "description": "Upstream, provider-specific identifier sent to the provider API.",
-            "type": "string"
-          },
           "name": {
-            "description": "Fully qualified name `provider_name/model_name`, e.g. \"openai/gpt-5-6-sol\". Unique within a tenant.",
-            "type": "string"
-          },
-          "properties": {
-            "$ref": "#/components/schemas/ModelProperties"
-          },
-          "provider": {
-            "$ref": "#/components/schemas/ModelListProvider"
-          }
-        },
-        "required": [
-          "name",
-          "model_id",
-          "provider",
-          "properties"
-        ],
-        "type": "object"
-      },
-      "ModelEntry": {
-        "additionalProperties": false,
-        "properties": {
-          "model_id": {
-            "description": "Upstream, provider-specific identifier sent to the provider API.",
+            "description": "Model FQN: `provider/model`, e.g. `openai/gpt-5.2`.",
             "minLength": 1,
             "type": "string"
           },
-          "name": {
-            "$ref": "#/components/schemas/ResourceName"
-          },
-          "properties": {
-            "$ref": "#/components/schemas/ModelProperties"
-          }
-        },
-        "required": [
-          "model_id",
-          "name",
-          "properties"
-        ],
-        "type": "object"
-      },
-      "ModelListProvider": {
-        "additionalProperties": false,
-        "description": "Owning configured provider.",
-        "properties": {
-          "name": {
-            "description": "Configured provider resource name; matches the FQN prefix of `name`.",
-            "minLength": 1,
-            "type": "string"
+          "params": {
+            "$ref": "#/components/schemas/ModelParams"
           }
         },
         "required": [
@@ -2239,22 +2276,6 @@
         },
         "type": "object"
       },
-      "ModelProvider": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/ModelProviderManifest"
-          },
-          "name": {
-            "$ref": "#/components/schemas/ResourceName"
-          }
-        },
-        "required": [
-          "name",
-          "manifest"
-        ],
-        "type": "object"
-      },
       "ModelProviderAuth": {
         "additionalProperties": false,
         "description": "Provider authentication credentials.",
@@ -2330,7 +2351,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -2364,7 +2385,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -2404,66 +2425,6 @@
         ],
         "default": "auto",
         "description": "Defaults to 'auto' (chain to session last turn). Use 'none' for a new root turn."
-      },
-      "PutAgentRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/AgentSpec"
-          }
-        },
-        "required": [
-          "manifest"
-        ],
-        "type": "object"
-      },
-      "PutMcpServerRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/McpServerManifest"
-          }
-        },
-        "required": [
-          "manifest"
-        ],
-        "type": "object"
-      },
-      "PutModelProviderRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/ModelProviderManifest"
-          }
-        },
-        "required": [
-          "manifest"
-        ],
-        "type": "object"
-      },
-      "PutSandboxProviderRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/SandboxProviderManifest"
-          }
-        },
-        "required": [
-          "manifest"
-        ],
-        "type": "object"
-      },
-      "PutSkillRequest": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/SkillManifest"
-          }
-        },
-        "required": [
-          "manifest"
-        ],
-        "type": "object"
       },
       "RawToolCall": {
         "allOf": [
@@ -2700,6 +2661,18 @@
         ],
         "type": "string"
       },
+      "SandboxCapability": {
+        "properties": {
+          "enabled": {
+            "description": "Whether a sandbox provider is configured for this tenant.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
       "SandboxConfig": {
         "default": {
           "enabled": false,
@@ -2714,9 +2687,6 @@
             "default": true,
             "description": "Allow downloading agent-produced files via the turn download endpoint. Default: true.",
             "type": "boolean"
-          },
-          "network_policy": {
-            "$ref": "#/components/schemas/SandboxNetworkPolicy"
           }
         },
         "required": [
@@ -2759,102 +2729,6 @@
           "created_at",
           "sandbox_id",
           "thread_id"
-        ],
-        "type": "object"
-      },
-      "SandboxNetworkPolicy": {
-        "properties": {
-          "auth_inject": {
-            "description": "Up to one rule injecting git basic-auth credentials for exact hosts.",
-            "items": {
-              "properties": {
-                "auth_data": {
-                  "properties": {
-                    "password": {
-                      "description": "Basic-auth password.",
-                      "minLength": 1,
-                      "type": "string"
-                    },
-                    "type": {
-                      "description": "Basic auth credential type.",
-                      "enum": [
-                        "basic"
-                      ],
-                      "type": "string"
-                    },
-                    "username": {
-                      "description": "Basic-auth username (no whitespace).",
-                      "pattern": "^\\S+$",
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "type",
-                    "username",
-                    "password"
-                  ],
-                  "type": "object"
-                },
-                "match": {
-                  "properties": {
-                    "hosts": {
-                      "description": "Hostnames that receive injected credentials.",
-                      "items": {
-                        "description": "Exact hostname to match (no wildcards).",
-                        "minLength": 1,
-                        "type": "string"
-                      },
-                      "minItems": 1,
-                      "type": "array"
-                    }
-                  },
-                  "required": [
-                    "hosts"
-                  ],
-                  "type": "object"
-                },
-                "type": {
-                  "description": "Inject credentials for git HTTPS clones.",
-                  "enum": [
-                    "git"
-                  ],
-                  "type": "string"
-                }
-              },
-              "required": [
-                "type",
-                "match",
-                "auth_data"
-              ],
-              "type": "object"
-            },
-            "maxItems": 1,
-            "type": "array"
-          }
-        },
-        "type": "object"
-      },
-      "SandboxProvider": {
-        "additionalProperties": false,
-        "properties": {
-          "manifest": {
-            "$ref": "#/components/schemas/SandboxProviderManifest"
-          },
-          "status": {
-            "$ref": "#/components/schemas/SandboxBuildStatus"
-          },
-          "status_reason": {
-            "description": "Human-readable detail for the current status; null when ready.",
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "manifest",
-          "status",
-          "status_reason"
         ],
         "type": "object"
       },
@@ -3101,6 +2975,50 @@
         ],
         "type": "object"
       },
+      "SettingsCapability": {
+        "properties": {
+          "enabled": {
+            "description": "Whether the settings UI/API is enabled.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
+      "Skill": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Name of a configured skill (also used as the skill directory name in the sandbox).",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9._-]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "SkillCapability": {
+        "properties": {
+          "enabled": {
+            "description": "Whether skills are available. False when sandbox is not enabled (skills require a sandbox).",
+            "type": "boolean"
+          },
+          "reason": {
+            "description": "Present when skills are disabled. Explains why.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
       "SkillManifest": {
         "additionalProperties": false,
         "properties": {
@@ -3139,40 +3057,6 @@
           "name",
           "url",
           "ref",
-          "description"
-        ],
-        "type": "object"
-      },
-      "SkillNameRef": {
-        "additionalProperties": false,
-        "properties": {
-          "name": {
-            "description": "Name of a configured skill (also used as the skill directory name in the sandbox).",
-            "maxLength": 64,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9._-]+$",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "type": "object"
-      },
-      "SkillReadEntry": {
-        "additionalProperties": false,
-        "properties": {
-          "description": {
-            "description": "Concise guidance for when the agent should use the skill.",
-            "minLength": 1,
-            "type": "string"
-          },
-          "name": {
-            "$ref": "#/components/schemas/ResourceName"
-          }
-        },
-        "required": [
-          "name",
           "description"
         ],
         "type": "object"
@@ -3356,7 +3240,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -4018,6 +3902,54 @@
           }
         ]
       },
+      "UpdateAgentRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/AgentSpec"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
+        "type": "object"
+      },
+      "UpdateMCPServerRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/MCPServerManifest"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
+        "type": "object"
+      },
+      "UpdateModelProviderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/ModelProviderManifest"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
+        "type": "object"
+      },
+      "UpdateSandboxProviderRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/SandboxProviderManifest"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
+        "type": "object"
+      },
       "UpdateSessionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -4025,6 +3957,18 @@
             "$ref": "#/components/schemas/SessionAgentSpecBody"
           }
         },
+        "type": "object"
+      },
+      "UpdateSkillRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/SkillManifest"
+          }
+        },
+        "required": [
+          "manifest"
+        ],
         "type": "object"
       },
       "UserMessage": {
@@ -4153,7 +4097,7 @@
           "models": {
             "description": "Models exposed by this provider (at least one).",
             "items": {
-              "$ref": "#/components/schemas/ModelEntry"
+              "$ref": "#/components/schemas/ConfiguredModel"
             },
             "minItems": 1,
             "type": "array"
@@ -4185,7 +4129,7 @@
   "info": {
     "description": "HTTP API for the TrueForge agent server (`/api/v1`). Interactive docs are served at `/api/v1/docs` (OpenAPI JSON at `/api/v1/openapi.json`).\n\n**Authentication:** Standalone deployments (no OIDC) accept requests without credentials — middleware stamps a local default user. When OIDC is configured, protected routes require a valid `id_token` cookie or `Authorization: Bearer` ID token. There is no built-in API-key scheme; pass custom headers only if your reverse proxy or IdP layer requires them.\n\nCovers DB-backed sessions, the agent registry, settings catalogs, and model/MCP/skill/sandbox providers.",
     "title": "TrueForge API",
-    "version": "0.1.0"
+    "version": "0.1.4"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -4402,7 +4346,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutAgentRequest"
+                "$ref": "#/components/schemas/UpdateAgentRequest"
               }
             }
           },
@@ -4516,6 +4460,7 @@
         "tags": [
           "Auth"
         ],
+        "x-excluded": true,
         "x-fern-ignore": true
       }
     },
@@ -4543,6 +4488,7 @@
         "tags": [
           "Auth"
         ],
+        "x-excluded": true,
         "x-fern-ignore": true
       }
     },
@@ -4558,10 +4504,8 @@
         "tags": [
           "Auth"
         ],
-        "x-fern-sdk-group-name": [
-          "auth"
-        ],
-        "x-fern-sdk-method-name": "logout"
+        "x-excluded": true,
+        "x-fern-ignore": true
       }
     },
     "/api/v1/auth/me": {
@@ -4572,7 +4516,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MeResponse"
+                  "$ref": "#/components/schemas/GetMeResponse"
                 }
               }
             },
@@ -4634,7 +4578,7 @@
         "x-fern-sdk-method-name": "get_capabilities"
       }
     },
-    "/api/v1/catalog/mcp-servers": {
+    "/api/v1/catalogs/mcp-servers": {
       "get": {
         "description": "Shipped MCP server presets (discovery-only). Copy into PUT /settings/mcp-servers to configure.",
         "responses": {
@@ -4642,7 +4586,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMcpServerCatalogResponse"
+                  "$ref": "#/components/schemas/GetMCPServerCatalogResponse"
                 }
               }
             },
@@ -4661,16 +4605,16 @@
         },
         "summary": "Get the MCP catalog",
         "tags": [
-          "Catalog"
+          "MCP Servers"
         ],
         "x-fern-sdk-group-name": [
-          "catalog",
+          "catalogs",
           "mcpServers"
         ],
         "x-fern-sdk-method-name": "list"
       }
     },
-    "/api/v1/catalog/model-providers": {
+    "/api/v1/catalogs/model-providers": {
       "get": {
         "description": "Shipped model-provider presets (discovery-only). Copy into PUT /settings/model-providers to configure. Includes a `custom` sentinel with `supported_reasoning_efforts`.",
         "responses": {
@@ -4697,16 +4641,16 @@
         },
         "summary": "Get the model catalog",
         "tags": [
-          "Catalog"
+          "Models"
         ],
         "x-fern-sdk-group-name": [
-          "catalog",
+          "catalogs",
           "modelProviders"
         ],
         "x-fern-sdk-method-name": "list"
       }
     },
-    "/api/v1/catalog/sandbox-providers": {
+    "/api/v1/catalogs/sandbox-providers": {
       "get": {
         "description": "Shipped sandbox-provider presets (discovery-only). Copy into PUT /settings/sandbox-providers to configure.",
         "responses": {
@@ -4733,16 +4677,16 @@
         },
         "summary": "Get the sandbox provider catalog",
         "tags": [
-          "Catalog"
+          "Sandboxes"
         ],
         "x-fern-sdk-group-name": [
-          "catalog",
+          "catalogs",
           "sandboxProviders"
         ],
         "x-fern-sdk-method-name": "list"
       }
     },
-    "/api/v1/catalog/skills": {
+    "/api/v1/catalogs/skills": {
       "get": {
         "description": "Shipped skill presets (discovery-only). Copy into PUT /settings/skills to configure.",
         "responses": {
@@ -4769,10 +4713,10 @@
         },
         "summary": "Get the skill catalog",
         "tags": [
-          "Catalog"
+          "Skills"
         ],
         "x-fern-sdk-group-name": [
-          "catalog",
+          "catalogs",
           "skills"
         ],
         "x-fern-sdk-method-name": "list"
@@ -4786,7 +4730,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListAvailableMcpServersResponse"
+                  "$ref": "#/components/schemas/ListAvailableMCPServersResponse"
                 }
               }
             },
@@ -4815,7 +4759,7 @@
     },
     "/api/v1/mcp-servers/oauth/callback": {
       "get": {
-        "description": "Browser redirect target for MCP server OAuth. The authorization server redirects here with `code`/`state` (or `error`). Exchanges the code for tokens, then either returns JSON or redirects to the `redirect_url` supplied at authorize time. Not called by the SDK — browsers hit this URL directly.",
+        "description": "Browser redirect target for MCP server OAuth. The authorization server redirects here with `code`/`state` (or `error`). Exchanges the code for tokens, then either returns JSON or redirects to the `return_to` path supplied at authorize time. Not called by the SDK — browsers hit this URL directly.",
         "parameters": [
           {
             "description": "Authorization code, present when the user granted consent.",
@@ -4867,7 +4811,7 @@
                 "schema": {
                   "properties": {
                     "success": {
-                      "description": "Present when the OAuth callback completed without a redirect_url.",
+                      "description": "Present when the OAuth callback completed without a return_to.",
                       "enum": [
                         true
                       ],
@@ -4881,10 +4825,10 @@
                 }
               }
             },
-            "description": "Token exchanged successfully and no `redirect_url` was given at authorize time."
+            "description": "Token exchanged successfully and no `return_to` was given at authorize time."
           },
           "302": {
-            "description": "Redirect to the `redirect_url` given at authorize time, with `isSuccess` (and `reason` when it failed) appended to its existing query params."
+            "description": "Redirect to the `return_to` path given at authorize time, with `isSuccess` (and `reason` when it failed) appended to its existing query params."
           },
           "400": {
             "content": {
@@ -4909,8 +4853,9 @@
         },
         "summary": "OAuth callback for MCP authorization",
         "tags": [
-          "MCP OAuth"
+          "MCP Servers"
         ],
+        "x-excluded": true,
         "x-fern-ignore": true
       }
     },
@@ -4935,7 +4880,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMcpServerResponse"
+                  "$ref": "#/components/schemas/GetMCPServerResponse"
                 }
               }
             },
@@ -4959,10 +4904,10 @@
         "x-fern-sdk-group-name": [
           "mcpServers"
         ],
-        "x-fern-sdk-method-name": "delete_authorize"
+        "x-fern-sdk-method-name": "delete_authorization"
       },
       "get": {
-        "description": "For servers without auth returns not_required, and for header credentials returns authenticated (no browser flow). For auth.type dcr, returns authenticated when a usable (or refreshable) token exists; otherwise runs DCR if needed and returns auth_required with an authorization URL. Optional redirect_url is where the OAuth callback then redirects the browser; without it the callback returns JSON.",
+        "description": "For servers without auth returns not_required, and for header credentials returns authenticated (no browser flow). For auth.type dcr, returns authenticated when a usable (or refreshable) token exists; otherwise runs DCR if needed and returns auth_required with an authorization URL. Optional return_to is where the OAuth callback then redirects the browser; without it the callback returns JSON.",
         "parameters": [
           {
             "description": "MCP server name.",
@@ -4976,13 +4921,12 @@
             }
           },
           {
-            "description": "Optional FE landing URL the OAuth callback redirects to, with `isSuccess`/`reason` appended.",
+            "description": "Optional path to return to after OAuth. Must be a same-origin relative path; the OAuth callback redirects here with `isSuccess`/`reason` appended.",
             "in": "query",
-            "name": "redirect_url",
+            "name": "return_to",
             "required": false,
             "schema": {
-              "description": "Optional FE landing URL the OAuth callback redirects to, with `isSuccess`/`reason` appended.",
-              "format": "uri",
+              "description": "Optional path to return to after OAuth. Must be a same-origin relative path; the OAuth callback redirects here with `isSuccess`/`reason` appended.",
               "type": "string"
             }
           }
@@ -4992,7 +4936,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/McpAuthStatus"
+                  "$ref": "#/components/schemas/MCPAuthStatus"
                 }
               }
             },
@@ -5006,7 +4950,7 @@
                 }
               }
             },
-            "description": "Invalid redirect_url."
+            "description": "Invalid return_to."
           },
           "404": {
             "content": {
@@ -5059,19 +5003,97 @@
         "x-fern-sdk-method-name": "authorize"
       }
     },
-    "/api/v1/models": {
+    "/api/v1/mcp-servers/{name}/tools": {
       "get": {
-        "description": "Models across all configured model providers, addressed by fully qualified name `name/model_name`.",
+        "description": "All tools exposed by the given MCP server (non-paginated), as returned by the MCP `tools/list` call.",
+        "parameters": [
+          {
+            "description": "MCP server name.",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "description": "MCP server name.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListModelsResponse"
+                  "$ref": "#/components/schemas/ListMCPServerToolsResponse"
                 }
               }
             },
-            "description": "All models of all configured providers."
+            "description": "All tools of the MCP server."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "OIDC is configured and the request has no valid session cookie."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "MCP server not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The MCP server requires authentication (does not trigger browser OIDC login)."
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The MCP server could not be reached or returned an error."
+          }
+        },
+        "summary": "List tools of an MCP server",
+        "tags": [
+          "MCP Servers"
+        ],
+        "x-fern-sdk-group-name": [
+          "mcpServers"
+        ],
+        "x-fern-sdk-method-name": "list_tools"
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "description": "Configured models as a slim FQN list for the composer.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAvailableModelsResponse"
+                }
+              }
+            },
+            "description": "All configured models (chat projection)."
           },
           "401": {
             "content": {
@@ -5084,7 +5106,7 @@
             "description": "OIDC is configured and the request has no valid session cookie."
           }
         },
-        "summary": "List models",
+        "summary": "List models for chat",
         "tags": [
           "Models"
         ],
@@ -5099,14 +5121,14 @@
         "description": "List the caller's sessions (newest first by default), token-paginated. Results are scoped to the authenticated identity via the session store's `created_by` filter (not a client query param). Optional `agent_id` filters to sessions bound to that named agent. Pass `page_token` to fetch the next page, keeping the other query params constant.",
         "parameters": [
           {
-            "description": "Page size. Defaults to 10, max 100.",
+            "description": "Page size. Defaults to 25, max 25.",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 10,
-              "description": "Page size. Defaults to 10, max 100.",
-              "maximum": 100,
+              "default": 25,
+              "description": "Page size. Defaults to 25, max 25.",
+              "maximum": 25,
               "minimum": 1,
               "type": "integer"
             }
@@ -5189,7 +5211,7 @@
         },
         "summary": "List sessions",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-pagination": {
           "cursor": "$request.page_token",
@@ -5257,7 +5279,7 @@
         },
         "summary": "Create a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5299,7 +5321,7 @@
         },
         "summary": "Delete a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5356,7 +5378,7 @@
         },
         "summary": "Get a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5443,7 +5465,7 @@
         },
         "summary": "Update a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5522,7 +5544,7 @@
         },
         "summary": "Cancel a running turn in a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5567,13 +5589,13 @@
             }
           },
           {
-            "description": "Max events per response. Default 100, max 100.",
+            "description": "Page size. Defaults to 100, max 100.",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
               "default": 100,
-              "description": "Max events per response. Default 100, max 100.",
+              "description": "Page size. Defaults to 100, max 100.",
               "maximum": 100,
               "minimum": 1,
               "type": "integer"
@@ -5624,7 +5646,7 @@
         },
         "summary": "List session events",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-pagination": {
           "cursor": "$request.page_token",
@@ -5654,14 +5676,14 @@
             }
           },
           {
-            "description": "Page size. Defaults to 10, max 100.",
+            "description": "Page size. Defaults to 25, max 25.",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 10,
-              "description": "Page size. Defaults to 10, max 100.",
-              "maximum": 100,
+              "default": 25,
+              "description": "Page size. Defaults to 25, max 25.",
+              "maximum": 25,
               "minimum": 1,
               "type": "integer"
             }
@@ -5721,7 +5743,7 @@
         },
         "summary": "List turns in a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-pagination": {
           "cursor": "$request.page_token",
@@ -5815,6 +5837,16 @@
             },
             "description": "Requested action cannot be performed on the session because it is no longer usable."
           },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Request body exceeds the configured maximum size (MAX_REQUEST_BODY_BYTES)."
+          },
           "422": {
             "content": {
               "application/json": {
@@ -5828,7 +5860,7 @@
         },
         "summary": "Create and execute a turn in a session",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5909,7 +5941,7 @@
         },
         "summary": "Get a turn",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -5917,7 +5949,7 @@
         "x-fern-sdk-method-name": "get_turn"
       }
     },
-    "/api/v1/sessions/{session_id}/turns/{turn_id}/download": {
+    "/api/v1/sessions/{session_id}/turns/{turn_id}/download-sandbox-file": {
       "get": {
         "description": "Download a file from the sandbox this turn ran in. Paths come from the assistant's `sandbox_artifacts` block. Only the session creator (`created_by`) may download.",
         "parameters": [
@@ -5986,7 +6018,7 @@
                 }
               }
             },
-            "description": "Caller is not the session creator, or sandbox belongs to another tenant."
+            "description": "Caller is not the session creator."
           },
           "404": {
             "content": {
@@ -6041,7 +6073,7 @@
         },
         "summary": "Download a file from the turn sandbox",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -6077,13 +6109,13 @@
             }
           },
           {
-            "description": "Max events per response. Default 25, max 100.",
+            "description": "Page size. Defaults to 100, max 100.",
             "in": "query",
             "name": "limit",
             "required": false,
             "schema": {
-              "default": 25,
-              "description": "Max events per response. Default 25, max 100.",
+              "default": 100,
+              "description": "Page size. Defaults to 100, max 100.",
               "maximum": 100,
               "minimum": 1,
               "type": "integer"
@@ -6153,7 +6185,7 @@
         },
         "summary": "List turn events",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-pagination": {
           "cursor": "$request.page_token",
@@ -6262,7 +6294,7 @@
         },
         "summary": "Subscribe to a running turn",
         "tags": [
-          "Sessions"
+          "Agent Sessions"
         ],
         "x-fern-sdk-group-name": [
           "sessions"
@@ -6282,7 +6314,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListMcpServersResponse"
+                  "$ref": "#/components/schemas/ListMCPServersResponse"
                 }
               }
             },
@@ -6325,7 +6357,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateMcpServerRequest"
+                "$ref": "#/components/schemas/CreateMCPServerRequest"
               }
             }
           },
@@ -6336,7 +6368,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMcpServerResponse"
+                  "$ref": "#/components/schemas/GetMCPServerResponse"
                 }
               }
             },
@@ -6389,7 +6421,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutMcpServerRequest"
+                "$ref": "#/components/schemas/UpdateMCPServerRequest"
               }
             }
           },
@@ -6400,7 +6432,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMcpServerResponse"
+                  "$ref": "#/components/schemas/GetMCPServerResponse"
                 }
               }
             },
@@ -6435,7 +6467,7 @@
           "settings",
           "mcpServers"
         ],
-        "x-fern-sdk-method-name": "upsert"
+        "x-fern-sdk-method-name": "create_or_update"
       }
     },
     "/api/v1/settings/mcp-servers/{name}": {
@@ -6459,7 +6491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMcpServerResponse"
+                  "$ref": "#/components/schemas/GetMCPServerResponse"
                 }
               }
             },
@@ -6485,85 +6517,6 @@
           "mcpServers"
         ],
         "x-fern-sdk-method-name": "get"
-      }
-    },
-    "/api/v1/settings/mcp-servers/{name}/tools": {
-      "get": {
-        "description": "All tools exposed by the given MCP server (non-paginated), as returned by the MCP `tools/list` call.",
-        "parameters": [
-          {
-            "description": "MCP server name.",
-            "in": "path",
-            "name": "name",
-            "required": true,
-            "schema": {
-              "description": "MCP server name.",
-              "minLength": 1,
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListMcpServerToolsResponse"
-                }
-              }
-            },
-            "description": "All tools of the MCP server."
-          },
-          "401": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorResponse"
-                }
-              }
-            },
-            "description": "Harness session login required."
-          },
-          "404": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorResponse"
-                }
-              }
-            },
-            "description": "MCP server not found."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorResponse"
-                }
-              }
-            },
-            "description": "The MCP server requires authentication (does not trigger browser OIDC login)."
-          },
-          "502": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RequestErrorResponse"
-                }
-              }
-            },
-            "description": "The MCP server could not be reached or returned an error."
-          }
-        },
-        "summary": "List tools of an MCP server",
-        "tags": [
-          "MCP Servers"
-        ],
-        "x-fern-sdk-group-name": [
-          "settings",
-          "mcpServers"
-        ],
-        "x-fern-sdk-method-name": "list_tools"
       }
     },
     "/api/v1/settings/model-providers": {
@@ -6603,7 +6556,7 @@
         },
         "summary": "List configured model providers",
         "tags": [
-          "Model Providers"
+          "Models"
         ],
         "x-fern-sdk-group-name": [
           "settings",
@@ -6657,7 +6610,7 @@
         },
         "summary": "Create a model provider",
         "tags": [
-          "Model Providers"
+          "Models"
         ],
         "x-fern-sdk-group-name": [
           "settings",
@@ -6671,7 +6624,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutModelProviderRequest"
+                "$ref": "#/components/schemas/UpdateModelProviderRequest"
               }
             }
           },
@@ -6701,13 +6654,13 @@
         },
         "summary": "Create or replace a model provider",
         "tags": [
-          "Model Providers"
+          "Models"
         ],
         "x-fern-sdk-group-name": [
           "settings",
           "modelProviders"
         ],
-        "x-fern-sdk-method-name": "upsert"
+        "x-fern-sdk-method-name": "create_or_update"
       }
     },
     "/api/v1/settings/sandbox-providers": {
@@ -6737,7 +6690,7 @@
         },
         "summary": "Get the configured sandbox provider",
         "tags": [
-          "Sandbox Providers"
+          "Sandboxes"
         ],
         "x-fern-sdk-group-name": [
           "settings",
@@ -6751,7 +6704,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutSandboxProviderRequest"
+                "$ref": "#/components/schemas/UpdateSandboxProviderRequest"
               }
             }
           },
@@ -6791,13 +6744,13 @@
         },
         "summary": "Create or replace the sandbox provider",
         "tags": [
-          "Sandbox Providers"
+          "Sandboxes"
         ],
         "x-fern-sdk-group-name": [
           "settings",
           "sandboxProviders"
         ],
-        "x-fern-sdk-method-name": "upsert"
+        "x-fern-sdk-method-name": "create_or_update"
       }
     },
     "/api/v1/settings/skills": {
@@ -6905,7 +6858,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PutSkillRequest"
+                "$ref": "#/components/schemas/UpdateSkillRequest"
               }
             }
           },
@@ -6941,7 +6894,7 @@
           "settings",
           "skills"
         ],
-        "x-fern-sdk-method-name": "upsert"
+        "x-fern-sdk-method-name": "create_or_update"
       }
     },
     "/api/v1/skills": {
@@ -6983,6 +6936,32 @@
   "security": [
     {
       "BearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Capabilities"
+    },
+    {
+      "name": "Models"
+    },
+    {
+      "name": "MCP Servers"
+    },
+    {
+      "name": "Skills"
+    },
+    {
+      "name": "Sandboxes"
+    },
+    {
+      "name": "Agents"
+    },
+    {
+      "name": "Agent Sessions"
     }
   ],
   "webhooks": {}
