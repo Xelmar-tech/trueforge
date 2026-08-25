@@ -1,0 +1,21 @@
+{
+  "mcp_servers": [
+    {
+      "type": "remote",
+      "name": "parallel-web",
+      "url": "https://search.parallel.ai/mcp",
+      "description": "Search the web and get ranked results with extracted content."
+    }
+  ],
+  "skills": [
+    {
+      "type": "git",
+      "name": "web-artifacts-builder",
+      "url": "https://github.com/anthropics/skills",
+      "path": "skills/web-artifacts-builder",
+      "ref": "main",
+      "description": "Build self-contained web artifacts that render as interactive standalone pages."
+    }
+  ],
+  "sandbox": true
+}
