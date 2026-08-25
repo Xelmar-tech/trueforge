@@ -2,9 +2,9 @@
   "mcp_servers": [
     {
       "type": "remote",
-      "name": "parallel-web",
-      "url": "https://search.parallel.ai/mcp",
-      "description": "Search the web and get ranked results with extracted content."
+      "name": "exa",
+      "url": "https://mcp.exa.ai/mcp",
+      "description": "Search the web, fetch page contents, and find similar pages."
     }
   ],
   "skills": [

@@ -2,9 +2,9 @@
 
 Working agents you can install into a running TrueForge instance and try from the Agents Library, SDK, or HTTP API.
 
-| Example                              | What it does                                                                          | Requirements                                                                          |
-| ------------------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| [Content Builder](./content-builder) | Research-driven content creator: sourced article, HTML preview, optional social posts | One model; Parallel web MCP and `web-artifacts-builder` skill installed automatically |
+| Example                              | What it does                                                                          | Requirements                                                                 |
+| ------------------------------------ | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [Content Builder](./content-builder) | Research-driven content creator: sourced article, HTML preview, optional social posts | One model; Exa MCP and `web-artifacts-builder` skill installed automatically |
 
 ```bash
 npx @truefoundry/trueforge

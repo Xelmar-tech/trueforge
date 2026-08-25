@@ -2,12 +2,12 @@
 
 A simple **content creator** agent for learning TrueForge. It uses exactly one model, one system prompt, one MCP server, and one skill.
 
-| Piece         | Name                                                  | Role                                                                                                                   |
-| ------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| Model         | Your configured default (`$DEFAULT_MODEL` at install) | Writes and reasons                                                                                                     |
-| System prompt | `instructions` in `agent.json`                        | Research-first content workflow                                                                                        |
-| MCP           | `parallel-web`                                        | Web search via [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) (free, no API key required) |
-| Skill         | `web-artifacts-builder`                               | Builds `article.md` and `preview.html` in the sandbox                                                                  |
+| Piece         | Name                                                  | Role                                                                          |
+| ------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Model         | Your configured default (`$DEFAULT_MODEL` at install) | Writes and reasons                                                            |
+| System prompt | `instructions` in `agent.json`                        | Research-first content workflow                                               |
+| MCP           | `exa`                                                 | Web search via [Exa](https://exa.ai) (catalog connector; no API key required) |
+| Skill         | `web-artifacts-builder`                               | Builds `article.md` and `preview.html` in the sandbox                         |
 
 ## Install
 
@@ -16,7 +16,7 @@ npx @truefoundry/trueforge
 pnpm example:install content-builder
 ```
 
-Needs a model under **Settings → Models**. Override with `TRUEFORGE_URL`, `TRUEFORGE_TOKEN`, or `TRUEFORGE_MODEL` if needed.
+Needs a model under **Settings → Models**. Skills need a sandbox under **Settings → Sandbox providers** (Daytona). Override with `TRUEFORGE_URL`, `TRUEFORGE_TOKEN`, or `TRUEFORGE_MODEL` if needed.
 
 ## 1. UI
 
@@ -141,7 +141,7 @@ When OIDC login is enabled, send `Authorization: Bearer <id_token>` on every req
 | File            | Purpose                                                 |
 | --------------- | ------------------------------------------------------- |
 | `agent.json`    | Agent definition (`$DEFAULT_MODEL` resolved at install) |
-| `requires.json` | Parallel MCP + skill + sandbox requirements             |
+| `requires.json` | Exa MCP + skill + sandbox requirements                  |
 | `prompts.md`    | Sample user requests                                    |
 
 Credentials are never stored here — configure them in TrueForge Settings.
