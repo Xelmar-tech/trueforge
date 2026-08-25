@@ -2,54 +2,29 @@
 
 A simple **content creator** agent for learning TrueForge. It uses exactly one model, one system prompt, one MCP server, and one skill.
 
-| Piece         | Name                                                  | Role                                                                                                                        |
-| ------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Model         | Your configured default (`$DEFAULT_MODEL` at install) | Writes and reasons                                                                                                          |
-| System prompt | `instructions` in `agent.json`                        | Research-first content workflow                                                                                             |
-| MCP           | `parallel-web`                                        | Web search via [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) (free tier, no API key required) |
-| Skill         | `web-artifacts-builder`                               | Builds `article.md` and `preview.html` in the sandbox                                                                       |
+| Piece         | Name                                                  | Role                                                                                                                   |
+| ------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Model         | Your configured default (`$DEFAULT_MODEL` at install) | Writes and reasons                                                                                                     |
+| System prompt | `instructions` in `agent.json`                        | Research-first content workflow                                                                                        |
+| MCP           | `parallel-web`                                        | Web search via [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp) (free, no API key required) |
+| Skill         | `web-artifacts-builder`                               | Builds `article.md` and `preview.html` in the sandbox                                                                  |
 
-The agent researches a topic with Parallel web search, then uses the skill to produce downloadable Markdown and HTML in the sandbox.
-
-## Prerequisites
-
-- Node.js 22 or newer
-- A running TrueForge instance with at least one model under **Settings → Models**
-
-Parallel Search MCP is free without authentication. Optional: add a Parallel API key under **Settings → MCP Servers** for higher rate limits.
-
-## Install the example
-
-Start TrueForge:
+## Install
 
 ```bash
 npx @truefoundry/trueforge
-```
-
-From a clone of this repository, install the agent and its dependencies:
-
-```bash
 pnpm example:install content-builder
 ```
 
-Override the server URL, token, or model when needed:
+Needs a model under **Settings → Models**. Override with `TRUEFORGE_URL`, `TRUEFORGE_TOKEN`, or `TRUEFORGE_MODEL` if needed.
 
-```bash
-TRUEFORGE_URL=https://trueforge.example.com \
-TRUEFORGE_TOKEN=your-id-token \
-TRUEFORGE_MODEL=anthropic/claude-sonnet-4-6 \
-pnpm example:install content-builder
-```
+## 1. UI
 
-## 1. Access via UI
+Open [http://localhost:8790](http://localhost:8790) → **Agents Library** → **content-builder** → **Try**.
 
-Open [http://localhost:8790](http://localhost:8790), go to **Agents Library**, find **content-builder**, and click **Try**.
+Sample prompts: [prompts.md](./prompts.md).
 
-Try a prompt from [prompts.md](./prompts.md), for example:
-
-> Write a 1,200-word article for engineering leaders explaining why agent harnesses matter once an AI agent moves from prototype to production. Research current sources, cite them, and produce a polished HTML preview.
-
-When the turn completes, download files from the chat:
+When done, download from chat:
 
 ```text
 output/
@@ -58,89 +33,115 @@ output/
 └── social/          # when social content is requested
 ```
 
-## 2. Access via SDK
-
-Install the TypeScript SDK (skip if you are in the TrueForge monorepo and already built the SDK):
+## 2. SDK
 
 ```bash
 npm i @truefoundry/trueforge-sdk
 ```
 
-Run the example script:
-
-```bash
-node sdk/run.mjs
-```
-
-The script opens a session on `content-builder`, streams one turn, and prints the assistant reply as it arrives. Set `TRUEFORGE_BASE_URL`, `TRUEFORGE_TOKEN`, `TRUEFORGE_AGENT`, or `TRUEFORGE_PROMPT` to customize.
-
-Minimal inline version:
-
-```typescript
+```js
 import { TrueForge } from '@truefoundry/trueforge-sdk';
 
-const client = new TrueForge({
-  baseUrl: 'http://localhost:8790',
-  timeoutInSeconds: 600,
-});
+const client = new TrueForge({ baseUrl: 'http://localhost:8790', timeoutInSeconds: 600 });
 
 const { data: session } = await client.sessions.create({ agent: { name: 'content-builder' } });
 
 const stream = await client.sessions.createTurnStream(session.id, {
-  input: [
-    {
-      type: 'user.message',
-      content: 'Write a short blog post on agent harnesses for production. Research first.',
-    },
-  ],
+  input: [{ type: 'user.message', content: 'Write a short blog post on agent harnesses. Research first.' }],
 });
 
 for await (const { data: event } of stream.withMetadata()) {
-  if (event.type === 'model.message.delta' && event.threadId === 'main') {
-    process.stdout.write(event.content ?? '');
-  }
+  if (event.type === 'model.message.delta') process.stdout.write(event.content ?? '');
 }
 ```
 
-See [SDK Quickstart](https://trueforge.dev/api/quickstart) and [Use an agent](https://trueforge.dev/api/use-agent) for sessions, approvals, and reconnects.
+## 3. HTTP API
 
-## 3. Access via HTTP API
-
-All clients use the same two calls:
-
-1. `POST /api/v1/sessions` with `{ "agent": { "name": "content-builder" } }`
-2. `POST /api/v1/sessions/{session_id}/turns` with `{ "input": [{ "type": "user.message", "content": "..." }] }` — returns a Server-Sent Events stream of turn events
+Same flow for every client: create a session, then create a turn with `stream: false` and poll until it finishes.
 
 ### curl
 
 ```bash
-chmod +x api/curl.sh
-./api/curl.sh
+# Create a session
+SESSION=$(curl -s http://localhost:8790/api/v1/sessions \
+  -H 'Content-Type: application/json' \
+  -d '{"agent":{"name":"content-builder"}}' | jq -r .data.id)
+
+# Start a turn (non-streaming)
+TURN=$(curl -s "http://localhost:8790/api/v1/sessions/$SESSION/turns" \
+  -H 'Content-Type: application/json' \
+  -d '{"stream":false,"input":[{"type":"user.message","content":"Write a short blog post on agent harnesses. Research first."}]}' \
+  | jq -r .data.id)
+
+# Poll until done
+curl -s "http://localhost:8790/api/v1/sessions/$SESSION/turns/$TURN" | jq .
 ```
 
 ### JavaScript (fetch)
 
-```bash
-node api/javascript_fetch.mjs
+```js
+const base = 'http://localhost:8790';
+
+const { data: session } = await fetch(`${base}/api/v1/sessions`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ agent: { name: 'content-builder' } }),
+}).then(r => r.json());
+
+let { data: turn } = await fetch(`${base}/api/v1/sessions/${session.id}/turns`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    stream: false,
+    input: [{ type: 'user.message', content: 'Write a short blog post on agent harnesses. Research first.' }],
+  }),
+}).then(r => r.json());
+
+while (turn.state.status === 'running') {
+  await new Promise(r => setTimeout(r, 1000));
+  ({ data: turn } = await fetch(`${base}/api/v1/sessions/${session.id}/turns/${turn.id}`).then(r => r.json()));
+}
+
+console.log(turn.state.output?.content ?? turn.state);
 ```
 
 ### Python (requests)
 
 ```bash
 pip install requests
-python api/python_requests.py
 ```
 
-When OIDC login is enabled, set `TRUEFORGE_TOKEN` to your ID token for all API and SDK examples.
+```python
+import time
+import requests
 
-## Files in this example
+base = "http://localhost:8790"
+
+session = requests.post(f"{base}/api/v1/sessions", json={"agent": {"name": "content-builder"}}).json()["data"]
+
+turn = requests.post(
+    f"{base}/api/v1/sessions/{session['id']}/turns",
+    json={
+        "stream": False,
+        "input": [{"type": "user.message", "content": "Write a short blog post on agent harnesses. Research first."}],
+    },
+).json()["data"]
+
+while turn["state"]["status"] == "running":
+    time.sleep(1)
+    turn = requests.get(f"{base}/api/v1/sessions/{session['id']}/turns/{turn['id']}").json()["data"]
+
+print(turn["state"].get("output", {}).get("content") or turn["state"])
+```
+
+When OIDC login is enabled, send `Authorization: Bearer <id_token>` on every request (SDK: pass `token`).
+
+## Files
 
 | File            | Purpose                                                 |
 | --------------- | ------------------------------------------------------- |
 | `agent.json`    | Agent definition (`$DEFAULT_MODEL` resolved at install) |
 | `requires.json` | Parallel MCP + skill + sandbox requirements             |
 | `prompts.md`    | Sample user requests                                    |
-| `api/`          | curl, fetch, and Python HTTP examples                   |
-| `sdk/run.mjs`   | TypeScript SDK example                                  |
 
-Credentials are never stored in the example. Configure authenticated connectors in TrueForge Settings.
+Credentials are never stored here — configure them in TrueForge Settings.
