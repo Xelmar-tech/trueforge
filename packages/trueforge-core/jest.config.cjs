@@ -37,5 +37,6 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/tests/**/*.test.ts'],
   // Compile-time suites are enforced by `tsc --noEmit`, not the Jest runner.
-  testPathIgnorePatterns: ['\\.compile\\.test\\.ts$'],
+  // E2E lives under tests/e2e and is run via jest.e2e.config.cjs.
+  testPathIgnorePatterns: ['\\.compile\\.test\\.ts$', '<rootDir>/tests/e2e/'],
 };

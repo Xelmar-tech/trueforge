@@ -95,7 +95,8 @@
     "build:pkg": "node scripts/write-dist-package-json.mjs",
     "build:check": "node scripts/check-dist.mjs",
     "typecheck": "pnpm run build:gen && tsc --noEmit",
-    "test": "pnpm run build:gen && jest --config jest.config.cjs",
+    "test": "pnpm run build:gen && jest --config jest.config.cjs && jest --config jest.e2e.config.cjs",
+    "test:e2e": "pnpm run build:gen && jest --config jest.e2e.config.cjs",
     "pack:dry": "pnpm pack --dry-run"
   },
   "dependencies": {
