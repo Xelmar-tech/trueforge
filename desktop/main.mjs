@@ -11,9 +11,12 @@ import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog } from 'electron';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const serverDirectory = path.join(repoRoot, 'packages/trueforge');
+const serverDirectory = app.isPackaged
+  ? path.join(process.resourcesPath, 'harness')
+  : path.join(repoRoot, 'packages/trueforge');
 const serverEntry = path.join(serverDirectory, 'dist/main.js');
-const envFile = path.join(serverDirectory, '.env');
+const envFile = app.isPackaged ? undefined : path.join(serverDirectory, '.env');
+const bundledNodeExecutable = path.join(process.resourcesPath, 'node/bin/node');
 const defaultPort = 8790;
 const healthTimeoutMs = 60_000;
 
@@ -72,11 +75,18 @@ async function waitForServer(port) {
 
 function startServer(port) {
   if (!existsSync(serverEntry)) {
-    throw new Error(`Missing ${serverEntry}. Run \`pnpm desktop:build\` first.`);
+    throw new Error(
+      app.isPackaged
+        ? `The app is missing its bundled TrueForge server at ${serverEntry}`
+        : `Missing ${serverEntry}. Run \`pnpm desktop:build\` first.`,
+    );
   }
 
-  const nodeExecutable = process.env['npm_node_execpath'] ?? 'node';
-  const nodeArgs = existsSync(envFile) ? ['--env-file=.env', serverEntry] : [serverEntry];
+  const nodeExecutable = app.isPackaged ? bundledNodeExecutable : (process.env['npm_node_execpath'] ?? 'node');
+  if (!existsSync(nodeExecutable) && app.isPackaged) {
+    throw new Error(`Missing bundled Node executable at ${nodeExecutable}`);
+  }
+  const nodeArgs = envFile !== undefined && existsSync(envFile) ? ['--env-file=.env', serverEntry] : [serverEntry];
   const child = spawn(nodeExecutable, nodeArgs, {
     cwd: serverDirectory,
     env: {
