@@ -4,7 +4,7 @@ import { InternalEventType } from '../../src/core/runtime/AgentThread.types';
 import { AgentThreadOrchestrator } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../agent-session/testHelpers';
-import { makeTextLlm } from './helpers';
+import { makeTextLLM } from './helpers';
 
 const THREAD_ID = 'main';
 const REPLY = 'hello from the mocked model';
@@ -17,7 +17,7 @@ function makeTextLlmThread(): AgentThread {
     tracing: NOOP_AGENT_TRACING,
     logger: makeSilentLogger(),
     definition: {
-      modelClient: makeTextLlm(REPLY),
+      modelClient: makeTextLLM(REPLY),
       instruction: 'You are running in a test setup.',
     },
   });
