@@ -86,8 +86,9 @@ export function ToolCallCard({
       data-approval-id={approvalId}
       className={cn(
         'aui-tool-call-card flex min-w-0 flex-col',
-        // Keep box model stable while flashing — only the background animates.
-        highlightCard ? '-mx-1 rounded-md p-1' : 'mx-0 mt-2 p-0',
+        // Pending-approval cards keep top/right padding always so flash doesn't jump the layout.
+        // Left stays unpadded so the step rail stays aligned with siblings.
+        approvalId != null || highlightCard ? 'mx-0 mt-2 rounded-md pt-1.5 pr-2 pb-1' : 'mx-0 mt-2 p-0',
         isFlashing && 'aui-approval-flash',
         className,
       )}
