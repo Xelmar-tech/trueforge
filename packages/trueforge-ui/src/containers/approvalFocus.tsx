@@ -64,16 +64,17 @@ export function ApprovalFocusProvider({ children }: { children: ReactNode }) {
   const focus = useCallback(
     (approvalId: string) => {
       const ancestors = findSubAgentAncestorsForApproval(messages, approvalId);
-      for (const toolCallId of ancestors) {
-        expandsRef.current.get(toolCallId)?.();
-      }
 
       if (retryTimerRef.current != null) {
         clearInterval(retryTimerRef.current);
         retryTimerRef.current = null;
       }
 
-      const tryScroll = (): boolean => {
+      const tryFocus = (): boolean => {
+        for (const toolCallId of ancestors) {
+          expandsRef.current.get(toolCallId)?.();
+        }
+
         const el = targetsRef.current.get(approvalId)?.() ?? null;
         if (el == null) return false;
         el.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
@@ -81,12 +82,12 @@ export function ApprovalFocusProvider({ children }: { children: ReactNode }) {
         return true;
       };
 
-      if (tryScroll()) return;
+      if (tryFocus()) return;
 
       let attempts = 0;
       retryTimerRef.current = setInterval(() => {
         attempts += 1;
-        if (tryScroll() || attempts >= MOUNT_RETRY_MAX) {
+        if (tryFocus() || attempts >= MOUNT_RETRY_MAX) {
           if (retryTimerRef.current != null) {
             clearInterval(retryTimerRef.current);
             retryTimerRef.current = null;

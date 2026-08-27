@@ -236,6 +236,8 @@ export const ToolCallContainer: ToolCallMessagePartComponent = part => {
         argsJson={argsJson}
         resultText={resultText}
         resultJson={resultJson}
+        approvalSlot={showApproval ? <ToolApprovalSlot part={part} /> : undefined}
+        approvalId={showApproval ? part.approval?.id : undefined}
       />
     );
   }
@@ -261,6 +263,8 @@ export const ToolCallContainer: ToolCallMessagePartComponent = part => {
           showResponseLine={status !== 'running' && !!resultDisplay.data}
           mcpServerName={mcpServer}
           {...slots}
+          approvalSlot={showApproval ? <ToolApprovalSlot part={part} /> : undefined}
+          approvalId={showApproval ? part.approval?.id : undefined}
         />
       );
     }

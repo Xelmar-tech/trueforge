@@ -51,6 +51,48 @@ describe('findSubAgentAncestorsForApproval', () => {
     expect(findSubAgentAncestorsForApproval(messages, 'appr-nested')).toEqual(['sub-1']);
   });
 
+  it('returns nested sub-agent ancestors from outermost to innermost', () => {
+    const messages = [
+      {
+        role: 'assistant',
+        content: [
+          {
+            type: 'tool-call',
+            toolCallId: 'sub-outer',
+            toolName: 'create_sub_agent',
+            messages: [
+              {
+                role: 'assistant',
+                content: [
+                  {
+                    type: 'tool-call',
+                    toolCallId: 'sub-inner',
+                    toolName: 'create_sub_agent',
+                    messages: [
+                      {
+                        role: 'assistant',
+                        content: [
+                          {
+                            type: 'tool-call',
+                            toolCallId: 'tc-nested',
+                            toolName: 'call_tool',
+                            approval: { id: 'appr-nested' },
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    expect(findSubAgentAncestorsForApproval(messages, 'appr-nested')).toEqual(['sub-outer', 'sub-inner']);
+  });
+
   it('ignores resolved approvals', () => {
     const messages = [
       {

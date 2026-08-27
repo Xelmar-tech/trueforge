@@ -25,25 +25,23 @@ export type ApprovalNavState = {
 export function useApprovalNav(): ApprovalNavState {
   const { pending } = useTrueFoundryApprovals();
   const focusApi = useOptionalApprovalFocus();
-  const [index, setIndex] = useState(0);
-  const prevCountRef = useRef(0);
+  const [selection, setSelection] = useState<{ approvalId: string | null; index: number }>({
+    approvalId: null,
+    index: 0,
+  });
   const focusedIdRef = useRef<string | null>(null);
 
   const count = pending.length;
-  const safeIndex = count === 0 ? 0 : Math.min(index, count - 1);
+  const matchedIndex =
+    selection.approvalId == null ? -1 : pending.findIndex(item => item.approvalId === selection.approvalId);
+  const safeIndex = matchedIndex >= 0 ? matchedIndex : count === 0 ? 0 : Math.min(selection.index, count - 1);
   const currentId = pending[safeIndex]?.approvalId;
 
   useEffect(() => {
-    if (safeIndex !== index) setIndex(safeIndex);
-  }, [safeIndex, index]);
-
-  useEffect(() => {
-    if (prevCountRef.current === 0 && count > 0) {
-      setIndex(0);
-      focusedIdRef.current = null;
-    }
-    prevCountRef.current = count;
-  }, [count]);
+    const approvalId = currentId ?? null;
+    if (selection.approvalId === approvalId && selection.index === safeIndex) return;
+    setSelection({ approvalId, index: safeIndex });
+  }, [currentId, safeIndex, selection.approvalId, selection.index]);
 
   useEffect(() => {
     if (currentId == null || focusApi == null) {
@@ -56,12 +54,14 @@ export function useApprovalNav(): ApprovalNavState {
   }, [currentId, focusApi]);
 
   const goPrev = useCallback(() => {
-    setIndex(i => Math.max(0, i - 1));
-  }, []);
+    const index = Math.max(0, safeIndex - 1);
+    setSelection({ approvalId: pending[index]?.approvalId ?? null, index });
+  }, [pending, safeIndex]);
 
   const goNext = useCallback(() => {
-    setIndex(i => Math.min(Math.max(count - 1, 0), i + 1));
-  }, [count]);
+    const index = Math.min(Math.max(count - 1, 0), safeIndex + 1);
+    setSelection({ approvalId: pending[index]?.approvalId ?? null, index });
+  }, [count, pending, safeIndex]);
 
   const focusCurrent = useCallback(() => {
     if (currentId == null || focusApi == null) return;
