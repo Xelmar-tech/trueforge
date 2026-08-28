@@ -3,11 +3,8 @@
  */
 import type { ImportSessionSnapshotRequest, ImportSessionSnapshotResult } from '../schemas/sessionImport';
 
-export type ImportSessionSnapshotInput = ImportSessionSnapshotRequest;
-export type { ImportSessionSnapshotResult };
-
 export interface ISessionSnapshotImporter {
-  importSessionSnapshot(input: ImportSessionSnapshotInput): Promise<ImportSessionSnapshotResult>;
+  importSessionSnapshot(input: ImportSessionSnapshotRequest): Promise<ImportSessionSnapshotResult>;
 }
 
 export function isContextPrefix({ prefix, full }: { prefix: unknown[]; full: unknown[] }): boolean {

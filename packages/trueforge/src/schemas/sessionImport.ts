@@ -19,7 +19,7 @@ export const ImportSessionSnapshotRequestSchema = z
         created_at: z.string().min(1),
         updated_at: z.string().min(1),
       })
-      .passthrough(),
+      .loose(),
     turns: z
       .array(
         z
@@ -48,7 +48,7 @@ export const ImportSessionSnapshotRequestSchema = z
                   agent_info: z.unknown().nullable(),
                   capability_state: z.record(z.string(), z.unknown()).nullable(),
                 })
-                .passthrough(),
+                .loose(),
             ),
             events: z.array(
               z
@@ -56,24 +56,28 @@ export const ImportSessionSnapshotRequestSchema = z
                   id: z.string().min(1),
                   created_at: z.string().min(1),
                 })
-                .passthrough(),
+                .loose(),
             ),
           })
-          .passthrough(),
+          .loose(),
       )
       .min(1),
   })
   .openapi('ImportSessionSnapshotRequest');
 
+export const ImportSessionSnapshotResultSchema = z
+  .object({
+    imported: z.boolean(),
+    session_id: z.string(),
+  })
+  .openapi('ImportSessionSnapshotResult');
+
 export const ImportSessionSnapshotResponseSchema = z
   .object({
-    data: z.object({
-      imported: z.boolean(),
-      session_id: z.string(),
-    }),
+    data: ImportSessionSnapshotResultSchema,
   })
   .openapi('ImportSessionSnapshotResponse');
 
 export type ImportSessionSnapshotRequest = z.infer<typeof ImportSessionSnapshotRequestSchema>;
+export type ImportSessionSnapshotResult = z.infer<typeof ImportSessionSnapshotResultSchema>;
 export type ImportSessionSnapshotResponse = z.infer<typeof ImportSessionSnapshotResponseSchema>;
-export type ImportSessionSnapshotResult = ImportSessionSnapshotResponse['data'];

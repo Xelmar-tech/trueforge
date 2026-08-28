@@ -2,19 +2,15 @@
  * Postgres historical session snapshot insert (skip-if-exists).
  */
 import type { Kysely } from 'kysely';
-import {
-  isContextPrefix,
-  type ImportSessionSnapshotInput,
-  type ImportSessionSnapshotResult,
-  type ISessionSnapshotImporter,
-} from '../../sessionSnapshotImport';
-import { json } from '../sqlExpressions';
+import type { ImportSessionSnapshotRequest, ImportSessionSnapshotResult } from '../../../schemas/sessionImport';
+import { isContextPrefix, type ISessionSnapshotImporter } from '../../sessionSnapshotImport';
+import { json, jsonUnknown } from '../sqlExpressions';
 import type { Database } from '../types';
 
 export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter {
   constructor(private readonly db: Kysely<Database>) {}
 
-  async importSessionSnapshot(input: ImportSessionSnapshotInput): Promise<ImportSessionSnapshotResult> {
+  async importSessionSnapshot(input: ImportSessionSnapshotRequest): Promise<ImportSessionSnapshotResult> {
     const sessionId = input.session.session_id;
     return this.db.transaction().execute(async trx => {
       const { session, turns } = input;
@@ -26,7 +22,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
           created_by: session.created_by,
           agent_id: null,
           agent_name: null,
-          agent_spec: json(session.agent_spec),
+          agent_spec: jsonUnknown(session.agent_spec),
           title: session.title,
           last_turn_id: session.last_turn_id,
           custom: session.custom !== null ? json(session.custom) : null,
@@ -53,9 +49,9 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
             first_turn_id: turn.first_turn_id,
             previous_turn_id: turn.previous_turn_id,
             ancestor_ids: turn.ancestor_ids,
-            input: json(turn.input),
-            state: json(turn.state),
-            checkpoint: json(turn.checkpoint),
+            input: jsonUnknown(turn.input),
+            state: jsonUnknown(turn.state),
+            checkpoint: jsonUnknown(turn.checkpoint),
             custom: turn.custom !== null ? json(turn.custom) : null,
             created_at: new Date(turn.created_at),
             updated_at: new Date(turn.updated_at),
@@ -78,7 +74,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                   session_id: sessionId,
                   thread_id: thread.thread_id,
                   turn_id: turn.turn_id,
-                  body: json(msg),
+                  body: jsonUnknown(msg),
                   created_at: new Date(turn.updated_at),
                 })),
               )
@@ -96,9 +92,9 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
               session_id: sessionId,
               turn_id: turn.turn_id,
               thread_id: thread.thread_id,
-              checkpoint: json({ parent: thread.parent, completion: thread.completion }),
-              agent_info: thread.agent_info !== null ? json(thread.agent_info) : null,
-              current_context_usage: json(thread.current_context_usage),
+              checkpoint: jsonUnknown({ parent: thread.parent, completion: thread.completion }),
+              agent_info: thread.agent_info !== null ? jsonUnknown(thread.agent_info) : null,
+              current_context_usage: jsonUnknown(thread.current_context_usage),
               context_ids: contextIds,
               updated_at: new Date(turn.updated_at),
             })
@@ -118,7 +114,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                     turn_id: turn.turn_id,
                     thread_id: thread.thread_id,
                     key,
-                    state: json(state),
+                    state: jsonUnknown(state),
                     updated_at: new Date(turn.updated_at),
                   })),
                 )
@@ -135,7 +131,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                 session_id: sessionId,
                 turn_id: turn.turn_id,
                 event_id: event.id,
-                event: json(event),
+                event: jsonUnknown(event),
                 created_at: new Date(event.created_at),
               })),
             )
