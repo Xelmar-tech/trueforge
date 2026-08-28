@@ -3,10 +3,7 @@
  */
 import { createRoute } from '@hono/zod-openapi';
 import { RequestErrorResponseSchema } from '../schemas/errors';
-import {
-  ImportSessionSnapshotRequestSchema,
-  ImportSessionSnapshotResponseSchema,
-} from '../schemas/sessionImport';
+import { ImportSessionSnapshotRequestSchema, ImportSessionSnapshotResponseSchema } from '../schemas/sessionImport';
 import { OpenApiTag } from './openapiTags';
 
 export const importSessionSnapshotRoute = createRoute({

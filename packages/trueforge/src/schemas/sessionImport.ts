@@ -75,3 +75,5 @@ export const ImportSessionSnapshotResponseSchema = z
   .openapi('ImportSessionSnapshotResponse');
 
 export type ImportSessionSnapshotRequest = z.infer<typeof ImportSessionSnapshotRequestSchema>;
+export type ImportSessionSnapshotResponse = z.infer<typeof ImportSessionSnapshotResponseSchema>;
+export type ImportSessionSnapshotResult = ImportSessionSnapshotResponse['data'];

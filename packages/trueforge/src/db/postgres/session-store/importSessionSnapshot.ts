@@ -1,19 +1,15 @@
 /**
  * Postgres historical session snapshot insert (skip-if-exists).
  */
-import type { Kysely, RawBuilder } from 'kysely';
-import { sql } from 'kysely';
+import type { Kysely } from 'kysely';
 import {
   isContextPrefix,
   type ImportSessionSnapshotInput,
   type ImportSessionSnapshotResult,
   type ISessionSnapshotImporter,
 } from '../../sessionSnapshotImport';
+import { json } from '../sqlExpressions';
 import type { Database } from '../types';
-
-function jsonbColumn<T>(value: unknown): RawBuilder<T> {
-  return sql`${JSON.stringify(value)}::jsonb`;
-}
 
 export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter {
   constructor(private readonly db: Kysely<Database>) {}
@@ -21,17 +17,8 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
   async importSessionSnapshot(input: ImportSessionSnapshotInput): Promise<ImportSessionSnapshotResult> {
     const sessionId = input.session.session_id;
     return this.db.transaction().execute(async trx => {
-      const existing = await trx
-        .selectFrom('session')
-        .select('session_id')
-        .where('session_id', '=', sessionId)
-        .executeTakeFirst();
-      if (existing !== undefined) {
-        return { imported: false, session_id: sessionId };
-      }
-
       const { session, turns } = input;
-      await trx
+      const insertedSession = await trx
         .insertInto('session')
         .values({
           tenant_id: session.tenant_id,
@@ -39,15 +26,20 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
           created_by: session.created_by,
           agent_id: null,
           agent_name: null,
-          agent_spec: jsonbColumn(session.agent_spec),
+          agent_spec: json(session.agent_spec),
           title: session.title,
           last_turn_id: session.last_turn_id,
-          custom: session.custom !== null ? jsonbColumn(session.custom) : null,
+          custom: session.custom !== null ? json(session.custom) : null,
           last_activity_timestamp_ms: session.last_activity_timestamp_ms,
           created_at: new Date(session.created_at),
           updated_at: new Date(session.updated_at),
         })
-        .execute();
+        .onConflict(oc => oc.column('session_id').doNothing())
+        .returning('session_id')
+        .executeTakeFirst();
+      if (insertedSession === undefined) {
+        return { imported: false, session_id: sessionId };
+      }
 
       const prevContextByThread = new Map<string, unknown[]>();
       const prevContextIdsByThread = new Map<string, number[]>();
@@ -61,10 +53,10 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
             first_turn_id: turn.first_turn_id,
             previous_turn_id: turn.previous_turn_id,
             ancestor_ids: turn.ancestor_ids,
-            input: jsonbColumn(turn.input),
-            state: jsonbColumn(turn.state),
-            checkpoint: jsonbColumn(turn.checkpoint),
-            custom: turn.custom !== null ? jsonbColumn(turn.custom) : null,
+            input: json(turn.input),
+            state: json(turn.state),
+            checkpoint: json(turn.checkpoint),
+            custom: turn.custom !== null ? json(turn.custom) : null,
             created_at: new Date(turn.created_at),
             updated_at: new Date(turn.updated_at),
           })
@@ -73,7 +65,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
         for (const thread of turn.threads) {
           const prevCtx = prevContextByThread.get(thread.thread_id) ?? [];
           const prevIds = prevContextIdsByThread.get(thread.thread_id) ?? [];
-          const appendOnly = isContextPrefix(prevCtx, thread.context);
+          const appendOnly = isContextPrefix({ prefix: prevCtx, full: thread.context });
           const newMessages = appendOnly ? thread.context.slice(prevCtx.length) : thread.context;
           const reusedIds = appendOnly ? prevIds : [];
 
@@ -86,7 +78,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                   session_id: sessionId,
                   thread_id: thread.thread_id,
                   turn_id: turn.turn_id,
-                  body: jsonbColumn(msg),
+                  body: json(msg),
                   created_at: new Date(turn.updated_at),
                 })),
               )
@@ -104,9 +96,9 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
               session_id: sessionId,
               turn_id: turn.turn_id,
               thread_id: thread.thread_id,
-              checkpoint: jsonbColumn({ parent: thread.parent, completion: thread.completion }),
-              agent_info: thread.agent_info !== null ? jsonbColumn(thread.agent_info) : null,
-              current_context_usage: jsonbColumn(thread.current_context_usage),
+              checkpoint: json({ parent: thread.parent, completion: thread.completion }),
+              agent_info: thread.agent_info !== null ? json(thread.agent_info) : null,
+              current_context_usage: json(thread.current_context_usage),
               context_ids: contextIds,
               updated_at: new Date(turn.updated_at),
             })
@@ -126,7 +118,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                     turn_id: turn.turn_id,
                     thread_id: thread.thread_id,
                     key,
-                    state: jsonbColumn(state),
+                    state: json(state),
                     updated_at: new Date(turn.updated_at),
                   })),
                 )
@@ -143,7 +135,7 @@ export class PostgresSessionSnapshotImporter implements ISessionSnapshotImporter
                 session_id: sessionId,
                 turn_id: turn.turn_id,
                 event_id: event.id,
-                event: jsonbColumn(event),
+                event: json(event),
                 created_at: new Date(event.created_at),
               })),
             )
