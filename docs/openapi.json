@@ -1595,23 +1595,26 @@
       "ImportSessionSnapshotResponse": {
         "properties": {
           "data": {
-            "properties": {
-              "imported": {
-                "type": "boolean"
-              },
-              "session_id": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "imported",
-              "session_id"
-            ],
-            "type": "object"
+            "$ref": "#/components/schemas/ImportSessionSnapshotResult"
           }
         },
         "required": [
           "data"
+        ],
+        "type": "object"
+      },
+      "ImportSessionSnapshotResult": {
+        "properties": {
+          "imported": {
+            "type": "boolean"
+          },
+          "session_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "imported",
+          "session_id"
         ],
         "type": "object"
       },
