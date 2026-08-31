@@ -1,8 +1,8 @@
 import type { Logger } from 'winston';
 import winston from 'winston';
-import type { ILLM } from '../../src/core/llm/ILLM';
-import type { ExtendedChatCompletionChunk, RawAssistantMessageWithUsage } from '../../src/core/llm/LLMTypes';
-import { getEmptyUsage } from '../../src/core/llm/LLMTypes';
+import type { ILLM } from '../../../src/core/llm/ILLM';
+import type { ExtendedChatCompletionChunk, RawAssistantMessageWithUsage } from '../../../src/core/llm/LLMTypes';
+import { getEmptyUsage } from '../../../src/core/llm/LLMTypes';
 
 /** One streamed chunk plus a stop completion. Used when the test needs a text reply and no tool calls. */
 // eslint-disable-next-line @typescript-eslint/require-await -- async generator fixture, not awaiting I/O
