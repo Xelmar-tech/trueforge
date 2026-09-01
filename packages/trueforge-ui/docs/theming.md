@@ -59,8 +59,8 @@ track (orthogonal to [`docs/server.md`](./server.md)).
 
 | Current (tfy)      | Target (in-repo shadcn-style)                                              |
 | ------------------ | -------------------------------------------------------------------------- |
-| `Button`           | `Button` (variants: default, secondary, ghost, destructive, outline, size) |
-| `IconButton`       | `Button` size=`icon` **or** thin `IconButton` wrapper                      |
+| `Button`           | Compound `Button.Primary`, `.Secondary`, `.Ghost`, `.Destructive`          |
+| `IconButton`       | Compound icon-only variants matching `Button`                              |
 | `Modal` / `Dialog` | `Dialog` (+ sheet if drawer needs it)                                      |
 | `Accordion*`       | `Accordion`                                                                |
 | `LightTooltip`     | `Tooltip`                                                                  |

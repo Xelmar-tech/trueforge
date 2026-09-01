@@ -3,7 +3,7 @@
 import { useChatChromeActionsVisible } from '../hooks/useChatChromeActionsVisible.js';
 import { Icon } from '../icons/Icon.js';
 import { useOptionalShellMode } from '../server/ShellModeContext.js';
-import { auiButtonClass } from './lib/buttonClasses.js';
+import { Button } from './primitives/Button.js';
 
 // Resets an immutable (named) chat. Hidden while idle or on mutable drafts.
 export function ClearChatButton() {
@@ -13,15 +13,15 @@ export function ClearChatButton() {
   if (!visible || shell == null) return null;
 
   return (
-    <button
+    <Button.Ghost
       type="button"
       title="Clear chat"
-      className={auiButtonClass({ variant: 'ghost', size: 'sm' })}
+      size="small"
       onClick={() => shell.clearChat()}
     >
       <Icon name="broom" size="0.875rem" />
       Clear chat
-    </button>
+    </Button.Ghost>
   );
 }
 

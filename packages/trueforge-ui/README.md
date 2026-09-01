@@ -613,7 +613,7 @@ See [docs/server.md](./docs/server.md) for the full method list and BYO guidance
 | `TrueForgeUI`                                                      | Component  | Root component — accepts all props above                     |
 | `TrueForgeServerConfig`                                            | Type       | `server` prop: `truefoundry` / `trueforge` / `AgentUIServer` |
 | `createTrueFoundryServer`                                          | Function   | Compose chat + builder into `AgentUIServer`                  |
-| `Thread`, `ThreadListContainer`, `BrandLogo`                       | Components | Layout primitives for custom layouts                         |
+| `Thread`, `ThreadListContainer`, `BrandLogo`, `Button`, `IconButton` | Components | Layout and themed UI primitives                              |
 | `resolveBrandChrome`, `useBrandName`, `useBrand`                   | Helpers    | Brand chrome look + name for custom layouts                  |
 | Composer / message / tool atoms                                    | Components | Overridable, themeable building blocks                       |
 | `SlotsProvider`, `useSlot`, `useTheme`                             | API        | Overrides + theme mode                                       |
