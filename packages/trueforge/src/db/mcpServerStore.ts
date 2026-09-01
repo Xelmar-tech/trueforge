@@ -32,12 +32,35 @@ export interface McpServerRecord {
 export interface GetMcpServerInput {
   tenant_id: string;
   name: string;
+  /** Caller token; required by the TrueFoundry store, ignored by DB stores. */
+  accessToken?: string;
 }
 
 export interface ListMcpServersInput {
   tenant_id: string;
   /** `undefined` lists all; empty returns `[]` without querying; otherwise `WHERE name IN (...)`. */
   names: readonly string[] | undefined;
+  /** Caller token; required by the TrueFoundry store, ignored by DB stores. */
+  accessToken?: string;
+}
+
+/** Spread into read inputs so `accessToken` is omitted when unset/blank. */
+export function optionalMcpAccessToken(accessToken: string | undefined): { accessToken?: string } {
+  if (accessToken === undefined || accessToken.length === 0) {
+    return {};
+  }
+  return { accessToken };
+}
+
+/** Thrown by stores that do not persist MCP server configuration (TrueFoundry). */
+export class McpServerStoreNotImplementedError extends Error {
+  readonly operation: string;
+
+  constructor(operation: string) {
+    super(`MCP server store does not implement ${operation}`);
+    this.name = 'McpServerStoreNotImplementedError';
+    this.operation = operation;
+  }
 }
 
 export interface CreateMcpServerInput {
