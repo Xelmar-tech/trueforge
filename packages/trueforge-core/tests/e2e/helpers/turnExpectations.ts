@@ -79,6 +79,9 @@ function projectExecuteEvent(event: AgentThreadExecutionEvent): ExecuteTraceRow 
       return { ...base, content: contentToString(event.content) };
     case EventType.TOOL_RESPONSE:
       return { ...base, tool_call_id: event.tool_call_id };
+    case EventType.TOOL_APPROVAL_REQUIRED:
+    case EventType.TOOL_RESPONSE_REQUIRED:
+      return { ...base, tool_call_id: event.tool_calls[0]?.id };
     case EventType.THREAD_CREATED:
       return {
         ...base,
@@ -96,7 +99,7 @@ function projectExecuteEvent(event: AgentThreadExecutionEvent): ExecuteTraceRow 
 function projectContext(context: ContextMessage[]): ContextRow[] {
   return context.map((msg): ContextRow => {
     if (!isLLMContextMessage(msg)) {
-      return { role: 'approval_decision' };
+      return { role: 'approval_decision', tool_call_id: msg.tool_call_id };
     }
     if (msg.role === 'user') {
       return {
