@@ -31,19 +31,18 @@ export async function* textReplyStream(
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async generator fixture, not awaiting I/O
 export async function* createSubAgentStream() {
   yield {
     id: 'chunk-tool',
     object: 'chat.completion.chunk',
     created: 0,
     model: 'test-model',
-    // Choices
     choices: [
       {
         index: 0,
         delta: {
           role: 'assistant',
-          // Tool Calls
           tool_calls: [
             {
               index: 0,
@@ -54,12 +53,12 @@ export async function* createSubAgentStream() {
                 arguments: JSON.stringify({ name: 'worker', input: 'do the delegated task' }),
               },
             },
-          ], // tool calls end
-        }, // Delta end
+          ],
+        },
         finish_reason: 'tool_calls',
       },
-    ], // Choices end
-  }; // yeild end
+    ],
+  };
 
   return {
     output: {
@@ -71,15 +70,15 @@ export async function* createSubAgentStream() {
           type: 'function',
           function: {
             name: 'create_sub_agent',
-            arguments: JSON.stringify({ name: 'worker', input: 'do the delegated task [output]' }),
-          }, // Function end
+            arguments: JSON.stringify({ name: 'worker', input: 'do the delegated task' }),
+          },
         },
-      ], // Tool calls end
-    }, // Output end
+      ],
+    },
     usage: getEmptyUsage(),
     finish_reason: 'tool_calls',
   };
-} // function end
+}
 
 /** ILLM that always streams `text` and then stops. */
 export function makeTextLLM(text: string): ILLM {
@@ -99,6 +98,7 @@ export function makeRootLLM(finalReply: string): ILLM {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/require-await -- async generator fixture, not awaiting I/O
 export async function* writeNoteToolCallStream() {
   yield {
     id: 'chunk-write-note',

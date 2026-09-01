@@ -25,37 +25,37 @@ import { logExecuteEvent, logSendEvent, logTurnPhase, logTurnResult } from './tu
 /** Placeholder substituted for the runtime-minted child thread id. */
 export const CHILD_THREAD_PLACEHOLDER = '<child>';
 
-export type ExecuteTraceRow = {
+export interface ExecuteTraceRow {
   type: string;
   thread_id: string | null;
   tool_call_id?: string;
   content?: string | null;
   title?: string;
   parent?: { thread_id: string; tool_call_id: string };
-};
+}
 
-export type ContextRow = {
+export interface ContextRow {
   role: string;
   content?: string | null;
   tool_call_id?: string;
-  tool_calls?: Array<{
+  tool_calls?: {
     id: string;
     function: { name: string; arguments: string };
-  }>;
-};
+  }[];
+}
 
-export type TurnResultRow = {
+export interface TurnResultRow {
   output: { thread_id: string; content: string | null } | null;
   required_actions: string[];
   root_agent_error: { error: string } | null;
-};
+}
 
-export type TurnActual = {
+export interface TurnActual {
   sendTypes: string[];
   executeTrace: ExecuteTraceRow[];
   result: TurnResultRow;
   context: ContextRow[];
-};
+}
 
 export type TurnExpected = TurnActual;
 
@@ -80,8 +80,13 @@ function projectExecuteEvent(event: AgentThreadExecutionEvent): ExecuteTraceRow 
     case EventType.TOOL_RESPONSE:
       return { ...base, tool_call_id: event.tool_call_id };
     case EventType.TOOL_APPROVAL_REQUIRED:
-    case EventType.TOOL_RESPONSE_REQUIRED:
-      return { ...base, tool_call_id: event.tool_calls[0]?.id };
+    case EventType.TOOL_RESPONSE_REQUIRED: {
+      const toolCallId = event.tool_calls[0]?.id;
+      if (toolCallId === undefined) {
+        return base;
+      }
+      return { ...base, tool_call_id: toolCallId };
+    }
     case EventType.THREAD_CREATED:
       return {
         ...base,

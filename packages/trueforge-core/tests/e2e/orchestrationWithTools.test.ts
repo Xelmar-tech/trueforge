@@ -72,7 +72,7 @@ const EXPECTED = {
             name: 'create_sub_agent',
             arguments: JSON.stringify({
               name: 'worker',
-              input: 'do the delegated task [output]',
+              input: 'do the delegated task',
             }),
           },
         },
