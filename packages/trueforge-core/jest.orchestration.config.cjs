@@ -10,6 +10,7 @@ module.exports = {
           target: 'es2022',
         },
         module: { type: 'commonjs' },
+        sourceMaps: 'inline',
       },
     ],
     '^.+\\.js$': [
@@ -20,6 +21,7 @@ module.exports = {
           target: 'es2022',
         },
         module: { type: 'commonjs' },
+        sourceMaps: 'inline',
       },
     ],
   },
@@ -30,6 +32,6 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 60_000,
   maxWorkers: 1,
-  roots: ['<rootDir>/tests/e2e'],
-  testMatch: ['<rootDir>/tests/e2e/**/*.test.ts'],
+  roots: ['<rootDir>/tests/orchestration'],
+  testMatch: ['<rootDir>/tests/orchestration/**/*.test.ts'],
 };

@@ -8,110 +8,62 @@ import {
   type AgentThreadOrchestratorInput,
 } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
-import { makeDummyLogger, makeRootLLM, makeTextLLM } from './helpers/helpers';
-import { expectTurn, runOrchestratorTurn } from './helpers/turnExpectations';
+import { makeSilentLogger } from '../core/harnessMocks';
+import { makeRootLLM, makeTextLLM, runTurn } from './helpers/helpers';
 
 const ROOT_ID = 'thread_root';
 const TOOL_CALL_ID = 'call-sub';
 const CHILD_REPLY = 'hello from the child';
 const ROOT_FINAL = 'How are you?';
 
-const EXPECTED = {
-  sendTypes: [InternalEventType.AGENT_CONTEXT_APPEND],
-  executeTrace: [
-    // model.message is an empty stream shell; text lands in deltas / context / result.
-    {
-      type: EventType.MODEL_MESSAGE,
-      thread_id: ROOT_ID,
-      content: null,
-    },
-    {
-      type: EventType.THREAD_CREATED,
-      thread_id: '<child>',
-      title: 'worker',
-      parent: { thread_id: ROOT_ID, tool_call_id: TOOL_CALL_ID },
-    },
-    {
-      type: EventType.MODEL_MESSAGE,
-      thread_id: '<child>',
-      content: null,
-    },
-    {
-      type: EventType.TOOL_RESPONSE,
-      thread_id: ROOT_ID,
-      tool_call_id: TOOL_CALL_ID,
-    },
-    {
-      type: InternalEventType.AGENT_DONE,
-      thread_id: '<child>',
-    },
-    {
-      type: EventType.MODEL_MESSAGE,
-      thread_id: ROOT_ID,
-      content: null,
-    },
-    {
-      type: InternalEventType.AGENT_DONE,
-      thread_id: ROOT_ID,
-    },
-  ],
-  result: {
-    output: { thread_id: ROOT_ID, content: ROOT_FINAL },
-    required_actions: [],
-    root_agent_error: null,
+const EXPECTED_EVENTS = [
+  { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
+  { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: EventType.THREAD_CREATED,
+    title: 'worker',
+    parent: { thread_id: ROOT_ID, tool_call_id: TOOL_CALL_ID },
   },
-  context: [
-    { role: 'user', content: 'hello' },
-    {
-      role: 'assistant',
-      content: null,
-      tool_calls: [
-        {
-          id: TOOL_CALL_ID,
-          function: {
-            name: 'create_sub_agent',
-            arguments: JSON.stringify({
-              name: 'worker',
-              input: 'do the delegated task',
-            }),
-          },
-        },
-      ],
-    },
-    {
-      role: 'tool',
-      tool_call_id: TOOL_CALL_ID,
-      content: CHILD_REPLY,
-    },
-    {
-      role: 'assistant',
-      content: ROOT_FINAL,
-    },
-  ],
+  { type: EventType.MODEL_MESSAGE, thread_id: expect.any(String) },
+  { type: EventType.MODEL_MESSAGE_DELTA, thread_id: expect.any(String), content: CHILD_REPLY },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: expect.any(String) },
+  { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: TOOL_CALL_ID },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_DONE, thread_id: expect.any(String), status: 'done' },
+  { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
+  { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID, content: ROOT_FINAL },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_DONE, thread_id: ROOT_ID, status: 'done' },
+];
+
+const OUTPUT = {
+  output: { thread_id: ROOT_ID, content: ROOT_FINAL },
+  required_actions: [],
 };
 
-describe('core E2E: orchestrator with dynamic sub-agent', () => {
+describe('orchestration: dynamic sub-agent', () => {
   it('delegates via create_sub_agent, routes child result to parent, then finishes', async () => {
-    const logger = makeDummyLogger();
-    const thread_1 = makeMainLLMThread(ROOT_ID, ROOT_FINAL, 'e2e-orchestration-with-tools');
+    const thread_1 = makeMainLLMThread(ROOT_ID, ROOT_FINAL, 'orchestration-with-tools');
 
     let orchestratorInput: AgentThreadOrchestratorInput = {
       agentThreads: new Map([[thread_1.threadId, thread_1]]),
       createDynamicSubAgentThread: createSubAgentThread,
       tracing: NOOP_AGENT_TRACING,
-      logger,
+      logger: makeSilentLogger(),
     };
 
     const orchestrator = new AgentThreadOrchestrator(orchestratorInput);
 
-    const actual = await runOrchestratorTurn({
+    const { events, result } = await runTurn({
       orchestrator,
-      rootThread: thread_1,
       sendBatch: [{ type: EventType.USER_MESSAGE, content: 'hello' }],
-      logger,
     });
 
-    expectTurn(actual, EXPECTED);
+    expect(events).toMatchObject(EXPECTED_EVENTS);
+    expect(result).toMatchObject(OUTPUT);
+    expect(result.root_agent_error).toBeUndefined();
   });
 });
 
@@ -143,7 +95,7 @@ function makeMainLLMThread(threadId: string, reply: string, title: string): Agen
     capabilityState: undefined,
     // Default
     tracing: NOOP_AGENT_TRACING,
-    logger: makeDummyLogger(),
+    logger: makeSilentLogger(),
   };
 
   let agentThread = new AgentThread(agentThreadInput);
@@ -175,6 +127,6 @@ const createSubAgentThread: CreateDynamicSubAgentThread = async ({ parentDefinit
     capabilities: undefined,
     capabilityState: undefined,
     tracing: NOOP_AGENT_TRACING,
-    logger: makeDummyLogger(),
+    logger: makeSilentLogger(),
   });
 };

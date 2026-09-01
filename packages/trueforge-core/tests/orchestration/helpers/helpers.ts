@@ -1,11 +1,15 @@
-import type { Logger } from 'winston';
-import winston from 'winston';
 import type { ILLM } from '../../../src/core/llm/ILLM';
 import type { ExtendedChatCompletionChunk, RawAssistantMessageWithUsage } from '../../../src/core/llm/LLMTypes';
 import { getEmptyUsage } from '../../../src/core/llm/LLMTypes';
 import type { IToolSet, ToolSource } from '../../../src/core/mcp/IMCPServer';
 import { toolResultResponse } from '../../../src/core/mcp/IMCPServer';
 import { ToolSet } from '../../../src/core/mcp/ToolSet';
+import type {
+  AgentThreadExecutionEvent,
+  AgentThreadExecutionResult,
+  AgentThreadSendBatch,
+} from '../../../src/core/runtime/AgentThread.types';
+import type { AgentThreadOrchestrator } from '../../../src/core/runtime/AgentThreadOrchestrator';
 
 export const WRITE_NOTE_TOOL_NAME = 'write_note';
 export const WRITE_NOTE_CALL_ID = 'call-write';
@@ -204,18 +208,23 @@ export function makeApprovalGatedWriteNoteToolSet(): IToolSet {
   });
 }
 
-export function makeDummyLogger(): Logger {
-  const logger = winston.createLogger({
-    level: 'debug',
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.printf(({ level, message, ...meta }) => {
-        const details = Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : '';
-        return `${level}: ${String(message)}${details}`;
-      }),
-    ),
-    transports: [new winston.transports.Console()],
+/** Consume send() then execute(); return raw events and the generator result. */
+export async function runTurn(input: {
+  orchestrator: AgentThreadOrchestrator;
+  sendBatch: AgentThreadSendBatch;
+  signal?: AbortSignal | undefined;
+}): Promise<{ events: AgentThreadExecutionEvent[]; result: AgentThreadExecutionResult }> {
+  for await (const _event of input.orchestrator.send(input.sendBatch)) {
+    void _event;
+  }
+  const events: AgentThreadExecutionEvent[] = [];
+  const iterator = input.orchestrator.execute({
+    signal: input.signal ?? new AbortController().signal,
   });
-  logger.child = () => logger;
-  return logger;
+  let step = await iterator.next();
+  while (!step.done) {
+    events.push(step.value);
+    step = await iterator.next();
+  }
+  return { events, result: step.value };
 }

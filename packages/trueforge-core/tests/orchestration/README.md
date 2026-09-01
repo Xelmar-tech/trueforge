@@ -1,4 +1,4 @@
-# Core runtime E2E tests
+# Orchestration tests
 
 End-to-end tests for `AgentThreadOrchestrator` and `AgentThread` in `@truefoundry/trueforge-core`.
 
@@ -23,7 +23,7 @@ Production creates the orchestrator inside `SessionHandle.createTurn`:
 resolve definitions → build AgentThread map → new AgentThreadOrchestrator → send → persist → execute (via TurnHandle)
 ```
 
-These E2E tests **skip the store and session layer** and talk to the orchestrator directly. That keeps the surface area small while still exercising the same `send` / `execute` contract production uses.
+These orchestration tests **skip the store and session layer** and talk to the orchestrator directly. That keeps the surface area small while still exercising the same `send` / `execute` contract production uses.
 
 ```mermaid
 flowchart LR
@@ -35,7 +35,7 @@ flowchart LR
     SH --> OrchP
   end
 
-  subgraph e2e["E2E tests"]
+  subgraph orch["Orchestration tests"]
     Test[Jest test]
     OrchE[AgentThreadOrchestrator]
     MockLLM[Mock ILLM]
@@ -48,12 +48,12 @@ flowchart LR
 
 ## Files
 
-| File                             | Role                                                                                               |
-| -------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `orchestration.test.ts`          | **Program 1** - single root thread, text-only reply, full assertions                               |
-| `orchestrationWithTools.test.ts` | **Program 2** - root delegates to sub-agent via `create_sub_agent`, logging only (assertions TODO) |
-| `helpers.ts`                     | Mock LLM streams, logger factory                                                                   |
-| `jest.e2e.config.cjs`            | Jest config scoped to this folder                                                                  |
+| File                             | Role                                                                 |
+| -------------------------------- | -------------------------------------------------------------------- |
+| `orchestration.test.ts`          | **Program 1** - single root thread, text-only reply, full assertions |
+| `orchestrationWithTools.test.ts` | **Program 2** - root delegates to sub-agent via `create_sub_agent`   |
+| `helpers.ts`                     | Mock LLM streams and approval-gated tools                            |
+| `jest.orchestration.config.cjs`  | Jest config scoped to this folder                                    |
 
 ## Core components under test
 
@@ -129,7 +129,6 @@ sequenceDiagram
 | `makeTextLLM(text)`       | `ILLM` that always replies with `text` (used for child threads)              |
 | `createSubAgentStream()`  | First root call: stream a `create_sub_agent` tool call                       |
 | `makeRootLLM(finalReply)` | First `create()` → sub-agent tool call; every later call → `finalReply` text |
-| `makeDummyLogger()`       | Winston logger with colorized console output for debugging                   |
 
 Root and child threads use **different** `ILLM` instances so each can follow its own scripted sequence.
 
@@ -314,19 +313,6 @@ internal.agent.done                     ← root finished (last event)
 4. assistant: "How are you?"
 ```
 
-### Current test status
-
-Program 2 currently **logs** events and the final result via `makeDummyLogger()`. It does **not** yet assert on event types or final state. Add the same style of expectations as Program 1 when ready.
-
-Suggested assertions to add:
-
-```ts
-expect(types).toContain(EventType.THREAD_CREATED);
-expect(types).toContain(EventType.TOOL_RESPONSE);
-expect(types.at(-1)).toBe(InternalEventType.AGENT_DONE);
-expect(step.value.output?.content).toBe('How are you?');
-```
-
 ---
 
 ## Running tests
@@ -334,40 +320,29 @@ expect(step.value.output?.content).toBe('How are you?');
 From `packages/trueforge-core`:
 
 ```bash
-pnpm test:e2e
+pnpm test:orchestration
 ```
 
 Single file:
 
 ```bash
-pnpm test:e2e -- orchestration.test.ts
-pnpm test:e2e -- orchestrationWithTools.test.ts
+pnpm test:orchestration -- orchestration.test.ts
+pnpm test:orchestration -- orchestrationWithTools.test.ts
 ```
 
 From repo root:
 
 ```bash
-pnpm test:trueforge-core:e2e
+pnpm test:trueforge-core:orchestration
 ```
 
-E2E tests use `jest.e2e.config.cjs` (`maxWorkers: 1`, 60s timeout). Unit tests under `tests/` (excluding `tests/e2e/`) run separately via `jest.config.cjs`.
+Orchestration tests use `jest.orchestration.config.cjs` (`maxWorkers: 1`, 60s timeout). Unit tests under `tests/` (excluding `tests/orchestration/`) run separately via `jest.config.cjs`.
 
-## Logging during tests
-
-- `tests/setup.ts` mocks `console.log` / `console.warn` / `console.error` for all Jest runs, including E2E.
-- `makeDummyLogger()` uses Winston's `Console` transport and **does** print to the terminal.
-- Program 2 logs:
-  - `send complete` with event types
-  - each `execute event` with `type` and `thread_id`
-  - `execute result` with full type list and terminal output
-
-The orchestrator itself does not log on the happy path. Test-side logging is intentional for learning.
-
-To debug with less noise, run a single file (see above).
+Threads and the orchestrator still take a Winston logger (required by the runtime). These tests use `makeSilentLogger()` from `tests/core/harnessMocks.ts`, so the suite does not print turn flow.
 
 ## Relationship to production
 
-| E2E test                               | Production equivalent                                  |
+| Orchestration test                     | Production equivalent                                  |
 | -------------------------------------- | ------------------------------------------------------ |
 | `new AgentThread({ definition, ... })` | `SessionHandle.buildThreads` + resolver                |
 | `createSubAgentThread` callback        | `SessionHandle.makeCreateDynamicSubAgentThread`        |

@@ -12,6 +12,6 @@
       "openai/resources/chat": ["./node_modules/openai/resources/chat/index.d.ts"]
     }
   },
-  "include": ["src/**/*", "tests/**/*", "tsup.config.ts", "jest.config.cjs", "jest.e2e.config.cjs"],
+  "include": ["src/**/*", "tests/**/*", "tsup.config.ts", "jest.config.cjs", "jest.orchestration.config.cjs"],
   "exclude": ["node_modules", "dist"]
 }

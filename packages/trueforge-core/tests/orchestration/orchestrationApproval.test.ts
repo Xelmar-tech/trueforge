@@ -1,0 +1,117 @@
+import type { AgentDefinition } from '../../src/core';
+import { EventType } from '../../src/core/events/schema';
+import { AgentThread } from '../../src/core/runtime/AgentThread';
+import { InternalEventType, type AgentThreadConstructorInput } from '../../src/core/runtime/AgentThread.types';
+import { AgentThreadOrchestrator } from '../../src/core/runtime/AgentThreadOrchestrator';
+import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
+import { makeSilentLogger } from '../core/harnessMocks';
+import {
+  makeApprovalGatedWriteNoteToolSet,
+  makeApprovalThenTextLLM,
+  runTurn,
+  WRITE_NOTE_CALL_ID,
+} from './helpers/helpers';
+
+const ROOT_ID = 'thread_root';
+const ROOT_FINAL = 'note saved';
+
+const EXPECTED_PAUSE_EVENTS = [
+  { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
+  { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: EventType.TOOL_APPROVAL_REQUIRED,
+    thread_id: ROOT_ID,
+    tool_calls: [{ id: WRITE_NOTE_CALL_ID }],
+  },
+];
+
+const PAUSE_OUTPUT = {
+  output: null,
+  required_actions: [
+    {
+      type: EventType.TOOL_APPROVAL_REQUIRED,
+      thread_id: ROOT_ID,
+      tool_calls: [{ id: WRITE_NOTE_CALL_ID }],
+    },
+  ],
+};
+
+const EXPECTED_RESUME_EVENTS = [
+  { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: WRITE_NOTE_CALL_ID },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
+  { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID, content: ROOT_FINAL },
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  { type: InternalEventType.AGENT_DONE, thread_id: ROOT_ID, status: 'done' },
+];
+
+const RESUME_OUTPUT = {
+  output: { thread_id: ROOT_ID, content: ROOT_FINAL },
+  required_actions: [],
+};
+
+describe('orchestration: pause then resume on tool approval', () => {
+  it('pauses for write_note approval, then finishes after allow', async () => {
+    const thread = makeApprovalThread();
+    const orchestrator = new AgentThreadOrchestrator({
+      agentThreads: new Map([[thread.threadId, thread]]),
+      createDynamicSubAgentThread: () => Promise.reject(new Error('unexpected sub-agent in approval test')),
+      tracing: NOOP_AGENT_TRACING,
+      logger: makeSilentLogger(),
+    });
+
+    const paused = await runTurn({
+      orchestrator,
+      sendBatch: [{ type: EventType.USER_MESSAGE, content: 'hello' }],
+    });
+    expect(paused.events).toMatchObject(EXPECTED_PAUSE_EVENTS);
+    expect(paused.result).toMatchObject(PAUSE_OUTPUT);
+    expect(paused.result.root_agent_error).toBeUndefined();
+
+    const resumed = await runTurn({
+      orchestrator,
+      sendBatch: [
+        {
+          type: EventType.USER_TOOL_APPROVAL,
+          thread_id: ROOT_ID,
+          tool_call_id: WRITE_NOTE_CALL_ID,
+          approval: { status: 'allow' },
+        },
+      ],
+    });
+    expect(resumed.events).toMatchObject(EXPECTED_RESUME_EVENTS);
+    expect(resumed.result).toMatchObject(RESUME_OUTPUT);
+    expect(resumed.result.root_agent_error).toBeUndefined();
+  });
+});
+
+function makeApprovalThread(): AgentThread {
+  const agentDefinition: AgentDefinition = {
+    modelClient: makeApprovalThenTextLLM(ROOT_FINAL),
+    instruction: 'You are running in a test setup.',
+    messages: undefined,
+    modelParams: undefined,
+    responseFormat: undefined,
+    iterationLimit: undefined,
+    toolSets: [makeApprovalGatedWriteNoteToolSet()],
+  };
+
+  const agentThreadInput: AgentThreadConstructorInput = {
+    definition: agentDefinition,
+    threadId: ROOT_ID,
+    title: 'orchestration-approval',
+    parent: undefined,
+    agentInfo: undefined,
+    context: undefined,
+    currentContextUsage: undefined,
+    preComputedCompletion: undefined,
+    sandbox: undefined,
+    capabilities: undefined,
+    capabilityState: undefined,
+    tracing: NOOP_AGENT_TRACING,
+    logger: makeSilentLogger(),
+  };
+
+  return new AgentThread(agentThreadInput);
+}
