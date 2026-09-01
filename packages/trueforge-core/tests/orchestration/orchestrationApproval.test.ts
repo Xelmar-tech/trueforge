@@ -6,15 +6,29 @@ import { AgentThreadOrchestrator } from '../../src/core/runtime/AgentThreadOrche
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../core/harnessMocks';
 import {
+  llmCreateInputs,
   makeApprovalGatedWriteNoteToolSet,
   makeApprovalThenTextLLM,
   runTurn,
+  WRITE_NOTE_ARGUMENTS,
   WRITE_NOTE_CALL_ID,
+  WRITE_NOTE_RESULT,
+  WRITE_NOTE_TOOL_NAME,
 } from './helpers/helpers';
 
 const ROOT_ID = 'thread_root';
 const ROOT_FINAL = 'note saved';
+const INSTRUCTION = 'You are running in a test setup.';
 
+const WRITE_NOTE_TOOLS = [
+  { function: { name: 'call_tool' } },
+  { function: { name: 'get_tool_info' } },
+  { function: { name: 'get_tool_output_schema' } },
+  { function: { name: 'list_tools' } },
+  { function: { name: WRITE_NOTE_TOOL_NAME } },
+];
+
+/** Pause on write_note approval, then resume after allow and finish. */
 const EXPECTED_PAUSE_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
@@ -37,6 +51,17 @@ const PAUSE_OUTPUT = {
   ],
 };
 
+const EXPECTED_PAUSE_LLM_INPUT = [
+  {
+    stream: true,
+    tools: WRITE_NOTE_TOOLS,
+    messages: [
+      { role: 'system', content: expect.stringContaining(INSTRUCTION) },
+      { role: 'user', content: 'hello' },
+    ],
+  },
+];
+
 const EXPECTED_RESUME_EVENTS = [
   { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: WRITE_NOTE_CALL_ID },
   { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
@@ -49,6 +74,27 @@ const EXPECTED_RESUME_EVENTS = [
 const RESUME_OUTPUT = {
   output: { thread_id: ROOT_ID, content: ROOT_FINAL },
   required_actions: [],
+};
+
+const EXPECTED_RESUME_LLM_INPUT = {
+  stream: true,
+  tools: WRITE_NOTE_TOOLS,
+  messages: [
+    { role: 'system', content: expect.stringContaining(INSTRUCTION) },
+    { role: 'user', content: 'hello' },
+    {
+      role: 'assistant',
+      content: null,
+      tool_calls: [
+        {
+          id: WRITE_NOTE_CALL_ID,
+          type: 'function',
+          function: { name: WRITE_NOTE_TOOL_NAME, arguments: WRITE_NOTE_ARGUMENTS },
+        },
+      ],
+    },
+    { role: 'tool', tool_call_id: WRITE_NOTE_CALL_ID, content: WRITE_NOTE_RESULT },
+  ],
 };
 
 describe('orchestration: pause then resume on tool approval', () => {
@@ -68,6 +114,7 @@ describe('orchestration: pause then resume on tool approval', () => {
     expect(paused.events).toMatchObject(EXPECTED_PAUSE_EVENTS);
     expect(paused.result).toMatchObject(PAUSE_OUTPUT);
     expect(paused.result.root_agent_error).toBeUndefined();
+    expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject(EXPECTED_PAUSE_LLM_INPUT);
 
     const resumed = await runTurn({
       orchestrator,
@@ -83,13 +130,17 @@ describe('orchestration: pause then resume on tool approval', () => {
     expect(resumed.events).toMatchObject(EXPECTED_RESUME_EVENTS);
     expect(resumed.result).toMatchObject(RESUME_OUTPUT);
     expect(resumed.result.root_agent_error).toBeUndefined();
+    expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject([
+      ...EXPECTED_PAUSE_LLM_INPUT,
+      EXPECTED_RESUME_LLM_INPUT,
+    ]);
   });
 });
 
 function makeApprovalThread(): AgentThread {
   const agentDefinition: AgentDefinition = {
     modelClient: makeApprovalThenTextLLM(ROOT_FINAL),
-    instruction: 'You are running in a test setup.',
+    instruction: INSTRUCTION,
     messages: undefined,
     modelParams: undefined,
     responseFormat: undefined,

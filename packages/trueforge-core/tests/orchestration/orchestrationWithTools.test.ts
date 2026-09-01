@@ -1,6 +1,7 @@
 import type { AgentDefinition, CreateDynamicSubAgentThread } from '../../src/core';
 import { DynamicSubAgents } from '../../src/core/capabilities/builtins/DynamicSubAgents';
 import { EventType } from '../../src/core/events/schema';
+import type { ILLM } from '../../src/core/llm/ILLM';
 import { AgentThread } from '../../src/core/runtime/AgentThread';
 import { InternalEventType, type AgentThreadConstructorInput } from '../../src/core/runtime/AgentThread.types';
 import {
@@ -9,13 +10,24 @@ import {
 } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../core/harnessMocks';
-import { makeRootLLM, makeTextLLM, runTurn } from './helpers/helpers';
+import { llmCreateInputs, makeRootLLM, makeTextLLM, runTurn } from './helpers/helpers';
 
 const ROOT_ID = 'thread_root';
 const TOOL_CALL_ID = 'call-sub';
 const CHILD_REPLY = 'hello from the child';
 const ROOT_FINAL = 'How are you?';
+const INSTRUCTION = 'You are running in a test setup.';
+const CHILD_TASK = 'do the delegated task';
 
+const ROOT_TOOLS = [
+  { function: { name: 'call_tool' } },
+  { function: { name: 'get_tool_info' } },
+  { function: { name: 'get_tool_output_schema' } },
+  { function: { name: 'list_tools' } },
+  { function: { name: 'create_sub_agent' } },
+];
+
+/** Root delegates via create_sub_agent; child result returns to parent; root finishes. */
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
@@ -43,9 +55,87 @@ const OUTPUT = {
   required_actions: [],
 };
 
+const EXPECTED_ROOT_LLM_INPUT = [
+  {
+    stream: true,
+    tools: ROOT_TOOLS,
+    messages: [
+      { role: 'system', content: expect.stringContaining(INSTRUCTION) },
+      { role: 'user', content: 'hello' },
+    ],
+  },
+  {
+    stream: true,
+    tools: ROOT_TOOLS,
+    messages: [
+      { role: 'system', content: expect.stringContaining(INSTRUCTION) },
+      { role: 'user', content: 'hello' },
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: TOOL_CALL_ID,
+            type: 'function',
+            function: {
+              name: 'create_sub_agent',
+              arguments: JSON.stringify({ name: 'worker', input: CHILD_TASK }),
+            },
+          },
+        ],
+      },
+      { role: 'tool', tool_call_id: TOOL_CALL_ID, content: CHILD_REPLY },
+    ],
+  },
+];
+
+const EXPECTED_CHILD_LLM_INPUT = [
+  {
+    stream: true,
+    messages: [
+      { role: 'system', content: expect.stringContaining('sub-agent') },
+      { role: 'user', content: CHILD_TASK },
+    ],
+  },
+];
+
 describe('orchestration: dynamic sub-agent', () => {
   it('delegates via create_sub_agent, routes child result to parent, then finishes', async () => {
     const thread_1 = makeMainLLMThread(ROOT_ID, ROOT_FINAL, 'orchestration-with-tools');
+    let childLLM: ILLM | undefined;
+
+    const createSubAgentThread: CreateDynamicSubAgentThread = async ({
+      parentDefinition,
+      request,
+      threadId,
+      parent,
+    }) => {
+      childLLM = makeTextLLM(CHILD_REPLY);
+      const agentDefinition: AgentDefinition = {
+        modelClient: childLLM,
+        instruction: undefined,
+        messages: [{ role: 'user', content: request.input }],
+        modelParams: parentDefinition.modelParams,
+        responseFormat: undefined,
+        iterationLimit: parentDefinition.iterationLimit,
+        toolSets: undefined,
+      };
+      return new AgentThread({
+        definition: agentDefinition,
+        threadId,
+        title: request.name,
+        parent,
+        agentInfo: request,
+        context: undefined,
+        currentContextUsage: undefined,
+        preComputedCompletion: undefined,
+        sandbox: undefined,
+        capabilities: undefined,
+        capabilityState: undefined,
+        tracing: NOOP_AGENT_TRACING,
+        logger: makeSilentLogger(),
+      });
+    };
 
     let orchestratorInput: AgentThreadOrchestratorInput = {
       agentThreads: new Map([[thread_1.threadId, thread_1]]),
@@ -64,6 +154,11 @@ describe('orchestration: dynamic sub-agent', () => {
     expect(events).toMatchObject(EXPECTED_EVENTS);
     expect(result).toMatchObject(OUTPUT);
     expect(result.root_agent_error).toBeUndefined();
+    expect(llmCreateInputs(thread_1.definition.modelClient)).toMatchObject(EXPECTED_ROOT_LLM_INPUT);
+    if (childLLM === undefined) {
+      throw new Error('expected child LLM to be created');
+    }
+    expect(llmCreateInputs(childLLM)).toMatchObject(EXPECTED_CHILD_LLM_INPUT);
   });
 });
 
@@ -71,7 +166,7 @@ function makeMainLLMThread(threadId: string, reply: string, title: string): Agen
   let agentDefinition: AgentDefinition = {
     // This is an instance if ILLM
     modelClient: makeRootLLM(reply),
-    instruction: 'You are running in a test setup.',
+    instruction: INSTRUCTION,
     // Undefined
     messages: undefined,
     modelParams: undefined,
@@ -102,31 +197,3 @@ function makeMainLLMThread(threadId: string, reply: string, title: string): Agen
 
   return agentThread;
 }
-
-const createSubAgentThread: CreateDynamicSubAgentThread = async ({ parentDefinition, request, threadId, parent }) => {
-  const agentDefinition: AgentDefinition = {
-    modelClient: makeTextLLM(CHILD_REPLY), // Child has text only LLM,
-    // Not sure if this should be taken from the parent, or left alone
-    instruction: undefined,
-    messages: [{ role: 'user', content: request.input }],
-    modelParams: parentDefinition.modelParams,
-    responseFormat: undefined,
-    iterationLimit: parentDefinition.iterationLimit,
-    toolSets: undefined, // No parents tools sent to the child
-  };
-  return new AgentThread({
-    definition: agentDefinition,
-    threadId,
-    title: request.name,
-    parent,
-    agentInfo: request,
-    context: undefined,
-    currentContextUsage: undefined,
-    preComputedCompletion: undefined,
-    sandbox: undefined,
-    capabilities: undefined,
-    capabilityState: undefined,
-    tracing: NOOP_AGENT_TRACING,
-    logger: makeSilentLogger(),
-  });
-};

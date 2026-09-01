@@ -4,11 +4,13 @@ import { InternalEventType } from '../../src/core/runtime/AgentThread.types';
 import { AgentThreadOrchestrator } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../core/harnessMocks';
-import { makeTextLLM, runTurn } from './helpers/helpers';
+import { llmCreateInputs, makeTextLLM, runTurn } from './helpers/helpers';
 
 const THREAD_ID = 'main';
 const REPLY = 'hello from the mocked model';
+const INSTRUCTION = 'You are running in a test setup.';
 
+/** One root thread, no tools: user message in, text reply out. */
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: THREAD_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: THREAD_ID, content: REPLY },
@@ -21,6 +23,16 @@ const OUTPUT = {
   required_actions: [],
 };
 
+const EXPECTED_LLM_INPUT = [
+  {
+    stream: true,
+    messages: [
+      { role: 'system', content: expect.stringContaining(INSTRUCTION) },
+      { role: 'user', content: 'hello' },
+    ],
+  },
+];
+
 /** Root thread with a one-shot text LLM and no tool sets. */
 function makeTextLlmThread(): AgentThread {
   return new AgentThread({
@@ -30,7 +42,7 @@ function makeTextLlmThread(): AgentThread {
     logger: makeSilentLogger(),
     definition: {
       modelClient: makeTextLLM(REPLY),
-      instruction: 'You are running in a test setup.',
+      instruction: INSTRUCTION,
     },
   });
 }
@@ -55,5 +67,6 @@ describe('orchestration: mocked LLM and no tools', () => {
     expect(events).toMatchObject(EXPECTED_EVENTS);
     expect(result).toMatchObject(OUTPUT);
     expect(result.root_agent_error).toBeUndefined();
+    expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject(EXPECTED_LLM_INPUT);
   });
 });

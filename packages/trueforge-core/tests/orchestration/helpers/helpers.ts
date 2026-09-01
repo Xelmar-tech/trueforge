@@ -228,3 +228,7 @@ export async function runTurn(input: {
   }
   return { events, result: step.value };
 }
+
+export function llmCreateInputs(llm: ILLM): unknown[] {
+  return jest.mocked(llm).create.mock.calls.map(call => call[0]);
+}
