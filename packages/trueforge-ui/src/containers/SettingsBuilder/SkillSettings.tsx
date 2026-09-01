@@ -222,8 +222,8 @@ const SkillSettings = () => {
                     name: entry.name,
                     description: entry.description,
                     action: (
-                    <Button.Secondary
-                      size="small"
+                      <Button.Secondary
+                        size="small"
                         type="button"
                         disabled={busy}
                         aria-label={`Enable ${entry.name}`}
@@ -232,7 +232,7 @@ const SkillSettings = () => {
                         }}
                       >
                         Enable
-                    </Button.Secondary>
+                      </Button.Secondary>
                     ),
                   }),
                 )}

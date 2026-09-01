@@ -105,11 +105,7 @@ export function ToolApprovalBar({
               )}
             </div>
             {!isDecided && !readOnly && selectedDenyOption && (
-              <Button.Secondary
-                size="small"
-                disabled={interactionsLocked}
-                onClick={() => onDenyOptionChange?.(null)}
-              >
+              <Button.Secondary size="small" disabled={interactionsLocked} onClick={() => onDenyOptionChange?.(null)}>
                 Back
               </Button.Secondary>
             )}

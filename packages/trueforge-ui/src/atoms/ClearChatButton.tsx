@@ -13,12 +13,7 @@ export function ClearChatButton() {
   if (!visible || shell == null) return null;
 
   return (
-    <Button.Ghost
-      type="button"
-      title="Clear chat"
-      size="small"
-      onClick={() => shell.clearChat()}
-    >
+    <Button.Ghost type="button" title="Clear chat" size="small" onClick={() => shell.clearChat()}>
       <Icon name="broom" size="0.875rem" />
       Clear chat
     </Button.Ghost>

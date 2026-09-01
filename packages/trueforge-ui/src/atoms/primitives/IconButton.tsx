@@ -12,13 +12,7 @@ export type IconButtonProps = Omit<ButtonProps, 'children'> & {
 function createIconButton(ButtonComponent: typeof Button.Primary) {
   return React.forwardRef<HTMLButtonElement, IconButtonProps>(
     ({ tooltip, children, className, size = 'small', ...props }, ref) => (
-      <ButtonComponent
-        ref={ref}
-        size={size}
-        className={cn('aspect-square px-0', className)}
-        title={tooltip}
-        {...props}
-      >
+      <ButtonComponent ref={ref} size={size} className={cn('aspect-square px-0', className)} title={tooltip} {...props}>
         {children}
       </ButtonComponent>
     ),

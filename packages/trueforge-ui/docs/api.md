@@ -71,13 +71,13 @@ const server = createTrueForgeAgentUIServer({ baseUrl: '/', token });
 
 ## Types for overrides
 
-| Export                                     | Notes                                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| `Button`                                   | `Button.Primary`, `.Secondary`, `.Ghost`, or `.Destructive`; no direct `<Button />` |
+| Export                                       | Notes                                                                               |
+| -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `Button`                                     | `Button.Primary`, `.Secondary`, `.Ghost`, or `.Destructive`; no direct `<Button />` |
 | `ButtonProps`, `ButtonSize`, `ButtonVariant` | Button prop contracts (`small`, `medium`, or `large`)                               |
-| `IconButton`                               | Matching compound variants for square icon-only buttons                             |
-| `IconButtonProps`                          | Icon button prop contract                                                            |
-| Atom `*Props` types                        | Per-atom override shapes                                                            |
+| `IconButton`                                 | Matching compound variants for square icon-only buttons                             |
+| `IconButtonProps`                            | Icon button prop contract                                                           |
+| Atom `*Props` types                          | Per-atom override shapes                                                            |
 
 ```tsx
 <Button.Primary size="medium" type="submit">

@@ -31,12 +31,7 @@ export function UserMessageActionBar({
   return (
     <div className={cn('aui-user-action-bar-root animate-in fade-in flex items-center gap-1 duration-200', className)}>
       <MessageTimestamp createdAt={createdAt} className="mr-1" />
-      <IconButton.Ghost
-        aria-label="Try again"
-        tooltip="Try again"
-        className={actionBtnClass}
-        onClick={onRetry}
-      >
+      <IconButton.Ghost aria-label="Try again" tooltip="Try again" className={actionBtnClass} onClick={onRetry}>
         <Icon name="rotate-right" size="0.875em" />
       </IconButton.Ghost>
       <IconButton.Ghost

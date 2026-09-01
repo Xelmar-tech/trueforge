@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 
 import { Icon } from '../icons/Icon.js';
 import { cn } from './lib/cn.js';
-import { Button } from './primitives/Button.js';
 import { formatRelativeShort } from './lib/threadListMeta.js';
+import { Button } from './primitives/Button.js';
 
 export type ThreadListRowProps = {
   title: string;

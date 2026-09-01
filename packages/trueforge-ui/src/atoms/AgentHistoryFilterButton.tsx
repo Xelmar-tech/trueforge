@@ -11,9 +11,9 @@ import { useCompactLayout } from './lib/CompactLayoutContext.js';
 import { useIsMobile } from './lib/useIsMobile.js';
 import { useSearchAgentsList } from './lib/useSearchAgentsList.js';
 import { BottomSheet } from './primitives/BottomSheet.js';
+import { Button } from './primitives/Button.js';
 import { DropdownMenuItem } from './primitives/DropdownMenu.js';
 import SearchInput from './primitives/SearchInput.js';
-import { Button } from './primitives/Button.js';
 
 /** Keep portaled chrome under ThemeProvider so preset/custom CSS vars still apply. */
 function themePortalRoot(from: HTMLElement | null): HTMLElement {

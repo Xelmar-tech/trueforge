@@ -53,13 +53,7 @@ export function ComposerRightSection(_: ComposerRightSectionProps): ReactNode {
 export function ComposerSendButton({ canSubmit, isRunning, onSubmit, onCancel }: ComposerSendButtonProps) {
   if (isRunning) {
     return (
-      <Button.Primary
-        type="button"
-        size="small"
-        disabled={!onCancel}
-        onClick={onCancel}
-        aria-label="Cancel"
-      >
+      <Button.Primary type="button" size="small" disabled={!onCancel} onClick={onCancel} aria-label="Cancel">
         <Spinner size={14} />
         Cancel
       </Button.Primary>

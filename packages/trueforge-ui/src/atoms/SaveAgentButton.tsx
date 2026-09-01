@@ -20,8 +20,8 @@ import { displayModelLabel, DraftModelCatalogPanel, ProviderMark } from './draft
 import { modelPatchWithReasoningEffort } from './draft/reasoningEffort.js';
 import { cn } from './lib/cn.js';
 import { auiInputClass } from './lib/inputClasses.js';
-import { CenteredModal } from './primitives/CenteredModal.js';
 import { Button } from './primitives/Button.js';
+import { CenteredModal } from './primitives/CenteredModal.js';
 import { Tooltip } from './primitives/Tooltip.js';
 
 type SaveIntent = 'create' | 'update';
@@ -397,11 +397,7 @@ function SaveAgentButtonContent({
             </div>
 
             <div className="bg-card-bg sticky bottom-0 z-10 flex shrink-0 justify-end gap-2 border-t border-border px-5 py-4">
-              <Button.Secondary
-                type="button"
-                disabled={saving}
-                onClick={close}
-              >
+              <Button.Secondary type="button" disabled={saving} onClick={close}>
                 Cancel
               </Button.Secondary>
               <Button.Primary

@@ -34,11 +34,7 @@ type ButtonBaseProps = ButtonProps & {
 const ButtonBase = React.forwardRef<HTMLButtonElement, ButtonBaseProps>(
   ({ className, variant, size = 'medium', ...props }, ref) => {
     return (
-      <button
-        ref={ref}
-        className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)}
-        {...props}
-      />
+      <button ref={ref} className={cn(baseClasses, variantClasses[variant], sizeClasses[size], className)} {...props} />
     );
   },
 );

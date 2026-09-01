@@ -67,12 +67,7 @@ export function AgentDetailsHeader({ agentId, detail, onBack }: AgentDetailsHead
             Try
           </Button.Primary>
           {canEdit ? (
-            <Button.Secondary
-              type="button"
-              aria-label="Edit agent"
-              size="small"
-              onClick={handleEdit}
-            >
+            <Button.Secondary type="button" aria-label="Edit agent" size="small" onClick={handleEdit}>
               <Icon name="pencil" className="size-3.5" />
               Edit
             </Button.Secondary>
