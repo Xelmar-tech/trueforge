@@ -90,7 +90,7 @@ export function DraftReasoningEffortSelector({ disabled, isRunning }: DraftReaso
               className={cn(
                 'h-auto w-full items-center justify-start px-2 py-2 text-left text-sm font-normal shadow-none',
                 active
-                  ? 'bg-dropdown-selected-item-bg text-dropdown-selected-item-text'
+                  ? 'bg-dropdown-selected-item-bg text-dropdown-selected-item-text hover:bg-dropdown-selected-item-bg'
                   : 'hover:bg-ghost-button-hover',
               )}
               onClick={() => {
