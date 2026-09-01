@@ -144,6 +144,7 @@ export async function getMcpConnection({
   tokenStore,
   clientName,
   userRef,
+  accessToken,
 }: {
   tenant_id: string;
   name: string;
@@ -151,8 +152,14 @@ export async function getMcpConnection({
   tokenStore: IOAuthTokenStore;
   clientName: string;
   userRef: string;
+  /** Caller token for TrueFoundry-backed stores; ignored by DB stores. */
+  accessToken?: string;
 }): Promise<McpConnection | undefined> {
-  const record = await store.getServer({ tenant_id, name });
+  const record = await store.getServer({
+    tenant_id,
+    name,
+    ...(accessToken !== undefined && accessToken.length > 0 ? { accessToken } : {}),
+  });
   if (record === undefined) {
     return undefined;
   }
@@ -330,7 +337,13 @@ export async function validateAgentSpec({
   if (requestedMcpServers.length > 0) {
     const names = requestedMcpServers.map(server => server.name);
     const configuredNames = new Set(
-      (await mcpServerStore.listServers({ tenant_id, names })).map(record => record.name),
+      (
+        await mcpServerStore.listServers({
+          tenant_id,
+          names,
+          ...(accessToken !== undefined && accessToken.length > 0 ? { accessToken } : {}),
+        })
+      ).map(record => record.name),
     );
     const unknown = requestedMcpServers.find(server => !configuredNames.has(server.name));
     if (unknown !== undefined) {

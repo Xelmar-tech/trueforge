@@ -1,10 +1,17 @@
 import { OpenAPIHono, type RouteHandler } from '@hono/zod-openapi';
 import { extractErrorLogFields, isAuthRequired, McpConnectionError, RemoteMCP } from '@truefoundry/trueforge-core/core';
+import { HTTPException } from 'hono/http-exception';
 import type { Logger } from 'winston';
 import type { ResolveUserContext } from '../auth/identity';
+import { requireAccessToken } from '../auth/middleware';
 import { safeReturnTo } from '../auth/safeReturnTo';
-import configuration from '../config';
-import { McpServerNameConflictError, type IMcpServerStore, type McpServerRecord } from '../db/mcpServerStore';
+import configuration, { getPublicBaseUrl, isTrueFoundryModeEnabled } from '../config';
+import {
+  McpServerNameConflictError,
+  optionalMcpAccessToken,
+  type IMcpServerStore,
+  type McpServerRecord,
+} from '../db/mcpServerStore';
 import type { WithTransaction } from '../db/transaction';
 import { createMcpOAuthClient, isMcpAuthRequired, resolveMcpAuth } from '../mcp/auth/mcpDcr';
 import { mcpOAuthCallbackUrl } from '../mcp/auth/mcpOAuthHelpers';
@@ -29,8 +36,46 @@ import type {
   UpdateMcpServerRequest,
 } from '../schemas/mcpServer';
 import { resolveMcpAuthStatus } from '../schemas/mcpServer';
+import { TrueFoundryMcpServerStore } from '../truefoundry/TrueFoundryMcpServerStore';
 import { MissingStoredSecretError, resolveStoredSecretValue, toRedactedSecretValue } from '../utils/secretRedaction';
 import { TENANT_ID } from './sessions';
+import { respondTrueFoundryManaged } from './trueFoundryManaged';
+
+function asTrueFoundryMcpStore<TTransaction>(
+  store: IMcpServerStore<TTransaction>,
+): TrueFoundryMcpServerStore<TTransaction> | undefined {
+  return store instanceof TrueFoundryMcpServerStore ? store : undefined;
+}
+
+/** Absolute redirect URL for SFY consent when `return_to` is a same-origin relative path. */
+function trueFoundryAuthorizeRedirectUrl(returnTo: string | undefined): string | undefined {
+  if (returnTo === undefined) {
+    return undefined;
+  }
+  return new URL(returnTo, `${getPublicBaseUrl()}/`).href;
+}
+
+async function configuredFromTrueFoundryStore<TTransaction>(params: {
+  store: TrueFoundryMcpServerStore<TTransaction>;
+  record: McpServerRecord;
+  accessToken: string;
+  userRef: string;
+}): Promise<ConfiguredMcpServer> {
+  const auth_status =
+    params.record.manifest.auth?.type === 'dcr'
+      ? await params.store.getAuthStatus({
+          name: params.record.name,
+          accessToken: params.accessToken,
+          subjectId: params.userRef,
+          subjectType: 'user',
+        })
+      : resolveMcpAuthStatus({ manifest: params.record.manifest });
+  return {
+    name: params.record.name,
+    manifest: redactMcpServerManifest(params.record.manifest),
+    auth_status,
+  };
+}
 
 export interface McpServersRouterDeps<TTransaction> {
   mcpServerStore: IMcpServerStore<TTransaction>;
@@ -140,6 +185,20 @@ function toAvailableMcpServer({
 export function createSettingsMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<TTransaction>) {
   const listHandler: RouteHandler<typeof listMcpServersRoute> = async c => {
     const userRef = deps.resolveUserContext(c).userRef;
+    const tfyStore = asTrueFoundryMcpStore(deps.mcpServerStore);
+    if (tfyStore !== undefined) {
+      const accessToken = requireAccessToken(c);
+      const records = await tfyStore.listServers({
+        tenant_id: TENANT_ID,
+        names: undefined,
+        accessToken,
+      });
+      const data = await Promise.all(
+        records.map(record => configuredFromTrueFoundryStore({ store: tfyStore, record, accessToken, userRef })),
+      );
+      return c.json({ data }, 200);
+    }
+
     const records = await deps.mcpServerStore.listServers({ tenant_id: TENANT_ID, names: undefined });
     // Only DCR servers have tokens; batch the lookup for this user.
     const dcrIds = records.filter(record => record.manifest.auth?.type === 'dcr').map(record => record.id);
@@ -153,6 +212,19 @@ export function createSettingsMcpServersRouter<TTransaction>(deps: McpServersRou
   const getHandler: RouteHandler<typeof getMcpServerRoute> = async c => {
     const { name } = c.req.valid('param');
     const userRef = deps.resolveUserContext(c).userRef;
+    const tfyStore = asTrueFoundryMcpStore(deps.mcpServerStore);
+    if (tfyStore !== undefined) {
+      const accessToken = requireAccessToken(c);
+      const record = await tfyStore.getServer({ tenant_id: TENANT_ID, name, accessToken });
+      if (!record) {
+        return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
+      }
+      return c.json(
+        { data: await configuredFromTrueFoundryStore({ store: tfyStore, record, accessToken, userRef }) },
+        200,
+      );
+    }
+
     const record = await deps.mcpServerStore.getServer({ tenant_id: TENANT_ID, name });
     if (!record) {
       return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
@@ -165,6 +237,9 @@ export function createSettingsMcpServersRouter<TTransaction>(deps: McpServersRou
   };
 
   const createHandler: RouteHandler<typeof createMcpServerRoute> = async c => {
+    if (isTrueFoundryModeEnabled()) {
+      return respondTrueFoundryManaged(c);
+    }
     const body: CreateMcpServerRequest = c.req.valid('json');
     const incomingManifest = body.manifest;
 
@@ -227,6 +302,9 @@ export function createSettingsMcpServersRouter<TTransaction>(deps: McpServersRou
   };
 
   const putHandler: RouteHandler<typeof putMcpServerRoute> = async c => {
+    if (isTrueFoundryModeEnabled()) {
+      return respondTrueFoundryManaged(c);
+    }
     const userRef = deps.resolveUserContext(c).userRef;
     const body: UpdateMcpServerRequest = c.req.valid('json');
     const incomingManifest = body.manifest;
@@ -321,6 +399,30 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
     const { name } = c.req.valid('param');
     const { return_to: returnTo } = c.req.valid('query');
     const userRef = deps.resolveUserContext(c).userRef;
+
+    if (returnTo && safeReturnTo(returnTo) !== returnTo) {
+      return c.json({ error: { message: 'Invalid return_to: must be a same-origin relative path' } }, 400);
+    }
+
+    const tfyStore = asTrueFoundryMcpStore(deps.mcpServerStore);
+    if (tfyStore !== undefined) {
+      try {
+        const accessToken = requireAccessToken(c);
+        const redirectURL = trueFoundryAuthorizeRedirectUrl(returnTo);
+        const authStatus = await tfyStore.authorize({
+          name,
+          accessToken,
+          ...(redirectURL !== undefined ? { redirectURL } : {}),
+        });
+        return c.json(authStatus, 200);
+      } catch (error) {
+        if (error instanceof HTTPException && error.status === 404) {
+          return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
+        }
+        throw error;
+      }
+    }
+
     const record = await deps.mcpServerStore.getServer({ tenant_id: TENANT_ID, name });
     if (!record) {
       return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
@@ -328,10 +430,6 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
 
     if (record.manifest.auth?.type !== 'dcr') {
       return c.json(resolveMcpAuthStatus({ manifest: record.manifest }), 200);
-    }
-
-    if (returnTo && safeReturnTo(returnTo) !== returnTo) {
-      return c.json({ error: { message: 'Invalid return_to: must be a same-origin relative path' } }, 400);
     }
 
     try {
@@ -374,6 +472,7 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
   const listToolsHandler: RouteHandler<typeof listMcpServerToolsRoute> = async c => {
     const { name } = c.req.valid('param');
     const userRef = deps.resolveUserContext(c).userRef;
+    const accessToken = isTrueFoundryModeEnabled() ? requireAccessToken(c) : '';
     // Same url + header resolution as turn execution (DCR via resolveMcpAuth, header/no-auth static).
     const connection = await getMcpConnection({
       tenant_id: TENANT_ID,
@@ -382,6 +481,7 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
       tokenStore: deps.tokenStore,
       clientName: configuration.MCP_DCR_OAUTH_CLIENT_NAME,
       userRef,
+      ...optionalMcpAccessToken(accessToken),
     });
     if (connection === undefined) {
       return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
@@ -418,6 +518,35 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
   const deleteAuthorizationHandler: RouteHandler<typeof deleteAuthorizationMcpServerRoute> = async c => {
     const { name } = c.req.valid('param');
     const userRef = deps.resolveUserContext(c).userRef;
+    const tfyStore = asTrueFoundryMcpStore(deps.mcpServerStore);
+    if (tfyStore !== undefined) {
+      const accessToken = requireAccessToken(c);
+      try {
+        const record = await tfyStore.getServer({ tenant_id: TENANT_ID, name, accessToken });
+        if (!record) {
+          return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
+        }
+        if (record.manifest.auth?.type === 'dcr') {
+          await tfyStore.deleteAuthorization({
+            name,
+            accessToken,
+            body: { authSource: 'oauth', subjectId: userRef, subjectType: 'user' },
+          });
+        }
+        return c.json(
+          {
+            data: await configuredFromTrueFoundryStore({ store: tfyStore, record, accessToken, userRef }),
+          },
+          200,
+        );
+      } catch (error) {
+        if (error instanceof HTTPException && error.status === 404) {
+          return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
+        }
+        throw error;
+      }
+    }
+
     const record = await deps.mcpServerStore.getServer({ tenant_id: TENANT_ID, name });
     if (!record) {
       return c.json({ error: { message: `MCP server not found: ${name}` } }, 404);
@@ -433,6 +562,34 @@ export function createMcpServersRouter<TTransaction>(deps: McpServersRouterDeps<
   const router = new OpenAPIHono();
   router.openapi(listAvailableMcpServersRoute, async c => {
     const userRef = deps.resolveUserContext(c).userRef;
+    const tfyStore = asTrueFoundryMcpStore(deps.mcpServerStore);
+    if (tfyStore !== undefined) {
+      const accessToken = requireAccessToken(c);
+      const records = await tfyStore.listServers({
+        tenant_id: TENANT_ID,
+        names: undefined,
+        accessToken,
+      });
+      const data: AvailableMcpServer[] = await Promise.all(
+        records.map(async record => {
+          const configured = await configuredFromTrueFoundryStore({
+            store: tfyStore,
+            record,
+            accessToken,
+            userRef,
+          });
+          const authType = record.manifest.auth?.type;
+          return {
+            name: configured.name,
+            url: record.manifest.url,
+            ...(authType !== undefined ? { auth: { type: authType } } : {}),
+            auth_status: configured.auth_status,
+          };
+        }),
+      );
+      return c.json({ data }, 200);
+    }
+
     const records = await deps.mcpServerStore.listServers({ tenant_id: TENANT_ID, names: undefined });
     const dcrIds = records.filter(record => record.manifest.auth?.type === 'dcr').map(record => record.id);
     const tokens = await deps.tokenStore.getTokens({ ids: dcrIds, userRef });

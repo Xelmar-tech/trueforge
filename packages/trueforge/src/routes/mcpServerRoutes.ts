@@ -4,6 +4,7 @@
  * tools, and authorize routes mount at /api/v1/mcp-servers.
  */
 import { createRoute, z } from '@hono/zod-openapi';
+import { trueFoundryManagedResponse } from '../apis/trueFoundryManaged';
 import { RequestErrorResponseSchema } from '../schemas/errors';
 import {
   CreateMcpServerRequestSchema,
@@ -122,6 +123,7 @@ export const createMcpServerRoute = createRoute({
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
       description: 'The server cannot satisfy `auth.type: dcr` (e.g. it advertises no registration_endpoint).',
     },
+    424: trueFoundryManagedResponse,
   },
 });
 
@@ -154,6 +156,7 @@ export const putMcpServerRoute = createRoute({
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
       description: 'The server cannot satisfy `auth.type: dcr` (e.g. it advertises no registration_endpoint).',
     },
+    424: trueFoundryManagedResponse,
   },
 });
 
