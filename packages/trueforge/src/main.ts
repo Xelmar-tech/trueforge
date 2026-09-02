@@ -56,6 +56,7 @@ import { SkillCatalog } from './catalog/SkillCatalog';
 import { type DistributedServerConfiguration } from './config';
 import { createController } from './controller';
 import type { IAgentStore } from './db/agentStore';
+import { wrapLocalMcpServerStore } from './db/LocalAuthMcpServerStore';
 import type { IMcpServerStore } from './db/mcpServerStore';
 import type { IModelProviderStore } from './db/modelProviderStore';
 import type { Database as PostgresDatabase } from './db/postgres/types';
@@ -262,7 +263,10 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
     redis,
   } = persistence;
 
-  let mcpServerStore: IMcpServerStore<TTransaction> = persistenceMcpServerStore;
+  let mcpServerStore: IMcpServerStore<TTransaction> = wrapLocalMcpServerStore({
+    store: persistenceMcpServerStore,
+    tokenStore,
+  });
   if (configuration.TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL !== undefined) {
     const { TrueFoundryMcpServerStore } = await import('./truefoundry/TrueFoundryMcpServerStore');
     mcpServerStore = new TrueFoundryMcpServerStore<TTransaction>({

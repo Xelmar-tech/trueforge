@@ -1,24 +1,27 @@
 import { HTTPException } from 'hono/http-exception';
 import type { Logger } from 'winston';
 import {
+  McpServerNotFoundError,
   McpServerStoreNotImplementedError,
+  type AuthorizeMcpServerInput,
   type CreateMcpServerInput,
+  type DeleteMcpAuthorizationInput,
   type GetMcpServerInput,
   type IMcpServerStore,
   type ListMcpServersInput,
   type McpServerRecord,
+  type ResolveMcpAuthStatusesInput,
   type UpsertMcpServerInput,
 } from '../db/mcpServerStore';
 import type { OAuthClientRecord } from '../mcp/auth/types';
 import type { ResourceName } from '../schemas/common';
-import type { McpAuthStatus, McpServerManifest } from '../schemas/mcpServer';
+import { resolveMcpAuthStatus, type McpAuthStatus, type McpServerManifest } from '../schemas/mcpServer';
 import type { InternalTlsOptions } from './internalTls';
 import { resolveDefaultGatewayUrl } from './mapEnabledModels';
 import { mapSfyMcpAuthStatus } from './mapMcpAuth';
 import {
   resolveMcpProxyUrl,
   TrueFoundryServiceFoundryServerClient,
-  type SfyMcpDeleteAuthBody,
   type SfyMcpServerSummary,
 } from './TrueFoundryServiceFoundryServerClient';
 
@@ -46,11 +49,6 @@ export class TrueFoundryMcpServerStore<TTransaction = never> implements IMcpServ
       ...(input.logger === undefined ? {} : { logger: input.logger }),
       ...(input.tls === undefined ? {} : { tls: input.tls }),
     });
-  }
-
-  /** Expose the SFY client for authorize/status/revoke in the API layer. */
-  get client(): TrueFoundryServiceFoundryServerClient {
-    return this.#client;
   }
 
   async listServers(input: ListMcpServersInput, transaction?: TTransaction): Promise<McpServerRecord[]> {
@@ -122,25 +120,30 @@ export class TrueFoundryMcpServerStore<TTransaction = never> implements IMcpServ
     return notImplemented('deleteClient');
   }
 
-  /**
-   * Authorize (or return current status) for a server by TrueForge name.
-   * `redirectURL` becomes SFY `redirectURL` for the consent popup return.
-   */
-  async authorize(input: {
-    name: string;
-    accessToken: string;
-    redirectURL?: string | undefined;
-    gatewayBaseURL?: string | undefined;
-  }): Promise<McpAuthStatus> {
+  async resolveAuthStatuses(input: ResolveMcpAuthStatusesInput): Promise<ReadonlyMap<string, McpAuthStatus>> {
+    const accessToken = requireAccessToken(input.accessToken);
+    const entries = await Promise.all(
+      input.records.map(async record => {
+        if (record.manifest.auth?.type !== 'dcr') {
+          return [record.name, resolveMcpAuthStatus({ manifest: record.manifest })] as const;
+        }
+        const response = await this.#client.getMcpAuthStatus(accessToken, record.id, {
+          subjectId: input.userRef,
+          subjectType: 'user',
+        });
+        return [record.name, mapSfyMcpAuthStatus(response)] as const;
+      }),
+    );
+    return new Map(entries);
+  }
+
+  async authorize(input: AuthorizeMcpServerInput): Promise<McpAuthStatus> {
     const accessToken = requireAccessToken(input.accessToken);
     const server = await this.#client.getMcpServerByName(accessToken, input.name);
     if (server === undefined) {
-      throw new HTTPException(404, { message: `MCP server not found: ${input.name}` });
+      throw new McpServerNotFoundError(input.name);
     }
-    let gatewayBaseURL = input.gatewayBaseURL;
-    if (gatewayBaseURL === undefined || gatewayBaseURL.length === 0) {
-      gatewayBaseURL = resolveDefaultGatewayUrl(await this.#client.listGatewayInstallations(accessToken));
-    }
+    const gatewayBaseURL = resolveDefaultGatewayUrl(await this.#client.listGatewayInstallations(accessToken));
     const response = await this.#client.authorizeMcpServer(accessToken, server.id, {
       gatewayBaseURL,
       ...(input.redirectURL !== undefined ? { redirectURL: input.redirectURL } : {}),
@@ -148,31 +151,19 @@ export class TrueFoundryMcpServerStore<TTransaction = never> implements IMcpServ
     return mapSfyMcpAuthStatus(response);
   }
 
-  async getAuthStatus(input: {
-    name: string;
-    accessToken: string;
-    subjectId: string;
-    subjectType: string;
-  }): Promise<McpAuthStatus> {
+  async deleteAuthorization(input: DeleteMcpAuthorizationInput): Promise<void> {
     const accessToken = requireAccessToken(input.accessToken);
     const server = await this.#client.getMcpServerByName(accessToken, input.name);
     if (server === undefined) {
-      throw new HTTPException(404, { message: `MCP server not found: ${input.name}` });
+      throw new McpServerNotFoundError(input.name);
     }
-    const response = await this.#client.getMcpAuthStatus(accessToken, server.id, {
-      subjectId: input.subjectId,
-      subjectType: input.subjectType,
-    });
-    return mapSfyMcpAuthStatus(response);
-  }
-
-  async deleteAuthorization(input: { name: string; accessToken: string; body: SfyMcpDeleteAuthBody }): Promise<void> {
-    const accessToken = requireAccessToken(input.accessToken);
-    const server = await this.#client.getMcpServerByName(accessToken, input.name);
-    if (server === undefined) {
-      throw new HTTPException(404, { message: `MCP server not found: ${input.name}` });
+    if (server.authType === 'oauth2') {
+      await this.#client.deleteMcpAuth(accessToken, server.id, {
+        authSource: 'oauth',
+        subjectId: input.userRef,
+        subjectType: 'user',
+      });
     }
-    await this.#client.deleteMcpAuth(accessToken, server.id, input.body);
   }
 }
 

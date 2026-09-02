@@ -308,6 +308,7 @@ export async function validateAgentSpec({
   mcpServerStore,
   skillStore,
   sandboxProviderStore,
+  accessToken,
 }: {
   spec: AgentSpec;
   tenant_id: string;
@@ -315,6 +316,8 @@ export async function validateAgentSpec({
   mcpServerStore: IMcpServerStore;
   skillStore: ISkillStore;
   sandboxProviderStore: ISandboxProviderStore;
+  /** Caller token for TrueFoundry-backed MCP stores; ignored by DB stores. */
+  accessToken?: string;
 }): Promise<void> {
   const resolved = await getModelDetails({
     tenant_id,

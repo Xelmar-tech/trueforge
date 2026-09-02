@@ -4,7 +4,6 @@
  * tools, and authorize routes mount at /api/v1/mcp-servers.
  */
 import { createRoute, z } from '@hono/zod-openapi';
-import { trueFoundryManagedResponse } from '../apis/trueFoundryManaged';
 import { RequestErrorResponseSchema } from '../schemas/errors';
 import {
   CreateMcpServerRequestSchema,
@@ -14,6 +13,7 @@ import {
   McpAuthStatusSchema,
   UpdateMcpServerRequestSchema,
 } from '../schemas/mcpServer';
+import { trueFoundryManagedResponse } from '../truefoundry/trueFoundryManaged';
 import { OpenApiTag } from './openapiTags';
 
 /** Chat/composer read view — mounted at /api/v1/mcp-servers (not under settings). */
