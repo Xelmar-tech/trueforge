@@ -13,7 +13,7 @@ import { parseAuthErrorReason, shouldShowAuthErrorScreen, stripAuthErrorSearch }
 import { GetStartedScreen } from './GetStartedScreen';
 import { LogoutButton } from './LogoutButton';
 
-const baseUrl = import.meta.env?.BASE_URL ?? '/';
+const baseUrl = import.meta.env.BASE_URL || '/';
 const routerBasename = baseUrl === '/' ? '' : baseUrl.replace(/\/$/, '');
 
 /** Shared cookie/OIDC fetch for boot helpers and `<TrueForgeUI server />`. */

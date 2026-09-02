@@ -21,6 +21,7 @@ jest.mock('../../../src/config', () => {
   const config = {
     STANDALONE: false as const,
     PUBLIC_BASE_URL: 'https://harness.example.com',
+    ROOT_PATH: '',
     NODE_ENV: 'development',
     OIDC,
     PORT: 8790,

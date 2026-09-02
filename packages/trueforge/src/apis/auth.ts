@@ -8,12 +8,13 @@ import { resolveUserContext } from '../auth/identity';
 import { authMiddleware, resolveAuthUser } from '../auth/middleware';
 import { buildLoginAuthorization, exchangeAuthorizationCode, getOidcVerify } from '../auth/oidc';
 import { safeReturnTo } from '../auth/safeReturnTo';
+import configuration from '../config';
 import { authLoginRoute, authLogoutRoute, meRoute, oAuthCallbackRoute } from '../routes/authRoutes';
 import type { GetMeResponse } from '../schemas/auth';
 
-/** Login / OIDC failures land on `/?error=<reason>`. */
+/** Login / OIDC failures land on `{ROOT_PATH}/?error=<reason>`. */
 function oauthErrorRedirect(reason: string): string {
-  return `/?error=${encodeURIComponent(reason)}`;
+  return `${configuration.ROOT_PATH}/?error=${encodeURIComponent(reason)}`;
 }
 
 /**
@@ -46,7 +47,7 @@ export function createAuthRouter(params: { oidcClient: Configuration | undefined
   router.openapi(authLoginRoute, async c => {
     // TODO: remove this checks once the middleware is implemented
     if (!params.oidcClient) {
-      return c.redirect('/', 302);
+      return c.redirect(configuration.ROOT_PATH || '/', 302);
     }
 
     try {
@@ -64,7 +65,7 @@ export function createAuthRouter(params: { oidcClient: Configuration | undefined
 
   router.openapi(oAuthCallbackRoute, async c => {
     if (!params.oidcClient) {
-      return c.redirect('/', 302);
+      return c.redirect(configuration.ROOT_PATH || '/', 302);
     }
 
     const query = c.req.valid('query');
@@ -73,7 +74,10 @@ export function createAuthRouter(params: { oidcClient: Configuration | undefined
 
     if (pending?.state !== query.state || query.error || !query.code) {
       // If already authenticated, redirect home instead of showing an error.
-      const soft = await redirectIfAlreadyAuthenticated({ context: c, whenAuthenticated: '/' });
+      const soft = await redirectIfAlreadyAuthenticated({
+        context: c,
+        whenAuthenticated: configuration.ROOT_PATH || '/',
+      });
       if (soft) {
         return soft;
       }

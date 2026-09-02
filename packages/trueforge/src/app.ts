@@ -378,9 +378,7 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
     ),
   );
 
-  // Relative so a strip-prefix proxy (e.g. /trueforge) still loads the spec from
-  // the same mount; an absolute `/api/v1/openapi.json` would miss the prefix.
-  app.get('/api/v1/docs', swaggerUI({ url: 'openapi.json' }));
+  app.get('/api/v1/docs', swaggerUI({ url: `${configuration.ROOT_PATH}/api/v1/openapi.json` }));
   app.get('/api/v1/openapi.json', c => c.json(buildOpenApiDocument(app, { authEnabled })));
 
   app.notFound(routeNotFound);

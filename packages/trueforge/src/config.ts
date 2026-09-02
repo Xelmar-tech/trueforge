@@ -433,6 +433,11 @@ export interface SharedServerConfiguration {
    */
   PUBLIC_BASE_URL: string;
   /**
+   * External path prefix when reverse-proxied (e.g. `/trueforge`). Empty when
+   * mounted at the site root. Env: `ROOT_PATH`.
+   */
+  ROOT_PATH: string;
+  /**
    * Base URL the controller uses to reach the server's HTTP API when it runs as its
    * own process (`STANDALONE=false`, `dist/controller-main.js`). The control loops call
    * the server over HTTP. Env: `SERVER_URL`. Default: `http://localhost:$PORT`,
@@ -617,6 +622,7 @@ const shared: SharedServerConfiguration = {
     defaultValue: 500,
   }),
   PUBLIC_BASE_URL: getEnv('PUBLIC_BASE_URL', { defaultValue: '' }) ?? '',
+  ROOT_PATH: getEnv('ROOT_PATH', { defaultValue: '' }) ?? '',
   SERVER_URL:
     getEnv('SERVER_URL', { defaultValue: `http://localhost:${String(port)}` }) ?? `http://localhost:${String(port)}`,
   TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL: getEnv('TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL', { required: false }),

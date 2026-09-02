@@ -3,7 +3,7 @@
  * On any HTTP 401, redirect to OIDC login (session required).
  */
 
-const basePrefix = (import.meta.env?.BASE_URL ?? '/').replace(/\/$/, '');
+const basePrefix = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
 
 /** Browser entry for OIDC login (not available as an SDK method). */
 export const AUTH_LOGIN_HREF = `${basePrefix}/api/v1/auth/login`;
