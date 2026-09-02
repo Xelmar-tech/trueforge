@@ -95,9 +95,7 @@
     "build:pkg": "node scripts/write-dist-package-json.mjs",
     "build:check": "node scripts/check-dist.mjs",
     "typecheck": "pnpm run build:gen && tsc --noEmit",
-    "test": "pnpm run build:gen && jest --config jest.config.cjs && jest --config jest.orchestration.config.cjs",
-    "test:orchestration": "pnpm run build:gen && jest --config jest.orchestration.config.cjs",
-    "test:orchestration:debug": "pnpm run build:gen && node --inspect-brk ./node_modules/jest/bin/jest.js --config jest.orchestration.config.cjs --runInBand --testTimeout 0",
+    "test": "pnpm run build:gen && jest --config jest.config.cjs",
     "pack:dry": "pnpm pack --dry-run"
   },
   "dependencies": {

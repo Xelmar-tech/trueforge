@@ -40,8 +40,6 @@
     "test:frontend": "pnpm --filter frontend test",
     "test:chart-version": "bash tests/scripts/resolve-chart-version.test.sh",
     "test:trueforge-core": "pnpm --filter @truefoundry/trueforge-core test",
-    "test:trueforge-core:orchestration": "pnpm --filter @truefoundry/trueforge-core test:orchestration",
-    "test:trueforge-core:orchestration:debug": "pnpm --filter @truefoundry/trueforge-core test:orchestration:debug",
     "test:trueforge": "pnpm --filter @truefoundry/trueforge test",
     "test:local-sandbox:contract": "pnpm --filter @truefoundry/trueforge test:local-sandbox:contract",
     "smoke:local-sandbox": "pnpm --filter @truefoundry/trueforge smoke:local-sandbox",

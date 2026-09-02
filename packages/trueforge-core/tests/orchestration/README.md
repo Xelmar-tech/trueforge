@@ -53,7 +53,6 @@ flowchart LR
 | `orchestration.test.ts`          | **Program 1** - single root thread, text-only reply, full assertions |
 | `orchestrationWithTools.test.ts` | **Program 2** - root delegates to sub-agent via `create_sub_agent`   |
 | `helpers.ts`                     | Mock LLM streams and approval-gated tools                            |
-| `jest.orchestration.config.cjs`  | Jest config scoped to this folder                                    |
 
 ## Core components under test
 
@@ -320,23 +319,23 @@ internal.agent.done                     ← root finished (last event)
 From `packages/trueforge-core`:
 
 ```bash
-pnpm test:orchestration
+pnpm test
 ```
 
 Single file:
 
 ```bash
-pnpm test:orchestration -- orchestration.test.ts
-pnpm test:orchestration -- orchestrationWithTools.test.ts
+pnpm test -- orchestration.test.ts
+pnpm test -- orchestrationWithTools.test.ts
 ```
 
 From repo root:
 
 ```bash
-pnpm test:trueforge-core:orchestration
+pnpm test:trueforge-core
 ```
 
-Orchestration tests use `jest.orchestration.config.cjs` (`maxWorkers: 1`, 60s timeout). Unit tests under `tests/` (excluding `tests/orchestration/`) run separately via `jest.config.cjs`.
+These files run with the rest of `@truefoundry/trueforge-core` via `jest.config.cjs`.
 
 Threads and the orchestrator still take a Winston logger (required by the runtime). These tests use `makeSilentLogger()` from `tests/core/harnessMocks.ts`, so the suite does not print turn flow.
 

@@ -37,6 +37,5 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/tests/**/*.test.ts'],
   // Compile-time suites are enforced by `tsc --noEmit`, not the Jest runner.
-  // Orchestration tests live under tests/orchestration and are run via jest.orchestration.config.cjs.
-  testPathIgnorePatterns: ['\\.compile\\.test\\.ts$', '<rootDir>/tests/orchestration/'],
+  testPathIgnorePatterns: ['\\.compile\\.test\\.ts$'],
 };
