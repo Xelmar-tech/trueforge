@@ -4,7 +4,7 @@ import { InternalEventType } from '../../src/core/runtime/AgentThread.types';
 import { AgentThreadOrchestrator } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../core/harnessMocks';
-import { llmCreateInputs, makeTextLLM, runTurn } from './helpers/helpers';
+import { llmCreateInputs, runTurn, textReplyStream } from './helpers/helpers';
 
 const THREAD_ID = 'main';
 const REPLY = 'hello from the mocked model';
@@ -37,23 +37,35 @@ const EXPECTED_LLM_INPUT = [
   },
 ];
 
-/** Root thread with a one-shot text LLM and no tool sets. */
-function makeTextLlmThread(): AgentThread {
-  return new AgentThread({
-    threadId: THREAD_ID,
-    title: 'orchestration',
-    tracing: NOOP_AGENT_TRACING,
-    logger: makeSilentLogger(),
-    definition: {
-      modelClient: makeTextLLM(REPLY),
-      instruction: INSTRUCTION,
-    },
-  });
-}
-
 describe('orchestration: mocked LLM and no tools', () => {
   it('sends a user message and finishes the thread with a text reply', async () => {
-    const thread = makeTextLlmThread();
+    const thread = new AgentThread({
+      definition: {
+        modelClient: {
+          create: jest.fn().mockImplementation(() => textReplyStream(REPLY)),
+          createNonStream: jest.fn().mockImplementation(() => textReplyStream(REPLY)),
+        },
+        instruction: INSTRUCTION,
+        messages: undefined,
+        modelParams: undefined,
+        responseFormat: undefined,
+        iterationLimit: undefined,
+        toolSets: [],
+      },
+      threadId: THREAD_ID,
+      title: 'orchestration',
+      parent: undefined,
+      agentInfo: undefined,
+      context: undefined,
+      currentContextUsage: undefined,
+      preComputedCompletion: undefined,
+      sandbox: undefined,
+      capabilities: undefined,
+      capabilityState: undefined,
+      tracing: NOOP_AGENT_TRACING,
+      logger: makeSilentLogger(),
+    });
+
     // Orchestrator owns the thread map and fans send/execute across live threads.
     // This case has only the root thread, so sub-agent creation must never run.
     const orchestrator = new AgentThreadOrchestrator({
