@@ -1,4 +1,3 @@
-import type { AgentDefinition } from '../../src/core';
 import { EventType } from '../../src/core/events/schema';
 import { AgentThread } from '../../src/core/runtime/AgentThread';
 import { InternalEventType, type AgentThreadConstructorInput } from '../../src/core/runtime/AgentThread.types';
@@ -8,12 +7,13 @@ import { makeSilentLogger } from '../core/harnessMocks';
 import {
   llmCreateInputs,
   makeApprovalGatedWriteNoteToolSet,
-  makeApprovalThenTextLLM,
   runTurn,
+  textReplyStream,
   WRITE_NOTE_ARGUMENTS,
   WRITE_NOTE_CALL_ID,
   WRITE_NOTE_RESULT,
   WRITE_NOTE_TOOL_NAME,
+  writeNoteToolCallStream,
 } from './helpers/helpers';
 
 const ROOT_ID = 'thread_root';
@@ -97,7 +97,38 @@ const EXPECTED_TURN_2_OUTPUT = {
 
 describe('orchestration: pause then resume on tool approval', () => {
   it('pauses for write_note approval, then finishes after allow', async () => {
-    const thread = makeApprovalThread();
+    const agentThreadInput: AgentThreadConstructorInput = {
+      definition: {
+        modelClient: {
+          create: jest
+            .fn()
+            .mockImplementationOnce(() => writeNoteToolCallStream())
+            .mockImplementation(() => textReplyStream(ROOT_FINAL)),
+          createNonStream: jest.fn(),
+        },
+        instruction: INSTRUCTION,
+        messages: undefined,
+        modelParams: undefined,
+        responseFormat: undefined,
+        iterationLimit: undefined,
+        toolSets: [makeApprovalGatedWriteNoteToolSet()],
+      },
+      threadId: ROOT_ID,
+      title: 'orchestration-approval',
+      parent: undefined,
+      agentInfo: undefined,
+      context: undefined,
+      currentContextUsage: undefined,
+      preComputedCompletion: undefined,
+      sandbox: undefined,
+      capabilities: undefined,
+      capabilityState: undefined,
+      tracing: NOOP_AGENT_TRACING,
+      logger: makeSilentLogger(),
+    };
+
+    const thread = new AgentThread(agentThreadInput);
+
     const orchestrator = new AgentThreadOrchestrator({
       agentThreads: new Map([[thread.threadId, thread]]),
       createDynamicSubAgentThread: () => Promise.reject(new Error('unexpected sub-agent in approval test')),
@@ -109,6 +140,8 @@ describe('orchestration: pause then resume on tool approval', () => {
       orchestrator,
       sendBatch: [{ type: EventType.USER_MESSAGE, content: 'hello' }],
     });
+
+    // Asserts
     expect(paused.events).toMatchObject(EXPECTED_TURN_1_EVENTS);
     expect(paused.result).toMatchObject(TURN_1_OUTPUT);
     expect(paused.result.root_agent_error).toBeUndefined();
@@ -134,33 +167,3 @@ describe('orchestration: pause then resume on tool approval', () => {
     ]);
   });
 });
-
-function makeApprovalThread(): AgentThread {
-  const agentDefinition: AgentDefinition = {
-    modelClient: makeApprovalThenTextLLM(ROOT_FINAL),
-    instruction: INSTRUCTION,
-    messages: undefined,
-    modelParams: undefined,
-    responseFormat: undefined,
-    iterationLimit: undefined,
-    toolSets: [makeApprovalGatedWriteNoteToolSet()],
-  };
-
-  const agentThreadInput: AgentThreadConstructorInput = {
-    definition: agentDefinition,
-    threadId: ROOT_ID,
-    title: 'orchestration-approval',
-    parent: undefined,
-    agentInfo: undefined,
-    context: undefined,
-    currentContextUsage: undefined,
-    preComputedCompletion: undefined,
-    sandbox: undefined,
-    capabilities: undefined,
-    capabilityState: undefined,
-    tracing: NOOP_AGENT_TRACING,
-    logger: makeSilentLogger(),
-  };
-
-  return new AgentThread(agentThreadInput);
-}
