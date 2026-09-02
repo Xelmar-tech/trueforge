@@ -61,8 +61,8 @@ RUN pnpm --filter @truefoundry/trueforge-core build && pnpm --filter @truefoundr
 # tsc needs, so this stage never compiles SDK JavaScript.
 # ---------------------------------------------------------------------------
 FROM workspace AS frontend-builder
-ARG VITE_BASE_PATH=/
-ENV VITE_BASE_PATH=$VITE_BASE_PATH
+ARG ROOT_PATH=/
+ENV ROOT_PATH=$ROOT_PATH
 RUN pnpm install --frozen-lockfile --offline --filter frontend...
 COPY packages/trueforge-sdk packages/trueforge-sdk
 COPY packages/trueforge-ui packages/trueforge-ui

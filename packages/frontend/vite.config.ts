@@ -16,8 +16,8 @@ if (!Number.isInteger(PORT)) {
   throw new Error(`FRONTEND_PORT must be an integer, got "${process.env.FRONTEND_PORT}"`);
 }
 
-/** Subpath mount, e.g. `/trueforge/`. Default `/`. */
-const BASE = process.env.VITE_BASE_PATH || '/';
+/** Reverse-proxy mount prefix, e.g. `/trueforge/`. Default `/`. */
+const BASE = process.env.ROOT_PATH || '/';
 const BASE_PREFIX = BASE === '/' ? '' : BASE.replace(/\/$/, '');
 
 const apiProxy: ProxyOptions = {
