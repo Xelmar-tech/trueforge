@@ -1,5 +1,6 @@
 import {
   AgentNameConflictError,
+  AgentNameReservedError,
   type AgentRecord,
   type CreateAgentInput,
   type DeleteAgentInput,
@@ -9,6 +10,9 @@ import {
 } from '../db/agentStore';
 import { toPutRemoteAgentPayload } from './toPutRemoteAgentPayload';
 import { TrueFoundryServiceFoundryServerClient } from './TrueFoundryServiceFoundryServerClient';
+
+/** Reserved for product / control-plane use — not creatable via TrueFoundryAgentStore. */
+const RESERVED_AGENT_NAMES = new Set(['tfg', 'trueforge']);
 
 function asError(value: unknown): Error {
   return value instanceof Error ? value : new Error(String(value));
@@ -43,6 +47,10 @@ export class TrueFoundryAgentStore<TTransaction = never> implements IAgentStore<
   }
 
   async createAgent(input: CreateAgentInput, transaction?: TTransaction): Promise<AgentRecord> {
+    if (RESERVED_AGENT_NAMES.has(input.name)) {
+      throw new AgentNameReservedError({ name: input.name });
+    }
+
     // SF PUT upserts by name — skip if local name exists (avoids overwrite/delete of e.g. research→sf-1).
     const existing = await this.#inner.getAgent({ tenant_id: input.tenant_id, name: input.name }, transaction);
     if (existing !== undefined) {

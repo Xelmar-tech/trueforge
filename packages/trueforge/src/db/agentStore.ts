@@ -79,6 +79,17 @@ export class AgentExternalIdConflictError extends Error {
   }
 }
 
+/** Name reserved for product / control-plane use (TrueFoundryAgentStore). */
+export class AgentNameReservedError extends Error {
+  readonly agent_name: string;
+
+  constructor({ name }: { name: string }, options?: ErrorOptions) {
+    super(`Agent name is reserved: ${name}`, options);
+    this.name = 'AgentNameReservedError';
+    this.agent_name = name;
+  }
+}
+
 export interface IAgentStore<TTransaction = never> {
   listAgents(tenantId: string, transaction?: TTransaction): Promise<AgentRecord[]>;
   getAgent(input: GetAgentInput, transaction?: TTransaction): Promise<AgentRecord | undefined>;
