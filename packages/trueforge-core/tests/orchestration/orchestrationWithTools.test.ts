@@ -10,7 +10,7 @@ import {
 } from '../../src/core/runtime/AgentThreadOrchestrator';
 import { NOOP_AGENT_TRACING } from '../../src/core/tracing/NoopAgentTracing';
 import { makeSilentLogger } from '../core/harnessMocks';
-import { llmCreateInputs, makeRootLLM, makeTextLLM, runTurn } from './helpers/helpers';
+import { createSubAgentStream, llmCreateInputs, makeTextLLM, runTurn, textReplyStream } from './helpers/helpers';
 
 const ROOT_ID = 'thread_root';
 const TOOL_CALL_ID = 'call-sub';
@@ -163,20 +163,25 @@ describe('orchestration: dynamic sub-agent', () => {
 });
 
 function makeMainLLMThread(threadId: string, reply: string, title: string): AgentThread {
-  let agentDefinition: AgentDefinition = {
-    // This is an instance if ILLM
-    modelClient: makeRootLLM(reply),
-    instruction: INSTRUCTION,
-    // Undefined
-    messages: undefined,
-    modelParams: undefined,
-    responseFormat: undefined,
-    iterationLimit: undefined,
-    toolSets: [new DynamicSubAgents({ tracing: NOOP_AGENT_TRACING })],
-  };
-
   let agentThreadInput: AgentThreadConstructorInput = {
-    definition: agentDefinition,
+    // AgentDefinition
+    definition: {
+      // This is an instance if ILLM
+      modelClient: {
+        create: jest
+          .fn()
+          .mockImplementationOnce(() => createSubAgentStream())
+          .mockImplementation(() => textReplyStream(reply)),
+        createNonStream: jest.fn(),
+      },
+      instruction: INSTRUCTION,
+      // Undefined
+      messages: undefined,
+      modelParams: undefined,
+      responseFormat: undefined,
+      iterationLimit: undefined,
+      toolSets: [new DynamicSubAgents({ tracing: NOOP_AGENT_TRACING })],
+    },
     threadId: threadId,
     title: title,
     // Undefined
