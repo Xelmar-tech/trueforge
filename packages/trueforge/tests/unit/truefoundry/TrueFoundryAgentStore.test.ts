@@ -1,6 +1,7 @@
 import { AgentSpecSchema } from '@truefoundry/trueforge-core/agent-session';
 
 import type { AgentRecord, IAgentStore } from '../../../src/db/agentStore';
+import { AgentNameConflictError } from '../../../src/db/agentStore';
 import { TrueFoundryAgentStore } from '../../../src/truefoundry/TrueFoundryAgentStore';
 import {
   TrueFoundryServiceFoundryServerClient,
@@ -98,9 +99,10 @@ describe('TrueFoundryAgentStore', () => {
       });
       return { remoteAgentId: 'sf-1' };
     });
+    const getAgent = jest.fn(async () => undefined);
     const createAgent = jest.fn(async () => created);
     const store = new TrueFoundryAgentStore({
-      inner: mockInner({ createAgent }),
+      inner: mockInner({ getAgent, createAgent }),
       client: mockClient({ putRemoteAgent }),
       accessToken: TOKEN,
     });
@@ -112,6 +114,7 @@ describe('TrueFoundryAgentStore', () => {
         manifest: manifest({ mcp_servers: [{ name: 'slack' }] }),
       }),
     ).resolves.toBe(created);
+    expect(getAgent).toHaveBeenCalledWith({ tenant_id: TENANT, name: 'research' }, undefined);
     expect(createAgent).toHaveBeenCalledWith(
       expect.objectContaining({
         tenant_id: TENANT,
@@ -120,6 +123,25 @@ describe('TrueFoundryAgentStore', () => {
       }),
       undefined,
     );
+  });
+
+  it('createAgent rejects a duplicate local name before calling ServiceFoundry', async () => {
+    const getAgent = jest.fn(async () => record({ external_id: 'sf-existing' }));
+    const createAgent = jest.fn();
+    const putRemoteAgent = jest.fn();
+    const deleteRemoteAgent = jest.fn();
+    const store = new TrueFoundryAgentStore({
+      inner: mockInner({ getAgent, createAgent }),
+      client: mockClient({ putRemoteAgent, deleteRemoteAgent }),
+      accessToken: TOKEN,
+    });
+
+    await expect(
+      store.createAgent({ tenant_id: TENANT, name: 'research', manifest: manifest() }),
+    ).rejects.toMatchObject({ name: 'AgentNameConflictError' });
+    expect(putRemoteAgent).not.toHaveBeenCalled();
+    expect(createAgent).not.toHaveBeenCalled();
+    expect(deleteRemoteAgent).not.toHaveBeenCalled();
   });
 
   it('createAgent uses agent name as description when instructions are omitted', async () => {
@@ -157,6 +179,23 @@ describe('TrueFoundryAgentStore', () => {
       'db failed',
     );
     expect(deleteRemoteAgent).toHaveBeenCalledWith({ accessToken: TOKEN, remoteAgentId: 'sf-1' });
+  });
+
+  it('createAgent does not delete remote on local name conflict after put', async () => {
+    const deleteRemoteAgent = jest.fn();
+    const createAgent = jest.fn(async () => {
+      throw new AgentNameConflictError({ tenant_id: TENANT, name: 'research' });
+    });
+    const store = new TrueFoundryAgentStore({
+      inner: mockInner({ createAgent }),
+      client: mockClient({ deleteRemoteAgent }),
+      accessToken: TOKEN,
+    });
+
+    await expect(
+      store.createAgent({ tenant_id: TENANT, name: 'research', manifest: manifest() }),
+    ).rejects.toBeInstanceOf(AgentNameConflictError);
+    expect(deleteRemoteAgent).not.toHaveBeenCalled();
   });
 
   it('createAgent still throws when SF rollback fails', async () => {
