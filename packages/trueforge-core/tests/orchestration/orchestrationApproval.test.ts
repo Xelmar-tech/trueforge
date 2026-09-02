@@ -1,3 +1,4 @@
+/** Pause on write_note approval, then resume after allow and finish. */
 import { EventType } from '../../src/core/events/schema';
 import { AgentThread } from '../../src/core/runtime/AgentThread';
 import { InternalEventType, type AgentThreadConstructorInput } from '../../src/core/runtime/AgentThread.types';
@@ -22,7 +23,6 @@ const INSTRUCTION = 'You are running in a test setup.';
 
 const WRITE_NOTE_TOOLS = [{ function: { name: WRITE_NOTE_TOOL_NAME } }];
 
-/** Pause on write_note approval, then resume after allow and finish. */
 const EXPECTED_TURN_1_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },

@@ -84,24 +84,6 @@ export async function* createSubAgentStream() {
   };
 }
 
-/** ILLM that always streams `text` and then stops. */
-export function makeTextLLM(text: string): ILLM {
-  return {
-    create: jest.fn().mockImplementation(() => textReplyStream(text)),
-    createNonStream: jest.fn().mockImplementation(() => textReplyStream(text)),
-  };
-}
-
-export function makeRootLLM(finalReply: string): ILLM {
-  return {
-    create: jest
-      .fn()
-      .mockImplementationOnce(() => createSubAgentStream())
-      .mockImplementation(() => textReplyStream(finalReply)),
-    createNonStream: jest.fn(),
-  };
-}
-
 // eslint-disable-next-line @typescript-eslint/require-await -- async generator fixture, not awaiting I/O
 export async function* writeNoteToolCallStream() {
   yield {
@@ -148,17 +130,6 @@ export async function* writeNoteToolCallStream() {
     },
     usage: getEmptyUsage(),
     finish_reason: 'tool_calls',
-  };
-}
-
-/** First create() requests write_note; later calls stream `finalReply`. */
-export function makeApprovalThenTextLLM(finalReply: string): ILLM {
-  return {
-    create: jest
-      .fn()
-      .mockImplementationOnce(() => writeNoteToolCallStream())
-      .mockImplementation(() => textReplyStream(finalReply)),
-    createNonStream: jest.fn(),
   };
 }
 

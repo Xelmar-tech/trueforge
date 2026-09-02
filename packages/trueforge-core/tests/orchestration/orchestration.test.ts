@@ -1,3 +1,4 @@
+/** One root thread, no tools: user message in, text reply out. */
 import { EventType } from '../../src/core/events/schema';
 import { AgentThread } from '../../src/core/runtime/AgentThread';
 import { InternalEventType } from '../../src/core/runtime/AgentThread.types';
@@ -10,7 +11,6 @@ const THREAD_ID = 'main';
 const REPLY = 'hello from the mocked model';
 const INSTRUCTION = 'You are running in a test setup.';
 
-/** One root thread, no tools: user message in, text reply out. */
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: THREAD_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: THREAD_ID, content: REPLY },
