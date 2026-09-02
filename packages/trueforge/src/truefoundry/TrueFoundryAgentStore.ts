@@ -1,4 +1,5 @@
 import {
+  AgentNameConflictError,
   type AgentRecord,
   type CreateAgentInput,
   type DeleteAgentInput,
@@ -14,21 +15,7 @@ function asError(value: unknown): Error {
 }
 
 /**
- * Wraps DB agent persistence and keeps ServiceFoundry in sync. Remote work always runs
- * before the local write so a ServiceFoundry/network failure leaves the DB unchanged.
- * The remote agent id is stored on the row as `external_id`.
- *
- * Create — put remote agent, then insert locally with that id; if the insert fails, delete
- * the remote agent; if that cleanup also fails, throw AggregateError (both failures).
- *
- * Update (manifest) — put remote with the new manifest, then patch the local row (and
- * external_id if it changed); if the local write fails, put remote again with the previous
- * manifest; if that restore also fails, throw AggregateError. Non-manifest patches skip SF.
- *
- * Delete — delete remote first (404 counts as already gone), then delete the local row; if
- * remote delete fails, the local row stays.
- *
- *   create:  putRemote → createDB(external_id) | on DB fail → deleteRemote | both fail → AggregateError
+ *   create:  getByName → putRemote → createDB(external_id) | on non-conflict DB fail → deleteRemote
  *   update:  putRemote(new) → updateDB | on DB fail → putRemote(old) | both fail → AggregateError
  *   delete:  deleteRemote(404 ok) → deleteDB
  */
@@ -56,29 +43,30 @@ export class TrueFoundryAgentStore<TTransaction = never> implements IAgentStore<
   }
 
   async createAgent(input: CreateAgentInput, transaction?: TTransaction): Promise<AgentRecord> {
+    // SF PUT upserts by name — skip if local name exists (avoids overwrite/delete of e.g. research→sf-1).
+    const existing = await this.#inner.getAgent({ tenant_id: input.tenant_id, name: input.name }, transaction);
+    if (existing !== undefined) {
+      throw new AgentNameConflictError({ tenant_id: input.tenant_id, name: input.name });
+    }
+
     const { remoteAgentId } = await this.#client.putRemoteAgent({
       accessToken: this.#accessToken,
       ...toPutRemoteAgentPayload({ name: input.name, manifest: input.manifest }),
     });
     try {
-      return await this.#inner.createAgent(
-        {
-          tenant_id: input.tenant_id,
-          name: input.name,
-          manifest: input.manifest,
-          external_id: remoteAgentId,
-        },
-        transaction,
-      );
+      return await this.#inner.createAgent({ ...input, external_id: remoteAgentId }, transaction);
     } catch (error) {
-      try {
-        await this.#client.deleteRemoteAgent({ accessToken: this.#accessToken, remoteAgentId });
-      } catch (cleanupError) {
-        throw new AggregateError(
-          [asError(error), asError(cleanupError)],
-          'createAgent failed and ServiceFoundry cleanup also failed',
-          { cause: cleanupError },
-        );
+      // Race: peer create won the name and owns this remote (1:1) — do not delete it.
+      if (!(error instanceof AgentNameConflictError)) {
+        try {
+          await this.#client.deleteRemoteAgent({ accessToken: this.#accessToken, remoteAgentId });
+        } catch (cleanupError) {
+          throw new AggregateError(
+            [asError(error), asError(cleanupError)],
+            'createAgent failed and ServiceFoundry cleanup also failed',
+            { cause: cleanupError },
+          );
+        }
       }
       throw error;
     }
