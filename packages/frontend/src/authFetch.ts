@@ -2,8 +2,9 @@
  * Browser auth entry points. Login and logout are not SDK methods (cookie session).
  * On any HTTP 401, redirect to OIDC login (session required).
  */
+import { viteBaseUrl } from './viteBaseUrl';
 
-const basePrefix = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+const basePrefix = viteBaseUrl().replace(/\/$/, '');
 
 /** Browser entry for OIDC login (not available as an SDK method). */
 export const AUTH_LOGIN_HREF = `${basePrefix}/api/v1/auth/login`;

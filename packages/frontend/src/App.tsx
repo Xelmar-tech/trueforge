@@ -12,8 +12,9 @@ import { probeSession, type SessionState } from './authSession';
 import { parseAuthErrorReason, shouldShowAuthErrorScreen, stripAuthErrorSearch } from './authStatusSearch';
 import { GetStartedScreen } from './GetStartedScreen';
 import { LogoutButton } from './LogoutButton';
+import { viteBaseUrl } from './viteBaseUrl';
 
-const baseUrl = import.meta.env.BASE_URL || '/';
+const baseUrl = viteBaseUrl();
 const routerBasename = baseUrl === '/' ? '' : baseUrl.replace(/\/$/, '');
 
 /** Shared cookie/OIDC fetch for boot helpers and `<TrueForgeUI server />`. */
