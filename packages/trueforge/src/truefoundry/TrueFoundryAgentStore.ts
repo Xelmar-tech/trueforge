@@ -23,7 +23,7 @@ function asError(value: unknown): Error {
  *
  * Update (manifest) — put remote with the new manifest, then patch the local row (and
  * external_id if it changed); if the local write fails, put remote again with the previous
- * manifest; if that restore also fails, throw AggregateError. Metadata-only updates skip SF.
+ * manifest; if that restore also fails, throw AggregateError. Non-manifest patches skip SF.
  *
  * Delete — delete remote first (404 counts as already gone), then delete the local row; if
  * remote delete fails, the local row stays.
@@ -105,7 +105,6 @@ export class TrueFoundryAgentStore<TTransaction = never> implements IAgentStore<
           tenant_id: input.tenant_id,
           id: input.id,
           manifest: input.manifest,
-          ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
           ...(remoteAgentId === previous.external_id ? {} : { external_id: remoteAgentId }),
         },
         transaction,
