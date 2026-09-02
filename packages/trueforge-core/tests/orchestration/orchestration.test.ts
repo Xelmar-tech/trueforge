@@ -14,7 +14,11 @@ const INSTRUCTION = 'You are running in a test setup.';
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: THREAD_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: THREAD_ID, content: REPLY },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: THREAD_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: THREAD_ID,
+    context: [{ role: 'assistant', content: REPLY }],
+  },
   { type: InternalEventType.AGENT_DONE, thread_id: THREAD_ID, status: 'done' },
 ];
 

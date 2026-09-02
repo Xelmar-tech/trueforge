@@ -19,12 +19,31 @@ const ROOT_FINAL = 'How are you?';
 const INSTRUCTION = 'You are running in a test setup.';
 const CHILD_TASK = 'do the delegated task';
 
+const CREATE_SUB_AGENT_ARGS = JSON.stringify({ name: 'worker', input: CHILD_TASK });
+
 /** Root delegates via create_sub_agent; child result returns to parent; root finishes. */
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: TOOL_CALL_ID,
+            type: 'function',
+            function: { name: 'create_sub_agent', arguments: CREATE_SUB_AGENT_ARGS },
+          },
+        ],
+      },
+    ],
+  },
+  // create_sub_agent tool path yields an empty append before THREAD_CREATED.
+  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID, context: [] },
   {
     type: EventType.THREAD_CREATED,
     title: 'worker',
@@ -32,13 +51,25 @@ const EXPECTED_EVENTS = [
   },
   { type: EventType.MODEL_MESSAGE, thread_id: expect.any(String) },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: expect.any(String), content: CHILD_REPLY },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: expect.any(String) },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: expect.any(String),
+    context: [{ role: 'assistant', content: CHILD_REPLY }],
+  },
   { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: TOOL_CALL_ID },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [{ role: 'tool', tool_call_id: TOOL_CALL_ID, content: CHILD_REPLY }],
+  },
   { type: InternalEventType.AGENT_DONE, thread_id: expect.any(String), status: 'done' },
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID, content: ROOT_FINAL },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [{ role: 'assistant', content: ROOT_FINAL }],
+  },
   { type: InternalEventType.AGENT_DONE, thread_id: ROOT_ID, status: 'done' },
 ];
 
@@ -67,7 +98,7 @@ const EXPECTED_ROOT_LLM_INPUT = [
             type: 'function',
             function: {
               name: 'create_sub_agent',
-              arguments: JSON.stringify({ name: 'worker', input: CHILD_TASK }),
+              arguments: CREATE_SUB_AGENT_ARGS,
             },
           },
         ],

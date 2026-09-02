@@ -32,7 +32,23 @@ const WRITE_NOTE_TOOLS = [
 const EXPECTED_TURN_1_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [
+      {
+        role: 'assistant',
+        content: null,
+        tool_calls: [
+          {
+            id: WRITE_NOTE_CALL_ID,
+            type: 'function',
+            function: { name: WRITE_NOTE_TOOL_NAME, arguments: WRITE_NOTE_ARGUMENTS },
+          },
+        ],
+      },
+    ],
+  },
   {
     type: EventType.TOOL_APPROVAL_REQUIRED,
     thread_id: ROOT_ID,
@@ -63,10 +79,18 @@ const EXPECTED_TURN_1_INPUT = [
 
 const EXPECTED_TURN_2_EVENTS = [
   { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: WRITE_NOTE_CALL_ID },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [{ role: 'tool', tool_call_id: WRITE_NOTE_CALL_ID, content: WRITE_NOTE_RESULT }],
+  },
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID, content: ROOT_FINAL },
-  { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
+  {
+    type: InternalEventType.AGENT_CONTEXT_APPEND,
+    thread_id: ROOT_ID,
+    context: [{ role: 'assistant', content: ROOT_FINAL }],
+  },
   { type: InternalEventType.AGENT_DONE, thread_id: ROOT_ID, status: 'done' },
 ];
 
