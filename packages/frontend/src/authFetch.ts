@@ -3,11 +3,13 @@
  * On any HTTP 401, redirect to OIDC login (session required).
  */
 
+const basePrefix = (import.meta.env?.BASE_URL ?? '/').replace(/\/$/, '');
+
 /** Browser entry for OIDC login (not available as an SDK method). */
-export const AUTH_LOGIN_HREF = '/api/v1/auth/login';
+export const AUTH_LOGIN_HREF = `${basePrefix}/api/v1/auth/login`;
 
 /** Clears the local session cookie (not available as an SDK method). */
-export const AUTH_LOGOUT_HREF = '/api/v1/auth/logout';
+export const AUTH_LOGOUT_HREF = `${basePrefix}/api/v1/auth/logout`;
 
 export function createAuthAwareFetch(baseFetch: typeof fetch = globalThis.fetch.bind(globalThis)): typeof fetch {
   let redirecting = false;

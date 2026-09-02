@@ -13,9 +13,12 @@ import { parseAuthErrorReason, shouldShowAuthErrorScreen, stripAuthErrorSearch }
 import { GetStartedScreen } from './GetStartedScreen';
 import { LogoutButton } from './LogoutButton';
 
+const baseUrl = import.meta.env?.BASE_URL ?? '/';
+const routerBasename = baseUrl === '/' ? '' : baseUrl.replace(/\/$/, '');
+
 /** Shared cookie/OIDC fetch for boot helpers and `<TrueForgeUI server />`. */
 const authAwareFetch = createAuthAwareFetch();
-const bootClient = createTrueForgeClient({ fetch: authAwareFetch });
+const bootClient = createTrueForgeClient({ baseUrl, fetch: authAwareFetch });
 
 type BootState =
   | { status: 'loading' }
@@ -161,9 +164,10 @@ export function App() {
   return (
     <div className="app-root">
       <TrueForgeUI
-        server={{ type: 'trueforge', baseUrl: '/', fetch: authAwareFetch }}
+        server={{ type: 'trueforge', baseUrl, fetch: authAwareFetch }}
         layout="sidebar"
         withRouter
+        {...(routerBasename === '' ? {} : { routes: { basename: routerBasename } })}
         agentConfig={{
           mode: 'AgentLibraryWithComposer',
           defaultAgentSpec: boot.defaultAgentSpec,

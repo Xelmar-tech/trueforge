@@ -16,6 +16,10 @@ if (!Number.isInteger(PORT)) {
   throw new Error(`FRONTEND_PORT must be an integer, got "${process.env.FRONTEND_PORT}"`);
 }
 
+/** Subpath mount, e.g. `/trueforge/`. Default `/`. */
+const BASE = process.env.VITE_BASE_PATH || '/';
+const BASE_PREFIX = BASE === '/' ? '' : BASE.replace(/\/$/, '');
+
 const apiProxy: ProxyOptions = {
   target: SERVER,
   changeOrigin: true,
@@ -28,9 +32,11 @@ const apiProxy: ProxyOptions = {
       }
     });
   },
+  ...(BASE_PREFIX === '' ? {} : { rewrite: (p: string) => p.slice(BASE_PREFIX.length) }),
 };
 
 export default defineConfig({
+  base: BASE,
   plugins: [
     react(),
     monacoEditorPlugin({
@@ -61,8 +67,8 @@ export default defineConfig({
     strictPort: true,
     // Proxy both public SDK routes and internal UI-only routes to the Harness.
     proxy: {
-      '/api': apiProxy,
-      '/internal': apiProxy,
+      [`${BASE_PREFIX}/api`]: apiProxy,
+      [`${BASE_PREFIX}/internal`]: apiProxy,
     },
   },
 });

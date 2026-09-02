@@ -5,7 +5,7 @@
 import { TrueForge as TrueForgeClient, type TrueForge } from '@truefoundry/trueforge-sdk';
 import { AUTH_LOGOUT_HREF, createAuthAwareFetch } from './authFetch';
 
-const DEFAULT_BASE_URL = '/';
+const DEFAULT_BASE_URL = import.meta.env?.BASE_URL ?? '/';
 
 /** Authenticated API client — 401 redirects to OIDC login. */
 const authClient = new TrueForgeClient({
