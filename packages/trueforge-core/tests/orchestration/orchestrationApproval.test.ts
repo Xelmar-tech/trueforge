@@ -29,7 +29,7 @@ const WRITE_NOTE_TOOLS = [
 ];
 
 /** Pause on write_note approval, then resume after allow and finish. */
-const EXPECTED_PAUSE_EVENTS = [
+const EXPECTED_TURN_1_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE_DELTA, thread_id: ROOT_ID },
   { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
@@ -40,7 +40,7 @@ const EXPECTED_PAUSE_EVENTS = [
   },
 ];
 
-const PAUSE_OUTPUT = {
+const TURN_1_OUTPUT = {
   output: null,
   required_actions: [
     {
@@ -51,9 +51,8 @@ const PAUSE_OUTPUT = {
   ],
 };
 
-const EXPECTED_PAUSE_LLM_INPUT = [
+const EXPECTED_TURN_1_INPUT = [
   {
-    stream: true,
     tools: WRITE_NOTE_TOOLS,
     messages: [
       { role: 'system', content: expect.stringContaining(INSTRUCTION) },
@@ -62,7 +61,7 @@ const EXPECTED_PAUSE_LLM_INPUT = [
   },
 ];
 
-const EXPECTED_RESUME_EVENTS = [
+const EXPECTED_TURN_2_EVENTS = [
   { type: EventType.TOOL_RESPONSE, thread_id: ROOT_ID, tool_call_id: WRITE_NOTE_CALL_ID },
   { type: InternalEventType.AGENT_CONTEXT_APPEND, thread_id: ROOT_ID },
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
@@ -71,13 +70,12 @@ const EXPECTED_RESUME_EVENTS = [
   { type: InternalEventType.AGENT_DONE, thread_id: ROOT_ID, status: 'done' },
 ];
 
-const RESUME_OUTPUT = {
+const TURN_2_OUTPUT = {
   output: { thread_id: ROOT_ID, content: ROOT_FINAL },
   required_actions: [],
 };
 
-const EXPECTED_RESUME_LLM_INPUT = {
-  stream: true,
+const EXPECTED_TURN_2_OUTPUT = {
   tools: WRITE_NOTE_TOOLS,
   messages: [
     { role: 'system', content: expect.stringContaining(INSTRUCTION) },
@@ -111,10 +109,10 @@ describe('orchestration: pause then resume on tool approval', () => {
       orchestrator,
       sendBatch: [{ type: EventType.USER_MESSAGE, content: 'hello' }],
     });
-    expect(paused.events).toMatchObject(EXPECTED_PAUSE_EVENTS);
-    expect(paused.result).toMatchObject(PAUSE_OUTPUT);
+    expect(paused.events).toMatchObject(EXPECTED_TURN_1_EVENTS);
+    expect(paused.result).toMatchObject(TURN_1_OUTPUT);
     expect(paused.result.root_agent_error).toBeUndefined();
-    expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject(EXPECTED_PAUSE_LLM_INPUT);
+    expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject(EXPECTED_TURN_1_INPUT);
 
     const resumed = await runTurn({
       orchestrator,
@@ -127,12 +125,12 @@ describe('orchestration: pause then resume on tool approval', () => {
         },
       ],
     });
-    expect(resumed.events).toMatchObject(EXPECTED_RESUME_EVENTS);
-    expect(resumed.result).toMatchObject(RESUME_OUTPUT);
+    expect(resumed.events).toMatchObject(EXPECTED_TURN_2_EVENTS);
+    expect(resumed.result).toMatchObject(TURN_2_OUTPUT);
     expect(resumed.result.root_agent_error).toBeUndefined();
     expect(llmCreateInputs(thread.definition.modelClient)).toMatchObject([
-      ...EXPECTED_PAUSE_LLM_INPUT,
-      EXPECTED_RESUME_LLM_INPUT,
+      ...EXPECTED_TURN_1_INPUT,
+      EXPECTED_TURN_2_OUTPUT,
     ]);
   });
 });

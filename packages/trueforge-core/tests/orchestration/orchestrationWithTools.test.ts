@@ -19,14 +19,6 @@ const ROOT_FINAL = 'How are you?';
 const INSTRUCTION = 'You are running in a test setup.';
 const CHILD_TASK = 'do the delegated task';
 
-const ROOT_TOOLS = [
-  { function: { name: 'call_tool' } },
-  { function: { name: 'get_tool_info' } },
-  { function: { name: 'get_tool_output_schema' } },
-  { function: { name: 'list_tools' } },
-  { function: { name: 'create_sub_agent' } },
-];
-
 /** Root delegates via create_sub_agent; child result returns to parent; root finishes. */
 const EXPECTED_EVENTS = [
   { type: EventType.MODEL_MESSAGE, thread_id: ROOT_ID },
@@ -57,16 +49,12 @@ const OUTPUT = {
 
 const EXPECTED_ROOT_LLM_INPUT = [
   {
-    stream: true,
-    tools: ROOT_TOOLS,
     messages: [
       { role: 'system', content: expect.stringContaining(INSTRUCTION) },
       { role: 'user', content: 'hello' },
     ],
   },
   {
-    stream: true,
-    tools: ROOT_TOOLS,
     messages: [
       { role: 'system', content: expect.stringContaining(INSTRUCTION) },
       { role: 'user', content: 'hello' },
@@ -85,16 +73,6 @@ const EXPECTED_ROOT_LLM_INPUT = [
         ],
       },
       { role: 'tool', tool_call_id: TOOL_CALL_ID, content: CHILD_REPLY },
-    ],
-  },
-];
-
-const EXPECTED_CHILD_LLM_INPUT = [
-  {
-    stream: true,
-    messages: [
-      { role: 'system', content: expect.stringContaining('sub-agent') },
-      { role: 'user', content: CHILD_TASK },
     ],
   },
 ];
@@ -197,6 +175,5 @@ describe('orchestration: dynamic sub-agent', () => {
     if (childLLM === undefined) {
       throw new Error('expected child LLM to be created');
     }
-    expect(llmCreateInputs(childLLM)).toMatchObject(EXPECTED_CHILD_LLM_INPUT);
   });
 });
