@@ -1,5 +1,5 @@
 import type { AgentDefinition, CreateDynamicSubAgentThread } from '../../src/core';
-import { DynamicSubAgents } from '../../src/core/capabilities/builtins/DynamicSubAgents';
+import { dynamicSubAgents } from '../../src/core/capabilities/builtins/DynamicSubAgents';
 import { EventType } from '../../src/core/events/schema';
 import type { ILLM } from '../../src/core/llm/ILLM';
 import { AgentThread } from '../../src/core/runtime/AgentThread';
@@ -127,7 +127,7 @@ describe('orchestration: dynamic sub-agent', () => {
         modelParams: undefined,
         responseFormat: undefined,
         iterationLimit: undefined,
-        toolSets: [new DynamicSubAgents({ tracing: NOOP_AGENT_TRACING })],
+        toolSets: undefined,
       },
       threadId: ROOT_ID,
       title: 'orchestration-with-tools',
@@ -138,7 +138,7 @@ describe('orchestration: dynamic sub-agent', () => {
       currentContextUsage: undefined,
       preComputedCompletion: undefined,
       sandbox: undefined,
-      capabilities: undefined,
+      capabilities: [dynamicSubAgents({ sandboxAvailable: false, tracing: NOOP_AGENT_TRACING })],
       capabilityState: undefined,
       // Default
       tracing: NOOP_AGENT_TRACING,

@@ -20,13 +20,7 @@ const ROOT_ID = 'thread_root';
 const ROOT_FINAL = 'note saved';
 const INSTRUCTION = 'You are running in a test setup.';
 
-const WRITE_NOTE_TOOLS = [
-  { function: { name: 'call_tool' } },
-  { function: { name: 'get_tool_info' } },
-  { function: { name: 'get_tool_output_schema' } },
-  { function: { name: 'list_tools' } },
-  { function: { name: WRITE_NOTE_TOOL_NAME } },
-];
+const WRITE_NOTE_TOOLS = [{ function: { name: WRITE_NOTE_TOOL_NAME } }];
 
 /** Pause on write_note approval, then resume after allow and finish. */
 const EXPECTED_TURN_1_EVENTS = [
@@ -135,7 +129,7 @@ describe('orchestration: pause then resume on tool approval', () => {
         modelParams: undefined,
         responseFormat: undefined,
         iterationLimit: undefined,
-        toolSets: [makeApprovalGatedWriteNoteToolSet()],
+        toolSets: undefined,
       },
       threadId: ROOT_ID,
       title: 'orchestration-approval',
@@ -145,7 +139,18 @@ describe('orchestration: pause then resume on tool approval', () => {
       currentContextUsage: undefined,
       preComputedCompletion: undefined,
       sandbox: undefined,
-      capabilities: undefined,
+      capabilities: [
+        {
+          systemToolSets: [makeApprovalGatedWriteNoteToolSet()],
+          preSendProcessors: undefined,
+          preLLMProcessors: undefined,
+          preLLMEphemeralProcessors: undefined,
+          postToolCallProcessors: undefined,
+          toolResponseProcessors: undefined,
+          instructionBuilders: undefined,
+          // state: {key: string, load(state: JsonValue): void}
+        },
+      ],
       capabilityState: undefined,
       tracing: NOOP_AGENT_TRACING,
       logger: makeSilentLogger(),

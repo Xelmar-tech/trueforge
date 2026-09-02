@@ -50,7 +50,7 @@ describe('orchestration: mocked LLM and no tools', () => {
         modelParams: undefined,
         responseFormat: undefined,
         iterationLimit: undefined,
-        toolSets: [],
+        toolSets: undefined,
       },
       threadId: THREAD_ID,
       title: 'orchestration',
