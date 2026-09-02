@@ -17,6 +17,7 @@ import {
   type RouteHandler as RequestReplyRouteHandler,
   type RequestReplyRouter,
 } from '@truefoundry/trueforge-core/request-reply';
+import type { Context } from 'hono';
 import type { RedisClientType } from 'redis';
 import type { Logger } from 'winston';
 import { z } from 'zod';
@@ -66,6 +67,7 @@ export function toWireSession(record: SessionRecord): Session {
     created_at: record.created_at.toISOString(),
     updated_at: record.updated_at.toISOString(),
     metrics: record.metrics,
+    metadata: record.metadata,
   };
 }
 
@@ -73,7 +75,7 @@ export interface SessionsRouterDeps {
   sessions: Sessions;
   sessionStore: ISessionStore;
   activeTurns: ActiveTurnRegistry;
-  modelProviderStore: IModelProviderStore;
+  resolveModelProviderStore: (c: Context) => IModelProviderStore;
   mcpServerStore: IMcpServerStore;
   skillStore: ISkillStore;
   agentStore: IAgentStore;
@@ -222,7 +224,7 @@ function checkSessionAccess({ userRef, createdBy }: { userRef: string; createdBy
 type InternalSessionsRouterDeps = Pick<
   SessionsRouterDeps,
   | 'sessions'
-  | 'modelProviderStore'
+  | 'resolveModelProviderStore'
   | 'mcpServerStore'
   | 'skillStore'
   | 'agentStore'
@@ -259,7 +261,7 @@ function createGetOrCreateSessionByExternalIdHandler(
       await validateAgentSpec({
         spec: body.agent.spec,
         tenant_id: TENANT_ID,
-        modelProviderStore: deps.modelProviderStore,
+        modelProviderStore: deps.resolveModelProviderStore(c),
         mcpServerStore: deps.mcpServerStore,
         skillStore: deps.skillStore,
         sandboxProviderStore: deps.sandboxProviderStore,
@@ -304,6 +306,7 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
         session_id: sessionId,
         created_by: user.userRef,
         agent: { type: 'reference', id: agent.id, name: agent.name },
+        metadata: body.metadata,
         external_id: null,
       });
       return c.json({ data: toWireSession(session.record) }, 201);
@@ -312,7 +315,7 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
     await validateAgentSpec({
       spec: body.agent.spec,
       tenant_id: TENANT_ID,
-      modelProviderStore: deps.modelProviderStore,
+      modelProviderStore: deps.resolveModelProviderStore(c),
       mcpServerStore: deps.mcpServerStore,
       skillStore: deps.skillStore,
       sandboxProviderStore: deps.sandboxProviderStore,
@@ -323,6 +326,7 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
       session_id: sessionId,
       created_by: user.userRef,
       agent: { type: 'inline', spec: body.agent.spec },
+      metadata: body.metadata,
       external_id: null,
     });
     return c.json({ data: toWireSession(session.record) }, 201);
@@ -370,7 +374,7 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
       await validateAgentSpec({
         spec: body.agent.spec,
         tenant_id: TENANT_ID,
-        modelProviderStore: deps.modelProviderStore,
+        modelProviderStore: deps.resolveModelProviderStore(c),
         mcpServerStore: deps.mcpServerStore,
         skillStore: deps.skillStore,
         sandboxProviderStore: deps.sandboxProviderStore,
@@ -382,6 +386,7 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
         session_id: sessionId,
         agent: body.agent === undefined ? undefined : { type: 'inline', spec: body.agent.spec },
         title: undefined,
+        metadata: body.metadata,
       });
     } catch (error) {
       if (error instanceof SessionStoreNotFoundError) {

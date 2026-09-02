@@ -40,7 +40,7 @@ describe('public CRUD after session deletion', () => {
         sessions,
         sessionStore,
         activeTurns,
-        modelProviderStore,
+        resolveModelProviderStore: () => modelProviderStore,
         mcpServerStore,
         skillStore,
         agentStore,
@@ -57,7 +57,7 @@ describe('public CRUD after session deletion', () => {
         sessions,
         sessionStore,
         activeTurns,
-        modelProviderStore,
+        resolveModelProviderStore: () => modelProviderStore,
         mcpServerStore,
         tokenStore,
         skillStore,
@@ -81,6 +81,7 @@ describe('public CRUD after session deletion', () => {
         }),
       },
       custom: null,
+      metadata: {},
       external_id: null,
     });
     expect((await app.request('/s1', { method: 'DELETE' })).status).toBe(204);
