@@ -88,12 +88,13 @@ export class MetricsClient {
     }
 
     /**
-     * Return one chart for the caller's sessions on a named agent over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.
+     * Return one chart for an agent the caller manages over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.
      *
      * @param {TrueForge.internal.GetChartDataMetricsRequest} request
      * @param {MetricsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link TrueForge.BadRequestError}
+     * @throws {@link TrueForge.NotFoundError}
      * @throws {@link errors.TrueForgeError}
      * @throws {@link errors.TrueForgeTimeoutError}
      *
@@ -179,6 +180,17 @@ export class MetricsClient {
                         }),
                         _response.rawResponse,
                     );
+                case 404:
+                    throw new TrueForge.NotFoundError(
+                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            skipValidation: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
                 default:
                     throw new errors.TrueForgeError({
                         statusCode: _response.error.statusCode,
@@ -197,12 +209,13 @@ export class MetricsClient {
     }
 
     /**
-     * Aggregate the caller's session meters for a named agent over an inclusive creation-time window.
+     * Aggregate session meters for an agent the caller manages over an inclusive creation-time window.
      *
      * @param {TrueForge.internal.GetMetersMetricsRequest} request
      * @param {MetricsClient.RequestOptions} requestOptions - Request-specific configuration.
      *
      * @throws {@link TrueForge.BadRequestError}
+     * @throws {@link TrueForge.NotFoundError}
      * @throws {@link errors.TrueForgeError}
      * @throws {@link errors.TrueForgeTimeoutError}
      *
@@ -272,6 +285,17 @@ export class MetricsClient {
             switch (_response.error.statusCode) {
                 case 400:
                     throw new TrueForge.BadRequestError(
+                        serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
+                            unrecognizedObjectKeys: "passthrough",
+                            allowUnrecognizedUnionMembers: true,
+                            allowUnrecognizedEnumValues: true,
+                            skipValidation: true,
+                            breadcrumbsPrefix: ["response"],
+                        }),
+                        _response.rawResponse,
+                    );
+                case 404:
+                    throw new TrueForge.NotFoundError(
                         serializers.RequestErrorResponse.parseOrThrow(_response.error.body, {
                             unrecognizedObjectKeys: "passthrough",
                             allowUnrecognizedUnionMembers: true,

@@ -2569,7 +2569,7 @@ await client.internal.metrics.listCharts();
 <dl>
 <dd>
 
-Return one chart for the caller's sessions on a named agent over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.
+Return one chart for an agent the caller manages over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.
 </dd>
 </dl>
 </dd>
@@ -2637,7 +2637,7 @@ await client.internal.metrics.getChartData({
 <dl>
 <dd>
 
-Aggregate the caller's session meters for a named agent over an inclusive creation-time window.
+Aggregate session meters for an agent the caller manages over an inclusive creation-time window.
 </dd>
 </dl>
 </dd>
