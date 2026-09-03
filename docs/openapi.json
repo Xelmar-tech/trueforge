@@ -4915,7 +4915,7 @@
     },
     "/api/internal/metrics/charts-data": {
       "get": {
-        "description": "Return one chart for the caller's sessions on a named agent over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.",
+        "description": "Return one chart for an agent the caller manages over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.",
         "parameters": [
           {
             "description": "Named agent identifier.",
@@ -4981,6 +4981,16 @@
               }
             },
             "description": "Invalid timestamps or a window longer than 30 days."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Agent not found or not manageable by the caller."
           }
         },
         "summary": "Get session metrics chart data",
@@ -4996,7 +5006,7 @@
     },
     "/api/internal/metrics/meters": {
       "get": {
-        "description": "Aggregate the caller's session meters for a named agent over an inclusive creation-time window.",
+        "description": "Aggregate session meters for an agent the caller manages over an inclusive creation-time window.",
         "parameters": [
           {
             "description": "Named agent identifier.",
@@ -5053,6 +5063,16 @@
               }
             },
             "description": "Invalid timestamps or a window longer than 30 days."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Agent not found or not manageable by the caller."
           }
         },
         "summary": "Get session metrics meters",
@@ -5287,6 +5307,16 @@
               }
             },
             "description": "OIDC is configured and the request has no valid session cookie."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Agent not found or not manageable by the caller."
           }
         },
         "summary": "Delete an agent",
@@ -6301,7 +6331,17 @@
                 }
               }
             },
-            "description": "Unknown agent or invalid cron."
+            "description": "Invalid cron."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Agent not found or not readable by the caller."
           },
           "409": {
             "content": {
