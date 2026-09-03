@@ -1,5 +1,5 @@
 import type { SessionHandle, Sessions, TurnInputItem } from '@truefoundry/trueforge-core/agent-session';
-import type { TrueForge } from '@truefoundry/trueforge-sdk';
+import { TrueForge } from '@truefoundry/trueforge-sdk';
 import type { Logger } from 'winston';
 import type { IAgentStore } from '../db/agentStore';
 import {
@@ -34,8 +34,6 @@ const SCHEDULE_DISPATCH_INTERVAL_MS = 60_000;
 /** The loop's name. */
 const SCHEDULE_DISPATCH_LOOP_NAME = 'schedule-dispatch';
 
-type ScheduleRunApiClient = Pick<TrueForge, 'sessions' | 'internal'>;
-
 /** Schedule's bound agent name is missing from the agent store. */
 export class ScheduleAgentNotFoundError extends Error {
   readonly agent_name: string;
@@ -54,8 +52,19 @@ export class ScheduleAgentNotFoundError extends Error {
  *
  * This call is hence idempotent.
  */
-function executeScheduledRun(client: ScheduleRunApiClient): (item: ScheduleDispatchItem) => Promise<void> {
+function executeScheduledRun(input: {
+  baseUrl: string;
+  trueforgeApiKey: string;
+}): (item: ScheduleDispatchItem) => Promise<void> {
   return async ({ run, schedule }) => {
+    const client = new TrueForge({
+      baseUrl: input.baseUrl,
+      auth: { token: input.trueforgeApiKey },
+      headers: {
+        'x-tf-tenant-id': schedule.tenant_id,
+        'x-tf-subject': JSON.stringify(schedule.created_by_subject),
+      },
+    });
     const { data: session } = await client.internal.sessions.getOrCreateByExternalId({
       externalId: run.id,
       agent: { name: schedule.agent_name },
@@ -97,7 +106,7 @@ export async function startScheduleRun(params: {
     startTurn,
   } = params;
 
-  const named = await agentStore.getAgent({ tenant_id: schedule.tenant_id, name: schedule.agent_name });
+  const named = await agentStore.getAgent({ tenant_id: schedule.tenant_id, id: schedule.agent_id });
   if (named === undefined) {
     throw new ScheduleAgentNotFoundError(schedule.agent_name);
   }
@@ -296,18 +305,19 @@ export async function dispatchScheduledRuns<TTransaction>(params: {
 
 export function scheduleDispatchLoop<TTransaction>(params: {
   scheduleStore: IScheduleStore<TTransaction>;
-  client: ScheduleRunApiClient;
+  baseUrl: string;
+  trueforgeApiKey: string;
   logger: Logger;
   withTransaction: WithTransaction<TTransaction>;
 }): ControlLoop {
-  const { scheduleStore, client, withTransaction, logger } = params;
+  const { scheduleStore, baseUrl, trueforgeApiKey, withTransaction, logger } = params;
   return {
     name: SCHEDULE_DISPATCH_LOOP_NAME,
     intervalMs: SCHEDULE_DISPATCH_INTERVAL_MS,
     async tick(signal: AbortSignal): Promise<void> {
       const result = await dispatchScheduledRuns({
         store: scheduleStore,
-        onTriggered: executeScheduledRun(client),
+        onTriggered: executeScheduledRun({ baseUrl, trueforgeApiKey }),
         logger,
         withTransaction,
         signal,

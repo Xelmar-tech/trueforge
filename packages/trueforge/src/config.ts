@@ -468,6 +468,10 @@ export interface SharedServerConfiguration {
    * Env: `TRUEFOUNDRY_MTLS_CERTS_DIR`. Default `/etc/tls/truefoundry`.
    */
   TRUEFOUNDRY_MTLS_CERTS_DIR: string;
+  /** Service credential used for offline scheduled TrueFoundry calls. Env: `TRUEFOUNDRY_API_KEY`. */
+  TRUEFOUNDRY_API_KEY: string | undefined;
+  /** Internal controller-to-server credential. Env: `TRUEFORGE_API_KEY`. */
+  TRUEFORGE_API_KEY: string | undefined;
 }
 
 export type StandaloneServerConfiguration = SharedServerConfiguration & {
@@ -636,6 +640,8 @@ const shared: SharedServerConfiguration = {
   }),
   TRUEFOUNDRY_MTLS_CERTS_DIR:
     getEnv('TRUEFOUNDRY_MTLS_CERTS_DIR', { defaultValue: '/etc/tls/truefoundry' }) ?? '/etc/tls/truefoundry',
+  TRUEFOUNDRY_API_KEY: getEnv('TRUEFOUNDRY_API_KEY', { required: false }),
+  TRUEFORGE_API_KEY: getEnv('TRUEFORGE_API_KEY', { required: false }),
 };
 
 const configuration: ServerConfiguration = standalone
@@ -683,6 +689,14 @@ export function isTrueFoundryModeEnabled(
   config: ServerConfiguration = configuration,
 ): config is ServerConfiguration & { TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL: string } {
   return config.TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL !== undefined;
+}
+
+/** Controller → API auth. Required whenever the schedule dispatcher runs. */
+export function requireTrueforgeApiKey(config: ServerConfiguration = configuration): string {
+  if (config.TRUEFORGE_API_KEY === undefined || config.TRUEFORGE_API_KEY === '') {
+    throw new Error('TRUEFORGE_API_KEY is required');
+  }
+  return config.TRUEFORGE_API_KEY;
 }
 
 // TrueFoundry mode authenticates each caller with their own gateway token, so browser SSO must be

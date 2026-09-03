@@ -37,6 +37,7 @@ function toScheduleRecord(row: Selectable<ScheduleTable>): ScheduleRecord {
   return {
     id: row.id,
     tenant_id: row.tenant_id,
+    agent_id: row.agent_id,
     agent_name: row.agent_name,
     name: row.name,
     manifest: parseStoredScheduleManifest(row.manifest),
@@ -140,6 +141,7 @@ export class PostgresScheduleStore implements IScheduleStore<Transaction<Databas
         .values({
           id: newId(),
           tenant_id: input.tenant_id,
+          agent_id: input.agent_id,
           agent_name: input.agent_name,
           name: input.name,
           manifest: json(input.manifest),
@@ -228,9 +230,16 @@ export class PostgresScheduleStore implements IScheduleStore<Transaction<Databas
     if (input.agent_names !== undefined) {
       query = query.where('agent_name', 'in', [...input.agent_names]);
     }
-    if (input.created_by_subject_id !== undefined) {
-      query = query.where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id);
-    }
+    query = query.where(eb => {
+      const owned = eb(sql<string>`created_by_subject->>'subject_id'`, '=', input.owner_subject_id);
+      if (input.accessible_agent_ids === undefined) {
+        return eb.or([owned, eb('agent_id', 'is not', null)]);
+      }
+      if (input.accessible_agent_ids.length === 0) {
+        return owned;
+      }
+      return eb.or([owned, eb('agent_id', 'in', [...input.accessible_agent_ids])]);
+    });
     const rows = await query
       .orderBy('created_at', 'desc')
       .orderBy('id')

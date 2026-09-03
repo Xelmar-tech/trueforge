@@ -273,10 +273,11 @@ export class InMemorySessionStore<
       ) {
         continue;
       }
-      if (
-        input.created_by_subject_id !== undefined &&
-        stored.record.created_by_subject.subject_id !== input.created_by_subject_id
-      ) {
+      const owned = stored.record.created_by_subject.subject_id === input.owner_subject_id;
+      const accessibleByAgent =
+        stored.record.agent.type === 'reference' &&
+        (input.accessible_agent_ids === undefined || input.accessible_agent_ids.includes(stored.record.agent.id));
+      if (!owned && !accessibleByAgent) {
         continue;
       }
       const createdAt = stored.record.created_at.getTime();

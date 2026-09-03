@@ -1,4 +1,3 @@
-import { TrueForge } from '@truefoundry/trueforge-sdk';
 import type { Logger } from 'winston';
 import { Controller } from './controller/Controller';
 import { scheduleDispatchLoop } from './controller/scheduleDispatch';
@@ -13,13 +12,15 @@ export function createController<TTransaction>(params: {
   withTransaction: WithTransaction<TTransaction>;
   logger: Logger;
   baseUrl: string;
+  trueforgeApiKey: string;
 }): Controller {
-  const { scheduleStore, withTransaction, logger, baseUrl } = params;
+  const { scheduleStore, withTransaction, logger, baseUrl, trueforgeApiKey } = params;
   return new Controller({
     loops: [
       scheduleDispatchLoop({
         scheduleStore,
-        client: new TrueForge({ baseUrl, auth: false }),
+        baseUrl,
+        trueforgeApiKey,
         withTransaction,
         logger,
       }),
@@ -36,6 +37,7 @@ export function runController<TTransaction>(params: {
   withTransaction: WithTransaction<TTransaction>;
   logger: Logger;
   baseUrl: string;
+  trueforgeApiKey: string;
   gracefulTimeoutSeconds: number;
   /** Releases what the caller opened for the loops, e.g. its database pool. */
   onStopped?: () => Promise<void>;

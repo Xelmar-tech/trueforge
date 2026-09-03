@@ -18,7 +18,7 @@ export const getSessionMetricsMetersRoute = createRoute({
   path: '/meters',
   tags: [OpenApiTag.INTERNAL],
   summary: 'Get session metrics meters',
-  description: "Aggregate the caller's session meters for a named agent over an inclusive creation-time window.",
+  description: 'Aggregate session meters for an agent the caller manages over an inclusive creation-time window.',
   'x-fern-sdk-group-name': ['internal', 'metrics'],
   'x-fern-sdk-method-name': 'get_meters',
   request: {
@@ -32,6 +32,10 @@ export const getSessionMetricsMetersRoute = createRoute({
     400: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
       description: 'Invalid timestamps or a window longer than 30 days.',
+    },
+    404: {
+      content: { 'application/json': { schema: RequestErrorResponseSchema } },
+      description: 'Agent not found or not manageable by the caller.',
     },
   },
 });
@@ -58,7 +62,7 @@ export const getSessionMetricsChartsDataRoute = createRoute({
   tags: [OpenApiTag.INTERNAL],
   summary: 'Get session metrics chart data',
   description:
-    "Return one chart for the caller's sessions on a named agent over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.",
+    'Return one chart for an agent the caller manages over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.',
   'x-fern-sdk-group-name': ['internal', 'metrics'],
   'x-fern-sdk-method-name': 'get_chart_data',
   request: {
@@ -72,6 +76,10 @@ export const getSessionMetricsChartsDataRoute = createRoute({
     400: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
       description: 'Invalid timestamps or a window longer than 30 days.',
+    },
+    404: {
+      content: { 'application/json': { schema: RequestErrorResponseSchema } },
+      description: 'Agent not found or not manageable by the caller.',
     },
   },
 });

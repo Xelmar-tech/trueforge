@@ -395,6 +395,8 @@ export interface ScheduleTable {
   /** application-generated (ulid); FK target for schedule_run */
   id: string;
   tenant_id: string;
+  /** Immutable FK to agent.id used for authorization and joins. */
+  agent_id: string;
   /** FK with tenant_id → agent(tenant_id, name). Immutable; agent version resolves at run time. */
   agent_name: string;
   /** Display label; not unique. */

@@ -39,6 +39,7 @@ function scheduleColumns(eb: ExpressionBuilder<Database, 'schedule'>) {
   return [
     'id' as const,
     'tenant_id' as const,
+    'agent_id' as const,
     'agent_name' as const,
     'name' as const,
     jsonText<ScheduleManifest>(eb.ref('manifest')).as('manifest'),
@@ -67,6 +68,7 @@ function runColumns(eb: ExpressionBuilder<Database, 'schedule_run'>) {
 interface ScheduleRow {
   id: string;
   tenant_id: string;
+  agent_id: string;
   agent_name: string;
   name: string;
   manifest: ScheduleManifest;
@@ -146,6 +148,7 @@ export class SqliteScheduleStore implements IScheduleStore<Transaction<Database>
         .values({
           id: newId(),
           tenant_id: input.tenant_id,
+          agent_id: input.agent_id,
           agent_name: input.agent_name,
           name: input.name,
           manifest: jsonbBind(input.manifest),
@@ -275,9 +278,16 @@ export class SqliteScheduleStore implements IScheduleStore<Transaction<Database>
     if (input.agent_names !== undefined) {
       query = query.where('agent_name', 'in', [...input.agent_names]);
     }
-    if (input.created_by_subject_id !== undefined) {
-      query = query.where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id);
-    }
+    query = query.where(eb => {
+      const owned = eb(sql<string>`json_extract(created_by_subject, '$.subject_id')`, '=', input.owner_subject_id);
+      if (input.accessible_agent_ids === undefined) {
+        return eb.or([owned, eb('agent_id', 'is not', null)]);
+      }
+      if (input.accessible_agent_ids.length === 0) {
+        return owned;
+      }
+      return eb.or([owned, eb('agent_id', 'in', [...input.accessible_agent_ids])]);
+    });
     const rows = await query
       .orderBy('created_at', 'desc')
       .orderBy('id')

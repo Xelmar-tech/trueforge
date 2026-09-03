@@ -245,9 +245,16 @@ export async function listSessions(
   if (input.agent_id !== undefined) {
     query = query.where('agent_id', '=', input.agent_id);
   }
-  if (input.created_by_subject_id !== undefined) {
-    query = query.where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id);
-  }
+  query = query.where(eb => {
+    const owned = eb(sql<string>`created_by_subject->>'subject_id'`, '=', input.owner_subject_id);
+    if (input.accessible_agent_ids === undefined) {
+      return eb.or([owned, eb('agent_id', 'is not', null)]);
+    }
+    if (input.accessible_agent_ids.length === 0) {
+      return owned;
+    }
+    return eb.or([owned, eb('agent_id', 'in', [...input.accessible_agent_ids])]);
+  });
   if (input.start_timestamp !== undefined) {
     query = query.where('created_at', '>=', input.start_timestamp);
   }

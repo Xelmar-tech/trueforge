@@ -58,6 +58,12 @@ export interface DeleteAgentInput {
   id: string;
 }
 
+export interface ListAgentsInput {
+  tenant_id: string;
+  /** `undefined` means all tenant agents; `[]` means none. */
+  external_ids: readonly string[] | undefined;
+}
+
 /** Unique `(tenant_id, name)` violation on create. */
 export class AgentNameConflictError extends Error {
   readonly tenant_id: string;
@@ -85,7 +91,7 @@ export class AgentExternalIdConflictError extends Error {
 }
 
 export interface IAgentStore<TTransaction = never> {
-  listAgents(tenantId: string, transaction?: TTransaction): Promise<AgentRecord[]>;
+  listAgents(input: ListAgentsInput, transaction?: TTransaction): Promise<AgentRecord[]>;
   getAgent(input: GetAgentInput, transaction?: TTransaction): Promise<AgentRecord | undefined>;
   /** Inserts a new agent with a generated ULID. Throws AgentNameConflictError or AgentExternalIdConflictError on unique clash. */
   createAgent(input: CreateAgentInput, transaction?: TTransaction): Promise<AgentRecord>;

@@ -38,20 +38,20 @@ export class TrueFoundryAuthenticator implements Authenticator {
     }
 
     const session = await this.#client.getSession(token);
-    const subjectType = mapSubjectType(session.user.subject.subjectType);
+    const subjectType = mapSubjectType(session.identity.subject.type);
     if (subjectType === undefined) {
       throw new HTTPException(502, {
         message: 'TrueFoundry session returned an unsupported subject type',
       });
     }
 
-    const { subject } = session.user;
+    const { subject } = session.identity;
     return {
       tenant_id: session.user.tenantName,
       subject: {
-        id: subject.subjectId,
+        id: subject.id,
         type: subjectType,
-        display_name: subject.subjectDisplayName ?? subject.subjectSlug ?? subject.subjectId,
+        display_name: subject.display_name ?? subject.id,
       },
       is_admin: session.user.roles.includes(TENANT_ADMIN_ROLE),
       user_credential: { authorization: toBearerAuthorization(token) },

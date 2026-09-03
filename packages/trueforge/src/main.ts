@@ -24,9 +24,15 @@ import { setCachedLocalSandboxSupport } from './sandbox/localRuntime';
 let configuration: typeof import('./config').default;
 let isOidcConfigured: typeof import('./config').isOidcConfigured;
 let isTrueFoundryModeEnabled: typeof import('./config').isTrueFoundryModeEnabled;
+let requireTrueforgeApiKey: typeof import('./config').requireTrueforgeApiKey;
 
 try {
-  ({ default: configuration, isOidcConfigured, isTrueFoundryModeEnabled } = await import('./config'));
+  ({
+    default: configuration,
+    isOidcConfigured,
+    isTrueFoundryModeEnabled,
+    requireTrueforgeApiKey,
+  } = await import('./config'));
 } catch (error) {
   console.error(
     'Failed to start server: Failed to load configuration:',
@@ -49,6 +55,8 @@ import type { Logger } from 'winston';
 
 import { createServerApp } from './app';
 import { createAuthenticator, TrueforgeMode } from './auth/createAuthenticator';
+import { TrueFoundryCredentialProvider } from './auth/credentialProvider';
+import { AllowAllExternalAuthorizer, TrueFoundryExternalAuthorizer } from './auth/externalAuthorizer';
 import { resolveRequestContext } from './auth/identity';
 import { initOidc } from './auth/oidc';
 import { rawTokenFromCredential } from './auth/token';
@@ -75,6 +83,10 @@ import type { IOAuthTokenStore } from './mcp/auth/types';
 import { PACKAGE_VERSION } from './packageVersion';
 import { ActiveTurnRegistry } from './runtime/activeTurns';
 import { EventSubscriptionRegistry } from './runtime/event-subscription';
+import {
+  createPersistenceTurnResourceStoresResolver,
+  createTrueFoundryTurnResourceStoresResolver,
+} from './runtime/turnResourceStores';
 import { printStandaloneStartupBanner } from './startupBanner';
 import { TrueFoundryMcpServerStore } from './truefoundry/TrueFoundryMcpServerStore';
 import { TrueFoundryModelProviderStore } from './truefoundry/TrueFoundryModelProviderStore';
@@ -330,19 +342,43 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
   const oidcClient = await initOidc(oidc);
 
   let authenticator;
+  let externalAuthorizer;
+  let resolveTurnResourceStores;
   if (isTrueFoundryModeEnabled(configuration)) {
+    if (configuration.TRUEFOUNDRY_API_KEY === undefined || configuration.TRUEFORGE_API_KEY === undefined) {
+      throw new Error('TrueFoundry mode requires TRUEFOUNDRY_API_KEY and TRUEFORGE_API_KEY');
+    }
+    const trueFoundryClient = new TrueFoundryServiceFoundryServerClient({
+      serviceFoundryServerUrl: configuration.TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL,
+      logger,
+      tls: { enabled: configuration.TRUEFOUNDRY_MTLS_ENABLED, dir: configuration.TRUEFOUNDRY_MTLS_CERTS_DIR },
+      apiKey: configuration.TRUEFOUNDRY_API_KEY,
+    });
     authenticator = createAuthenticator({
       mode: TrueforgeMode.TrueFoundry,
-      trueFoundryClient: new TrueFoundryServiceFoundryServerClient({
-        serviceFoundryServerUrl: configuration.TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL,
-        logger,
-        tls: { enabled: configuration.TRUEFOUNDRY_MTLS_ENABLED, dir: configuration.TRUEFOUNDRY_MTLS_CERTS_DIR },
+      trueFoundryClient,
+    });
+    externalAuthorizer = new TrueFoundryExternalAuthorizer({ client: trueFoundryClient });
+    resolveTurnResourceStores = createTrueFoundryTurnResourceStoresResolver({
+      client: trueFoundryClient,
+      credentialProvider: new TrueFoundryCredentialProvider({
+        client: trueFoundryClient,
       }),
     });
   } else if (isOidcConfigured(configuration)) {
     authenticator = createAuthenticator({ mode: TrueforgeMode.Oidc });
+    externalAuthorizer = new AllowAllExternalAuthorizer();
+    resolveTurnResourceStores = createPersistenceTurnResourceStoresResolver({
+      modelProviderStore: resolveModelProviderStore(),
+      mcpServerStore: resolveMcpServerStore(),
+    });
   } else {
     authenticator = createAuthenticator({ mode: TrueforgeMode.Standalone });
+    externalAuthorizer = new AllowAllExternalAuthorizer();
+    resolveTurnResourceStores = createPersistenceTurnResourceStoresResolver({
+      modelProviderStore: resolveModelProviderStore(),
+      mcpServerStore: resolveMcpServerStore(),
+    });
   }
 
   // Standalone is one process, so it owns the control loops too.
@@ -352,6 +388,7 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
         withTransaction,
         logger,
         baseUrl: `http://localhost:${String(configuration.PORT)}`,
+        trueforgeApiKey: requireTrueforgeApiKey(configuration),
       })
     : undefined;
 
@@ -378,6 +415,8 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
     logger,
     oidcClient,
     authenticator,
+    externalAuthorizer,
+    resolveTurnResourceStores,
   });
 
   return { activeTurns, app, controller, destroyDb, redis, requestReplyRouter };

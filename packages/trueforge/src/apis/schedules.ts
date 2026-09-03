@@ -3,6 +3,7 @@
  */
 import { OpenAPIHono, type RouteHandler } from '@hono/zod-openapi';
 import { InvalidPageTokenError, type Sessions } from '@truefoundry/trueforge-core/agent-session';
+import { resolveInternalAgentIds, type ExternalAuthorizer } from '../auth/externalAuthorizer';
 import { createdBySubjectFromRequestContext, type RequestContext, type ResolveRequestContext } from '../auth/identity';
 import { ScheduleAgentNotFoundError, startScheduleRun } from '../controller/scheduleDispatch';
 import type { IAgentStore } from '../db/agentStore';
@@ -25,6 +26,7 @@ import {
   putScheduleRoute,
 } from '../routes/scheduleRoutes';
 import { minIntervalSeconds, nextTriggerAfter } from '../runtime/cron';
+import type { ResolveTurnResourceStores } from '../runtime/turnResourceStores';
 import {
   InvalidCronError,
   SCHEDULE_MIN_INTERVAL_SECONDS,
@@ -38,9 +40,11 @@ export interface SchedulesRouterDeps<TTransaction> {
   scheduleStore: IScheduleStore<TTransaction>;
   agentStore: IAgentStore<TTransaction>;
   sessions: Sessions;
-  turnDeps: BeginTurnExecutionDeps;
+  turnDeps: Omit<BeginTurnExecutionDeps, 'modelProviderStore' | 'mcpServerStore'>;
+  resolveTurnResourceStores: ResolveTurnResourceStores;
   withTransaction: WithTransaction<TTransaction>;
   resolveRequestContext: ResolveRequestContext;
+  externalAuthorizer: ExternalAuthorizer;
 }
 
 function toWireSchedule(record: ScheduleRecord): Schedule {
@@ -114,19 +118,44 @@ function canAccessSchedule(
   return requestContext.is_admin || requestContext.subject.id === created_by_subject_id;
 }
 
+async function canReadSchedule<TTransaction>(
+  deps: Pick<SchedulesRouterDeps<TTransaction>, 'agentStore' | 'externalAuthorizer'>,
+  requestContext: RequestContext,
+  schedule: ScheduleRecord,
+): Promise<boolean> {
+  if (canAccessSchedule(requestContext, schedule.created_by_subject.subject_id)) {
+    return true;
+  }
+  const agent = await deps.agentStore.getAgent({
+    tenant_id: requestContext.tenant_id,
+    id: schedule.agent_id,
+  });
+  return (
+    agent !== undefined && deps.externalAuthorizer.canAccessAgent({ context: requestContext, action: 'manage', agent })
+  );
+}
+
 export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TTransaction>) {
   const listHandler: RouteHandler<typeof listSchedulesRoute> = async c => {
     const { agent_names: agentNames, limit, page_token: pageToken } = c.req.valid('query');
     const requestContext = deps.resolveRequestContext(c);
-    // Admins see every schedule; a regular user is scoped to their own via the
-    // store's `created_by_subject_id` filter (never a client-supplied param).
     try {
+      const access = await deps.externalAuthorizer.listAgentAccess({
+        context: requestContext,
+        action: 'manage',
+      });
+      const accessibleAgentIds = await resolveInternalAgentIds({
+        tenant_id: requestContext.tenant_id,
+        access,
+        agent_store: deps.agentStore,
+      });
       const { data, pagination } = await deps.scheduleStore.listSchedules({
         tenant_id: requestContext.tenant_id,
         limit,
         page_token: pageToken,
         agent_names: agentNames,
-        created_by_subject_id: requestContext.is_admin ? undefined : requestContext.subject.id,
+        owner_subject_id: requestContext.subject.id,
+        accessible_agent_ids: accessibleAgentIds,
       });
       return c.json({ data: data.map(toWireSchedule), pagination }, 200);
     } catch (error) {
@@ -147,7 +176,7 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
     if (schedule === undefined) {
       return c.json({ error: { message: `Schedule not found: ${scheduleId}` } }, 404);
     }
-    if (!canAccessSchedule(requestContext, schedule.created_by_subject.subject_id)) {
+    if (!(await canReadSchedule(deps, requestContext, schedule))) {
       return c.json({ error: { message: FORBIDDEN_SCHEDULE_ACCESS } }, 403);
     }
     const records = await deps.scheduleStore.listRuns({
@@ -171,6 +200,26 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
     if (!canAccessSchedule(requestContext, schedule.created_by_subject.subject_id)) {
       return c.json({ error: { message: FORBIDDEN_SCHEDULE_ACCESS } }, 403);
     }
+    const executionAgent = await deps.agentStore.getAgent({
+      tenant_id: requestContext.tenant_id,
+      id: schedule.agent_id,
+    });
+    if (executionAgent === undefined) {
+      return c.json({ error: { message: `Agent not found: ${schedule.agent_id}` } }, 404);
+    }
+    if (
+      !(await deps.externalAuthorizer.canAccessAgent({
+        context: requestContext,
+        action: 'read',
+        agent: executionAgent,
+      }))
+    ) {
+      return c.json({ error: { message: FORBIDDEN_SCHEDULE_ACCESS } }, 403);
+    }
+    const resourceStores = await deps.resolveTurnResourceStores({
+      context: requestContext,
+      agent: executionAgent,
+    });
 
     const now = new Date();
     let run: ScheduleRunRecord;
@@ -197,7 +246,7 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
         sessions: deps.sessions,
         agentStore: deps.agentStore,
         startTurn: async turnParams => {
-          await startTurnInProcess({ ...turnParams, deps: deps.turnDeps });
+          await startTurnInProcess({ ...turnParams, deps: { ...deps.turnDeps, ...resourceStores } });
         },
       });
     } catch (error) {
@@ -235,7 +284,10 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
       name: body.agent_name,
     });
     if (agent === undefined) {
-      return c.json({ error: { message: `Agent not found: ${body.agent_name}` } }, 400);
+      return c.json({ error: { message: `Agent not found: ${body.agent_name}` } }, 404);
+    }
+    if (!(await deps.externalAuthorizer.canAccessAgent({ context: requestContext, action: 'read', agent }))) {
+      return c.json({ error: { message: `Agent not found: ${body.agent_name}` } }, 404);
     }
 
     let record: ScheduleRecord;
@@ -244,6 +296,7 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
         const { schedule } = await deps.scheduleStore.createScheduleAndRun(
           {
             tenant_id: requestContext.tenant_id,
+            agent_id: agent.id,
             agent_name: agent.name,
             name: body.name,
             manifest: body.manifest,
@@ -277,7 +330,7 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
     if (record === undefined) {
       return c.json({ error: { message: `Schedule not found: ${scheduleId}` } }, 404);
     }
-    if (!canAccessSchedule(requestContext, record.created_by_subject.subject_id)) {
+    if (!(await canReadSchedule(deps, requestContext, record))) {
       return c.json({ error: { message: FORBIDDEN_SCHEDULE_ACCESS } }, 403);
     }
     return c.json({ data: toWireSchedule(record) }, 200);

@@ -64,8 +64,10 @@ export interface ListSessionsInput {
   end_timestamp: Date | undefined;
   /** When set, only sessions bound to this named agent id. */
   agent_id: string | undefined;
-  /** When set, only sessions whose `created_by_subject.subject_id` matches. */
-  created_by_subject_id: string | undefined;
+  /** Caller-owned sessions are always visible. */
+  owner_subject_id: string;
+  /** `undefined` means every reference agent; `[]` means none. */
+  accessible_agent_ids: readonly string[] | undefined;
 }
 
 /** Turn row fields without assembled snapshot (create input / listTurns). */

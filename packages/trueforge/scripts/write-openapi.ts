@@ -14,6 +14,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import winston from 'winston';
 import { buildOpenApiDocument, createServerApp } from '../src/app';
+import { AllowAllExternalAuthorizer } from '../src/auth/externalAuthorizer';
 import { StandaloneAuthenticator } from '../src/auth/standaloneAuthenticator';
 import { McpCatalog } from '../src/catalog/McpCatalog';
 import { ModelCatalog } from '../src/catalog/ModelCatalog';
@@ -32,6 +33,7 @@ import { SqliteSkillStore } from '../src/db/sqlite/skill-store/SqliteSkillStore'
 import { SqliteOAuthTokenStore } from '../src/db/sqlite/token-store/SqliteOAuthTokenStore';
 import { ActiveTurnRegistry } from '../src/runtime/activeTurns';
 import { EventSubscriptionRegistry } from '../src/runtime/event-subscription';
+import { createPersistenceTurnResourceStoresResolver } from '../src/runtime/turnResourceStores';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -60,17 +62,18 @@ function canonicalise(value: unknown): unknown {
 const sessionStore = new InMemorySessionStore();
 const db = createSqliteDb(':memory:');
 const tokenStore = new SqliteOAuthTokenStore(db);
+const modelProviderStore = new SqliteModelProviderStore(db);
+const mcpServerStore = new McpServerWithAuthStore({
+  store: new SqliteMcpServerStore(db),
+  tokenStore,
+  clientName: configuration.MCP_DCR_OAUTH_CLIENT_NAME,
+});
 const app = createServerApp({
   modelCatalog: ModelCatalog.load(),
-  resolveModelProviderStore: () => new SqliteModelProviderStore(db),
+  resolveModelProviderStore: () => modelProviderStore,
   withTransaction: callback => db.transaction().execute(callback),
   mcpCatalog: McpCatalog.load(),
-  resolveMcpServerStore: () =>
-    new McpServerWithAuthStore({
-      store: new SqliteMcpServerStore(db),
-      tokenStore,
-      clientName: configuration.MCP_DCR_OAUTH_CLIENT_NAME,
-    }),
+  resolveMcpServerStore: () => mcpServerStore,
   tokenStore,
   skillCatalog: SkillCatalog.load(),
   skillStore: new SqliteSkillStore(db),
@@ -87,6 +90,11 @@ const app = createServerApp({
   logger: winston.createLogger({ silent: true }),
   oidcClient: undefined,
   authenticator: new StandaloneAuthenticator(),
+  externalAuthorizer: new AllowAllExternalAuthorizer(),
+  resolveTurnResourceStores: createPersistenceTurnResourceStoresResolver({
+    modelProviderStore,
+    mcpServerStore,
+  }),
 });
 
 // Runtime apps only advertise BearerAuth when OIDC is configured. The committed

@@ -51,3 +51,14 @@ export function createdBySubjectFromRequestContext(ctx: RequestContext): Created
     subject_display_name: ctx.subject.display_name,
   };
 }
+
+export function requestSubjectFromCreatedBy(subject: CreatedBySubject): RequestSubject {
+  if (subject.subject_type !== 'user' && subject.subject_type !== 'virtualaccount') {
+    throw new Error(`Unsupported created-by subject type: ${subject.subject_type}`);
+  }
+  return {
+    id: subject.subject_id,
+    type: subject.subject_type,
+    display_name: subject.subject_display_name,
+  };
+}

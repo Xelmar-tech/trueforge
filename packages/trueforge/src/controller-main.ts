@@ -12,7 +12,7 @@
  * each tick until the schema is present. The loops call the server over HTTP at
  * `SERVER_URL`, so no Redis peering is wired here.
  */
-import configuration from './config';
+import configuration, { requireTrueforgeApiKey } from './config';
 import { runController } from './controller';
 import { createDb } from './db/postgres/client';
 import { PostgresScheduleStore } from './db/postgres/schedule-store/PostgresScheduleStore';
@@ -50,6 +50,7 @@ try {
     withTransaction: callback => db.transaction().execute(callback),
     logger,
     baseUrl: configuration.SERVER_URL,
+    trueforgeApiKey: requireTrueforgeApiKey(configuration),
     gracefulTimeoutSeconds: configuration.GRACEFUL_TIMEOUT_SECONDS,
     onStopped: () => db.destroy(),
   });

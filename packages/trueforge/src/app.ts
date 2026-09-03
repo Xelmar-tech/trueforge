@@ -23,7 +23,14 @@ import { createInternalSessionsRouter, createSessionsRouter } from './apis/sessi
 import { createSettingsRouter } from './apis/settings';
 import { createAvailableSkillsRouter } from './apis/skills';
 import { createTurnsRouter } from './apis/turns';
-import { createAdminAuthMiddleware, createAuthMiddleware, type Authenticator } from './auth/authenticator';
+import {
+  createAdminAuthMiddleware,
+  createAuthMiddleware,
+  createControllerAwareAuthMiddleware,
+  createTrustedControllerAuthMiddleware,
+  type Authenticator,
+} from './auth/authenticator';
+import type { ExternalAuthorizer } from './auth/externalAuthorizer';
 import { resolveRequestContext } from './auth/identity';
 import { StandaloneAuthenticator } from './auth/standaloneAuthenticator';
 import type { McpCatalog } from './catalog/McpCatalog';
@@ -44,6 +51,7 @@ import { PACKAGE_VERSION } from './packageVersion';
 import { OPENAPI_DOCUMENT_TAGS } from './routes/openapiTags';
 import type { ActiveTurnRegistry } from './runtime/activeTurns';
 import type { EventSubscriptionRegistry } from './runtime/event-subscription';
+import type { ResolveTurnResourceStores } from './runtime/turnResourceStores';
 import { InvalidCronError } from './schemas/schedule';
 import { zodErrorResponse, zodValidationHook } from './zodErrorResponse';
 
@@ -181,12 +189,22 @@ export interface ServerDeps<TTransaction> {
   oidcClient: Configuration | undefined;
   /** Startup-selected authenticator; middleware is built from this once per app. */
   authenticator: Authenticator;
+  externalAuthorizer: ExternalAuthorizer;
+  resolveTurnResourceStores: ResolveTurnResourceStores;
 }
 
 export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
   const app = new OpenAPIHono({ defaultHook: zodValidationHook });
   const authMiddleware = createAuthMiddleware(deps.authenticator);
   const adminAuthMiddleware = createAdminAuthMiddleware(deps.authenticator);
+  const sessionAuthMiddleware = createControllerAwareAuthMiddleware(
+    deps.authenticator,
+    configuration.TRUEFORGE_API_KEY,
+  );
+  const internalSessionsAuthMiddleware =
+    configuration.TRUEFORGE_API_KEY === undefined
+      ? authMiddleware
+      : createTrustedControllerAuthMiddleware(configuration.TRUEFORGE_API_KEY);
   const authEnabled = !(deps.authenticator instanceof StandaloneAuthenticator);
 
   function withAuth(router: OpenAPIHono): OpenAPIHono {
@@ -199,6 +217,20 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
   function withAdminAuth(router: OpenAPIHono): OpenAPIHono {
     const shell = new OpenAPIHono();
     shell.use('*', adminAuthMiddleware);
+    shell.route('/', router);
+    return shell;
+  }
+
+  function withInternalSessionsAuth(router: OpenAPIHono): OpenAPIHono {
+    const shell = new OpenAPIHono();
+    shell.use('*', internalSessionsAuthMiddleware);
+    shell.route('/', router);
+    return shell;
+  }
+
+  function withSessionAuth(router: OpenAPIHono): OpenAPIHono {
+    const shell = new OpenAPIHono();
+    shell.use('*', sessionAuthMiddleware);
     shell.route('/', router);
     return shell;
   }
@@ -293,6 +325,7 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         sandboxProviderStore: deps.sandboxProviderStore,
         withTransaction: deps.withTransaction,
         resolveRequestContext,
+        externalAuthorizer: deps.externalAuthorizer,
       }),
     ),
   );
@@ -306,8 +339,6 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         turnDeps: {
           activeTurns: deps.activeTurns,
           eventSubscriptions: deps.eventSubscriptions,
-          modelProviderStore: deps.resolveModelProviderStore(),
-          mcpServerStore: deps.resolveMcpServerStore(),
           tokenStore: deps.tokenStore,
           skillStore: deps.skillStore,
           agentStore: deps.agentStore,
@@ -316,6 +347,8 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         },
         withTransaction: deps.withTransaction,
         resolveRequestContext,
+        externalAuthorizer: deps.externalAuthorizer,
+        resolveTurnResourceStores: deps.resolveTurnResourceStores,
       }),
     ),
   );
@@ -336,7 +369,7 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
   );
   app.route(
     '/api/internal/sessions',
-    withAuth(
+    withInternalSessionsAuth(
       createInternalSessionsRouter({
         sessions: deps.sessions,
         resolveModelProviderStore: deps.resolveModelProviderStore,
@@ -345,6 +378,7 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         agentStore: deps.agentStore,
         sandboxProviderStore: deps.sandboxProviderStore,
         resolveRequestContext,
+        externalAuthorizer: deps.externalAuthorizer,
       }),
     ),
   );
@@ -354,12 +388,14 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
       createInternalMetricsRouter({
         sessionMetricsStore: deps.sessionMetricsStore,
         resolveRequestContext,
+        agentStore: deps.agentStore,
+        externalAuthorizer: deps.externalAuthorizer,
       }),
     ),
   );
   app.route(
     '/api/v1/sessions',
-    withAuth(
+    withSessionAuth(
       createSessionsRouter({
         sessions: deps.sessions,
         sessionStore: deps.sessionStore,
@@ -373,18 +409,17 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         requestReplyRouter: deps.requestReplyRouter,
         resolveRequestContext,
         logger: deps.logger,
+        externalAuthorizer: deps.externalAuthorizer,
       }),
     ),
   );
   app.route(
     '/api/v1/sessions',
-    withAuth(
+    withSessionAuth(
       createTurnsRouter({
         sessions: deps.sessions,
         sessionStore: deps.sessionStore,
         activeTurns: deps.activeTurns,
-        resolveModelProviderStore: deps.resolveModelProviderStore,
-        resolveMcpServerStore: deps.resolveMcpServerStore,
         tokenStore: deps.tokenStore,
         skillStore: deps.skillStore,
         agentStore: deps.agentStore,
@@ -392,6 +427,8 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         sandboxProviderStore: deps.sandboxProviderStore,
         logger: deps.logger,
         resolveRequestContext,
+        externalAuthorizer: deps.externalAuthorizer,
+        resolveTurnResourceStores: deps.resolveTurnResourceStores,
       }),
     ),
   );

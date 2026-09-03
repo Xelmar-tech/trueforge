@@ -45,7 +45,9 @@ async function fetchSessionMetricsAggregate(
     ])
     .where('tenant_id', '=', input.tenant_id)
     .where('agent_id', '=', input.agent_id)
-    .where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id)
+    .$if(input.created_by_subject_id !== undefined, qb =>
+      qb.where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id),
+    )
     .where('created_at', '>=', input.start_timestamp)
     .where('created_at', '<=', input.end_timestamp)
     .executeTakeFirstOrThrow();
@@ -83,7 +85,9 @@ async function fetchSessionMetricsBuckets(
     ])
     .where('tenant_id', '=', input.tenant_id)
     .where('agent_id', '=', input.agent_id)
-    .where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id)
+    .$if(input.created_by_subject_id !== undefined, qb =>
+      qb.where(sql`created_by_subject->>'subject_id'`, '=', input.created_by_subject_id),
+    )
     .where('created_at', '>=', input.start_timestamp)
     .where('created_at', '<=', input.end_timestamp)
     .groupBy(sql`1`)
