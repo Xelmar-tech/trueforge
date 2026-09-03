@@ -12,6 +12,7 @@ import type { TurnRecord } from '../models/TurnRecord';
 import type { PersistedTurnEvent, SessionEventItem } from '../schemas/events';
 import type { TokenPagination } from '../schemas/pagination';
 import type { CancellationReason, TerminalTurnState } from '../schemas/turn';
+import type { ListVisibility } from './ListVisibility';
 
 /**
  * Caller-supplied fields for creating a session; the store owns timestamps and tip state.
@@ -64,10 +65,7 @@ export interface ListSessionsInput {
   end_timestamp: Date | undefined;
   /** When set, only sessions bound to this named agent id. */
   agent_id: string | undefined;
-  /** Caller-owned sessions are always visible. */
-  owner_subject_id: string;
-  /** `undefined` means every reference agent; `[]` means none. */
-  accessible_agent_ids: readonly string[] | undefined;
+  visibility: ListVisibility;
 }
 
 /** Turn row fields without assembled snapshot (create input / listTurns). */

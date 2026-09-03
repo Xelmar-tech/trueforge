@@ -157,7 +157,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
     function oidcRequestContext(params: {
       subjectId: string;
       isAdmin: boolean;
-      authorization: string;
+      user_credential: string;
       displayName?: string;
     }) {
       return {
@@ -168,7 +168,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
           display_name: params.displayName ?? params.subjectId,
         },
         is_admin: params.isAdmin,
-        user_credential: { authorization: params.authorization },
+        user_credential: params.user_credential,
       };
     }
 
@@ -232,7 +232,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });
@@ -248,7 +248,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });
@@ -268,7 +268,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'bearer-user',
           isAdmin: true,
-          authorization: `Bearer ${bearerToken}`,
+          user_credential: bearerToken,
         }),
       });
     });
@@ -287,7 +287,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });
@@ -303,7 +303,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });
@@ -319,7 +319,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });
@@ -361,7 +361,7 @@ describe('createAuthMiddleware / createAdminAuthMiddleware', () => {
         user: oidcRequestContext({
           subjectId: 'alice',
           isAdmin: true,
-          authorization: `Bearer ${token}`,
+          user_credential: token,
         }),
       });
     });

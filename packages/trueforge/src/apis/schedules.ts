@@ -3,7 +3,7 @@
  */
 import { OpenAPIHono, type RouteHandler } from '@hono/zod-openapi';
 import { InvalidPageTokenError, type Sessions } from '@truefoundry/trueforge-core/agent-session';
-import { resolveInternalAgentIds, type ExternalAuthorizer } from '../auth/externalAuthorizer';
+import { resolveListVisibility, type ExternalAuthorizer } from '../auth/externalAuthorizer';
 import { createdBySubjectFromRequestContext, type RequestContext, type ResolveRequestContext } from '../auth/identity';
 import { ScheduleAgentNotFoundError, startScheduleRun } from '../controller/scheduleDispatch';
 import type { IAgentStore } from '../db/agentStore';
@@ -140,13 +140,10 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
     const { agent_names: agentNames, limit, page_token: pageToken } = c.req.valid('query');
     const requestContext = deps.resolveRequestContext(c);
     try {
-      const access = await deps.externalAuthorizer.listAgentAccess({
+      const visibility = await resolveListVisibility({
         context: requestContext,
         action: 'manage',
-      });
-      const accessibleAgentIds = await resolveInternalAgentIds({
-        tenant_id: requestContext.tenant_id,
-        access,
+        external_authorizer: deps.externalAuthorizer,
         agent_store: deps.agentStore,
       });
       const { data, pagination } = await deps.scheduleStore.listSchedules({
@@ -154,8 +151,7 @@ export function createSchedulesRouter<TTransaction>(deps: SchedulesRouterDeps<TT
         limit,
         page_token: pageToken,
         agent_names: agentNames,
-        owner_subject_id: requestContext.subject.id,
-        accessible_agent_ids: accessibleAgentIds,
+        visibility,
       });
       return c.json({ data: data.map(toWireSchedule), pagination }, 200);
     } catch (error) {

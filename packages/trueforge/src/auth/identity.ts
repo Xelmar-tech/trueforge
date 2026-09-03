@@ -11,15 +11,12 @@ export interface RequestSubject {
   display_name: string;
 }
 
-export interface UserCredential {
-  authorization: string;
-}
-
 export interface RequestContext {
   tenant_id: string;
   subject: RequestSubject;
   is_admin: boolean;
-  user_credential: UserCredential | null;
+  /** Presented bearer token, or `null` when the caller has no live user credential. */
+  user_credential: string | null;
 }
 
 export const STANDALONE_REQUEST_CONTEXT: RequestContext = {
@@ -27,7 +24,7 @@ export const STANDALONE_REQUEST_CONTEXT: RequestContext = {
   subject: {
     id: 'trueforge-default',
     type: 'user',
-    display_name: 'Admin',
+    display_name: 'trueforge-default',
   },
   is_admin: true,
   user_credential: null,

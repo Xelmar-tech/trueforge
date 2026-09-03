@@ -1,3 +1,4 @@
+import type { ListVisibility } from '@truefoundry/trueforge-core/agent-session';
 import type { AgentRecord, IAgentStore } from '../db/agentStore';
 import { credentialSubjectFor, type CredentialSubject } from './credentialSubject';
 import type { RequestContext } from './identity';
@@ -95,14 +96,30 @@ export function listAccessibleAgents(input: {
   });
 }
 
-export async function resolveInternalAgentIds(input: {
-  tenant_id: string;
-  access: ExternalAgentListAccess;
+/**
+ * Visibility for owner-or-agent list queries, with external agent ids mapped to
+ * internal ones so the session and schedule stores never see external ids.
+ */
+export async function resolveListVisibility(input: {
+  context: RequestContext;
+  action: AgentAction;
+  external_authorizer: ExternalAuthorizer;
   agent_store: IAgentStore;
-}): Promise<string[] | undefined> {
-  if (input.access.kind === 'all') {
-    return undefined;
+}): Promise<ListVisibility> {
+  const access = await input.external_authorizer.listAgentAccess({
+    context: input.context,
+    action: input.action,
+  });
+  if (access.kind === 'all') {
+    return { owner_subject_id: input.context.subject.id, agents: { kind: 'all' } };
   }
-  const agents = await listAccessibleAgents(input);
-  return agents.map(agent => agent.id);
+  const agents = await listAccessibleAgents({
+    tenant_id: input.context.tenant_id,
+    access,
+    agent_store: input.agent_store,
+  });
+  return {
+    owner_subject_id: input.context.subject.id,
+    agents: { kind: 'ids', ids: agents.map(agent => agent.id) },
+  };
 }

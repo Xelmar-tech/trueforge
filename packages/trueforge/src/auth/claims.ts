@@ -58,9 +58,9 @@ export function resolveRole(claims: IdTokenClaims, config: OIDCConfig): 'admin' 
 export function toRequestContext(params: {
   claims: IdTokenClaims;
   config: OIDCConfig;
-  authorization: string;
+  user_credential: string;
 }): RequestContext {
-  const { claims, config, authorization } = params;
+  const { claims, config, user_credential } = params;
   assertEmailAllowed(claims, config);
   const subjectId = resolveUserRef(claims, config);
   const role = resolveRole(claims, config);
@@ -73,7 +73,7 @@ export function toRequestContext(params: {
       display_name: displayName,
     },
     is_admin: role === 'admin',
-    user_credential: { authorization },
+    user_credential,
   };
 }
 

@@ -78,6 +78,7 @@ export type {
   UpdateSessionInput,
   UpdateTurnStateInput,
 } from './store/ISessionStore';
+export type { ListVisibility } from './store/ListVisibility';
 export {
   InvalidPageTokenError,
   PreviousTurnRunningError,

@@ -1,4 +1,4 @@
-import { AgentSpecSchema, type CreatedBySubject } from '@truefoundry/trueforge-core/agent-session';
+import { AgentSpecSchema, type CreatedBySubject, type ListVisibility } from '@truefoundry/trueforge-core/agent-session';
 import type { IAgentStore } from '../../src/db/agentStore';
 import { cronRunName, ScheduleNameConflictError, type IScheduleStore } from '../../src/db/scheduleStore';
 import { nextTriggerAfter } from '../../src/runtime/cron';
@@ -11,6 +11,7 @@ const USER_SUBJECT: CreatedBySubject = {
   subject_type: 'user',
   subject_display_name: USER,
 };
+const USER_VISIBILITY: ListVisibility = { owner_subject_id: USER, agents: { kind: 'all' } };
 
 function manifest(overrides: Partial<ScheduleManifest> = {}): ScheduleManifest {
   return ScheduleManifestSchema.parse({
@@ -49,6 +50,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule, pendingRun } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'daily',
       manifest: m,
       created_by_subject: USER_SUBJECT,
@@ -72,6 +74,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule, pendingRun } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'paused-at-create',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -88,6 +91,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'toggle',
       manifest: manifest({ cron: '0 * * * *', timezone: 'UTC' }),
       created_by_subject: USER_SUBJECT,
@@ -126,6 +130,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule, pendingRun: first } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'reclock',
       manifest: manifest({ cron: '0 9 * * *', timezone: 'UTC' }),
       created_by_subject: USER_SUBJECT,
@@ -158,6 +163,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule, pendingRun: first } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'label-only',
       manifest: manifest({ cron: '0 9 * * *', timezone: 'UTC', task: 'old task' }),
       created_by_subject: USER_SUBJECT,
@@ -187,6 +193,7 @@ export function runScheduleStoreContractSuite(deps: {
       store.createScheduleAndRun({
         tenant_id: TENANT,
         agent_name: agent.name,
+        agent_id: agent.id,
         name,
         manifest: manifest({ status: 'paused' }),
         created_by_subject: USER_SUBJECT,
@@ -200,18 +207,19 @@ export function runScheduleStoreContractSuite(deps: {
   it('allows the same schedule name under different agents', async () => {
     const store = deps.getScheduleStore();
     const [first, second] = [await seedAgent(), await seedAgent()];
-    const create = (agentName: string) =>
+    const create = (agent: { id: string; name: string }) =>
       store.createScheduleAndRun({
         tenant_id: TENANT,
-        agent_name: agentName,
+        agent_name: agent.name,
+        agent_id: agent.id,
         name: 'daily-report',
         manifest: manifest({ status: 'paused' }),
         created_by_subject: USER_SUBJECT,
         runFrom: new Date(),
       });
 
-    await create(first.name);
-    await expect(create(second.name)).resolves.toBeDefined();
+    await create(first);
+    await expect(create(second)).resolves.toBeDefined();
   });
 
   it('rejects renaming a schedule onto a name already taken for the agent', async () => {
@@ -220,6 +228,7 @@ export function runScheduleStoreContractSuite(deps: {
     await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'taken',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -228,6 +237,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule: other } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'free',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -251,6 +261,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'paused-edit',
       manifest: manifest({ status: 'paused', cron: '0 9 * * *' }),
       created_by_subject: USER_SUBJECT,
@@ -278,6 +289,7 @@ export function runScheduleStoreContractSuite(deps: {
       const { schedule } = await store.createScheduleAndRun({
         tenant_id: TENANT,
         agent_name: agent.name,
+        agent_id: agent.id,
         name,
         manifest: manifest({ status: 'paused' }),
         created_by_subject: USER_SUBJECT,
@@ -339,6 +351,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'to-delete',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -382,6 +395,7 @@ export function runScheduleStoreContractSuite(deps: {
       store.createScheduleAndRun({
         tenant_id: TENANT,
         agent_name: 'no-such-agent',
+        agent_id: 'no-such-agent-id',
         name: 'orphan',
         manifest: manifest(),
         created_by_subject: USER_SUBJECT,
@@ -396,6 +410,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule, pendingRun } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'bound-to-agent',
       manifest: manifest({ cron: '0 * * * *', timezone: 'UTC' }),
       created_by_subject: USER_SUBJECT,
@@ -419,6 +434,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'name-unique',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -454,6 +470,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'one-pending',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -491,6 +508,7 @@ export function runScheduleStoreContractSuite(deps: {
     const older = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agentA.name,
+      agent_id: agentA.id,
       name: 'list-older',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -501,6 +519,7 @@ export function runScheduleStoreContractSuite(deps: {
     const newer = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agentA.name,
+      agent_id: agentA.id,
       name: 'list-newer',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -510,6 +529,7 @@ export function runScheduleStoreContractSuite(deps: {
     const otherAgent = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agentB.name,
+      agent_id: agentB.id,
       name: 'list-other-agent',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -521,6 +541,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 25,
       page_token: undefined,
       agent_names: [agentA.name],
+      visibility: USER_VISIBILITY,
     });
     expect(forA.data.map(row => row.id)).toEqual([newer.schedule.id, older.schedule.id]);
     expect(forA.data.every(row => row.agent_name === agentA.name)).toBe(true);
@@ -531,6 +552,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 25,
       page_token: undefined,
       agent_names: [agentB.name],
+      visibility: USER_VISIBILITY,
     });
     expect(forB.data.map(row => row.id)).toEqual([otherAgent.schedule.id]);
 
@@ -539,6 +561,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 25,
       page_token: undefined,
       agent_names: [agentA.name, agentB.name],
+      visibility: USER_VISIBILITY,
     });
     expect(forBoth.data.map(row => row.id)).toEqual([otherAgent.schedule.id, newer.schedule.id, older.schedule.id]);
 
@@ -547,6 +570,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 25,
       page_token: undefined,
       agent_names: undefined,
+      visibility: USER_VISIBILITY,
     });
     expect(all.data.map(row => row.id)).toEqual(
       expect.arrayContaining([newer.schedule.id, older.schedule.id, otherAgent.schedule.id]),
@@ -562,6 +586,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 2,
       page_token: undefined,
       agent_names: undefined,
+      visibility: USER_VISIBILITY,
     });
     expect(page1.data).toHaveLength(2);
     expect(page1.pagination.limit).toBe(2);
@@ -572,6 +597,7 @@ export function runScheduleStoreContractSuite(deps: {
       limit: 2,
       page_token: page1.pagination.next_page_token,
       agent_names: undefined,
+      visibility: USER_VISIBILITY,
     });
     expect(page2.data).toHaveLength(1);
     expect(page1.data.map(row => row.id)).not.toContain(page2.data[0]?.id);
@@ -589,6 +615,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule: scheduleA } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agentA.name,
+      agent_id: agentA.id,
       name: 'runs-a',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -614,6 +641,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule: scheduleB } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agentB.name,
+      agent_id: agentB.id,
       name: 'runs-b',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,
@@ -642,6 +670,7 @@ export function runScheduleStoreContractSuite(deps: {
     const { schedule } = await store.createScheduleAndRun({
       tenant_id: TENANT,
       agent_name: agent.name,
+      agent_id: agent.id,
       name: 'run-status',
       manifest: manifest({ status: 'paused' }),
       created_by_subject: USER_SUBJECT,

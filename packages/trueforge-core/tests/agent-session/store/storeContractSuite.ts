@@ -4,6 +4,7 @@ import type { PersistedTurnEvent } from '../../../src/agent-session/schemas/even
 import { EventType } from '../../../src/agent-session/schemas/events';
 import { CancellationReason } from '../../../src/agent-session/schemas/turn';
 import type { ISessionStore } from '../../../src/agent-session/store/ISessionStore';
+import type { ListVisibility } from '../../../src/agent-session/store/ListVisibility';
 import { decodeSessionEventPageToken } from '../../../src/agent-session/store/SessionEventPageToken';
 import {
   PreviousTurnRunningError,
@@ -29,6 +30,12 @@ import {
   makeTurnCreatedEvent,
   makeTurnDoneEvent,
 } from '../testHelpers';
+
+/** Inline sessions are agent-less, so this resolves to "everything `subject_id` created". */
+const visibleTo = (subject_id: string): ListVisibility => ({
+  owner_subject_id: subject_id,
+  agents: { kind: 'all' },
+});
 
 const ContractPassthroughEventSchema = z.object({
   id: z.string(),
@@ -215,7 +222,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
         start_timestamp: undefined,
         end_timestamp: undefined,
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('alice@example.com'),
       });
       expect(listed.data.map(s => s.session_id)).toContain('created-by-session');
       expect(listed.data.find(s => s.session_id === 'created-by-session')?.created_by_subject.subject_id).toBe(
@@ -241,7 +248,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const filtered = await store.listSessions({
         agent_id: 'agent-abc',
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -578,7 +585,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const listed = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -834,7 +841,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const desc = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -846,7 +853,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const asc = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -863,7 +870,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const first = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 2,
         page_token: undefined,
@@ -875,7 +882,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       expect(first.pagination.next_page_token).toBeDefined();
       const second = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 2,
         page_token: first.pagination.next_page_token,
@@ -888,7 +895,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const all = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -903,7 +910,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const middleCreatedAt = middleSession.created_at;
       const bounded = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         limit: 10,
         order: 'asc',
@@ -928,7 +935,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const listArgs = {
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         order: undefined,
         start_timestamp: undefined,
@@ -954,7 +961,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const listArgs = {
         agent_id: undefined,
-        created_by_subject_id: undefined,
+        visibility: visibleTo('user-1'),
         tenant_id: tenant,
         order: 'desc' as const,
         start_timestamp: undefined,
@@ -998,7 +1005,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const aliceOnly = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: 'alice',
+        visibility: visibleTo('alice'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -1011,7 +1018,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
 
       const unmatched = await store.listSessions({
         agent_id: undefined,
-        created_by_subject_id: 'nobody',
+        visibility: visibleTo('nobody'),
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,

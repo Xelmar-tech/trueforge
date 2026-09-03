@@ -21,7 +21,7 @@ import type { Context } from 'hono';
 import type { RedisClientType } from 'redis';
 import type { Logger } from 'winston';
 import { z } from 'zod';
-import { resolveInternalAgentIds, type ExternalAuthorizer } from '../auth/externalAuthorizer';
+import { resolveListVisibility, type ExternalAuthorizer } from '../auth/externalAuthorizer';
 import { createdBySubjectFromRequestContext, type ResolveRequestContext } from '../auth/identity';
 import { canReadSession, isOwner } from '../auth/resourceAccess';
 import configuration from '../config';
@@ -441,19 +441,15 @@ export function createSessionsRouter(deps: SessionsRouterDeps) {
     const query = c.req.valid('query');
     const requestContext = deps.resolveRequestContext(c);
     try {
-      const access = await deps.externalAuthorizer.listAgentAccess({
+      const visibility = await resolveListVisibility({
         context: requestContext,
         action: 'manage',
-      });
-      const accessibleAgentIds = await resolveInternalAgentIds({
-        tenant_id: requestContext.tenant_id,
-        access,
+        external_authorizer: deps.externalAuthorizer,
         agent_store: deps.agentStore,
       });
       const { data, pagination } = await deps.sessionStore.listSessions({
         agent_id: query.agent_id,
-        owner_subject_id: requestContext.subject.id,
-        accessible_agent_ids: accessibleAgentIds,
+        visibility,
         tenant_id: requestContext.tenant_id,
         limit: query.limit,
         order: query.order,

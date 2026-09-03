@@ -1,8 +1,8 @@
 import type { CreatedBySubject } from '@truefoundry/trueforge-core/agent-session';
-import { createdBySubjectFromRequestContext, type RequestContext, type UserCredential } from './identity';
+import { createdBySubjectFromRequestContext, type RequestContext } from './identity';
 
 export type CredentialSubject =
-  | UserCredential
+  | string
   | {
       tenant_id: string;
       created_by_subject: CreatedBySubject;
@@ -17,6 +17,6 @@ export function credentialSubjectFor(context: RequestContext): CredentialSubject
   );
 }
 
-export function isUserCredential(subject: CredentialSubject): subject is UserCredential {
-  return 'authorization' in subject;
+export function isUserCredential(subject: CredentialSubject): subject is string {
+  return typeof subject === 'string';
 }

@@ -4,7 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import type { GetSessionResponse } from '../truefoundry/TrueFoundryServiceFoundryServerClient';
 import type { Authenticator } from './authenticator';
 import { SubjectTypeSchema, type RequestContext, type SubjectType } from './identity';
-import { extractRequestToken, toBearerAuthorization } from './token';
+import { extractRequestToken } from './token';
 
 const TENANT_ADMIN_ROLE = 'tenant-admin';
 
@@ -54,7 +54,7 @@ export class TrueFoundryAuthenticator implements Authenticator {
         display_name: subject.display_name ?? subject.id,
       },
       is_admin: session.user.roles.includes(TENANT_ADMIN_ROLE),
-      user_credential: { authorization: toBearerAuthorization(token) },
+      user_credential: token,
     };
   }
 }

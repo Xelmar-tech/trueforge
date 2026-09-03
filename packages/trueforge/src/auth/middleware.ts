@@ -4,9 +4,9 @@ import { jwtVerify } from 'jose';
 import { toRequestContext, type IdTokenClaims } from './claims';
 import type { RequestContext } from './identity';
 import { getOidcVerify } from './oidc';
-import { extractRequestToken, toBearerAuthorization } from './token';
+import { extractRequestToken } from './token';
 
-export { extractRequestToken, readBearerToken, toBearerAuthorization } from './token';
+export { extractRequestToken, readBearerToken } from './token';
 
 /**
  * Bearer or cookie token → {@link RequestContext} when OIDC is enabled and the JWT is valid.
@@ -38,6 +38,6 @@ export async function resolveOidcRequestContext(c: Context): Promise<RequestCont
   return toRequestContext({
     claims,
     config: oidcVerify.oidcConfig,
-    authorization: toBearerAuthorization(token),
+    user_credential: token,
   });
 }

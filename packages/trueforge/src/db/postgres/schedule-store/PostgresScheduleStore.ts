@@ -231,14 +231,15 @@ export class PostgresScheduleStore implements IScheduleStore<Transaction<Databas
       query = query.where('agent_name', 'in', [...input.agent_names]);
     }
     query = query.where(eb => {
-      const owned = eb(sql<string>`created_by_subject->>'subject_id'`, '=', input.owner_subject_id);
-      if (input.accessible_agent_ids === undefined) {
+      const { owner_subject_id, agents } = input.visibility;
+      const owned = eb(sql<string>`created_by_subject->>'subject_id'`, '=', owner_subject_id);
+      if (agents.kind === 'all') {
         return eb.or([owned, eb('agent_id', 'is not', null)]);
       }
-      if (input.accessible_agent_ids.length === 0) {
+      if (agents.ids.length === 0) {
         return owned;
       }
-      return eb.or([owned, eb('agent_id', 'in', [...input.accessible_agent_ids])]);
+      return eb.or([owned, eb('agent_id', 'in', [...agents.ids])]);
     });
     const rows = await query
       .orderBy('created_at', 'desc')

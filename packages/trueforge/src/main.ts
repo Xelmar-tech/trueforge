@@ -59,7 +59,6 @@ import { TrueFoundryCredentialProvider } from './auth/credentialProvider';
 import { AllowAllExternalAuthorizer, TrueFoundryExternalAuthorizer } from './auth/externalAuthorizer';
 import { resolveRequestContext } from './auth/identity';
 import { initOidc } from './auth/oidc';
-import { rawTokenFromCredential } from './auth/token';
 import { McpCatalog } from './catalog/McpCatalog';
 import { ModelCatalog } from './catalog/ModelCatalog';
 import { SandboxCatalog } from './catalog/SandboxCatalog';
@@ -115,7 +114,7 @@ function requireRequestCredentialToken(c: Context): string {
       message: 'Authentication token required to list or call TrueFoundry models and MCP servers',
     });
   }
-  return rawTokenFromCredential(credential.authorization);
+  return credential;
 }
 
 /**

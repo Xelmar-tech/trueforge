@@ -6,7 +6,6 @@ import { z } from 'zod';
 
 import { isUserCredential, type CredentialSubject } from '../auth/credentialSubject';
 import type { AgentAction } from '../auth/externalAuthorizer';
-import { rawTokenFromCredential } from '../auth/token';
 import { createInternalTlsDispatcher, normalizeInternalTlsUrl, type InternalTlsOptions } from './internalTls';
 
 const INTEGRATIONS_PATH = 'v1/provider-integrations';
@@ -192,7 +191,7 @@ export class TrueFoundryServiceFoundryServerClient {
         resourceType: 'agent',
         v2: 'true',
       }),
-      rawTokenFromCredential(input.subject.authorization),
+      input.subject,
     );
     const permissions = this.#parseAgentPermissions(payload);
     const requiredPermission = this.#permissionFor(input.action);
@@ -232,7 +231,7 @@ export class TrueFoundryServiceFoundryServerClient {
           v2: 'true',
           resourceIds: JSON.stringify([input.agent_external_id]),
         }),
-        rawTokenFromCredential(input.subject.authorization),
+        input.subject,
       );
       const permissions = this.#parseAgentPermissions(payload);
       return (permissions[input.agent_external_id] ?? []).includes(this.#permissionFor(input.action));
@@ -246,7 +245,7 @@ export class TrueFoundryServiceFoundryServerClient {
 
   async getAgentIdentityToken(input: { subject: CredentialSubject; agent_external_id: string }): Promise<string> {
     if (isUserCredential(input.subject)) {
-      const session = await this.getSession(rawTokenFromCredential(input.subject.authorization));
+      const session = await this.getSession(input.subject);
       return this.#vendAgentToken({
         tenant_name: session.user.tenantName,
         subject_id: session.identity.subject.id,

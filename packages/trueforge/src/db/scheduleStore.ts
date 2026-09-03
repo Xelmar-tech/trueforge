@@ -13,7 +13,7 @@
  *
  * Implementations: PostgresScheduleStore and SqliteScheduleStore.
  */
-import type { CreatedBySubject, TokenPagination } from '@truefoundry/trueforge-core/agent-session';
+import type { CreatedBySubject, ListVisibility, TokenPagination } from '@truefoundry/trueforge-core/agent-session';
 import { randomUUID } from 'node:crypto';
 import {
   ScheduleManifestSchema,
@@ -94,9 +94,7 @@ export interface ListSchedulesInput {
   page_token: string | undefined;
   /** When set, only schedules for these agent names */
   agent_names: readonly string[] | undefined;
-  owner_subject_id: string;
-  /** `undefined` means every bound agent; `[]` means none. */
-  accessible_agent_ids: readonly string[] | undefined;
+  visibility: ListVisibility;
 }
 
 /** User-facing run listing, scoped to one schedule. */

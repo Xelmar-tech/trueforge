@@ -44,10 +44,10 @@ export class TrueFoundryCredentialProvider implements CredentialProvider {
       throw new Error('TrueFoundry execution requires a user identity');
     }
     if (input.agent === undefined) {
-      if (!('authorization' in input.user)) {
+      if (typeof input.user !== 'string') {
         throw new Error('Offline execution requires a saved agent');
       }
-      return { authorization: input.user.authorization };
+      return { authorization: `Bearer ${input.user}` };
     }
     const token = await this.#client.getAgentIdentityToken({
       subject: input.user,

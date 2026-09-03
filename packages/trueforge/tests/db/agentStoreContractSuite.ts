@@ -3,11 +3,7 @@
  * Runs under jest against a fresh store per test (see backend test files).
  */
 import { AgentSpecSchema, type AgentSpec, type CreatedBySubject } from '@truefoundry/trueforge-core/agent-session';
-import {
-  AgentExternalIdConflictError,
-  AgentNameConflictError,
-  type IAgentStore,
-} from '../../src/db/agentStore';
+import { AgentExternalIdConflictError, AgentNameConflictError, type IAgentStore } from '../../src/db/agentStore';
 
 const TENANT = 'default';
 
@@ -196,7 +192,7 @@ export function runAgentStoreContractSuite(getStore: () => IAgentStore): void {
       external_id: null,
     });
 
-    const agents = await store.listAgents(TENANT);
+    const agents = await store.listAgents({ tenant_id: TENANT, external_ids: undefined });
     expect(agents.map(agent => agent.name)).toEqual(['alpha', 'zeta']);
     expect(agents.every(agent => agent.tenant_id === TENANT)).toBe(true);
   });
