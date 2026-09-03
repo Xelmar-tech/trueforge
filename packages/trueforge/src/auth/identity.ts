@@ -1,3 +1,4 @@
+import type { CreatedBySubject } from '@truefoundry/trueforge-core/agent-session';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
@@ -40,4 +41,13 @@ export function resolveRequestContext(c: Context): RequestContext {
     throw new Error('RequestContext missing; auth middleware did not run');
   }
   return requestContext;
+}
+
+/** Persistable creator snapshot derived from the authenticated request. */
+export function createdBySubjectFromRequestContext(ctx: RequestContext): CreatedBySubject {
+  return {
+    subject_id: ctx.subject.id,
+    subject_type: ctx.subject.type,
+    subject_display_name: ctx.subject.display_name,
+  };
 }
