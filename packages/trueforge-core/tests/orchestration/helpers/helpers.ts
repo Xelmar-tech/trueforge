@@ -133,7 +133,7 @@ export async function* writeNoteToolCallStream() {
   };
 }
 
-function makeWriteNoteSource(): ToolSource {
+function makeWriteNoteSource(callTool: ToolSource['callTool']): ToolSource {
   return {
     name: 'notes',
     id: 'notes',
@@ -154,7 +154,7 @@ function makeWriteNoteSource(): ToolSource {
         },
         wasInitialized: undefined,
       }),
-    callTool: () => Promise.resolve(toolResultResponse({ text: WRITE_NOTE_RESULT })),
+    callTool,
     toolCallInfo: () =>
       Promise.resolve({
         type: 'mcp',
@@ -165,18 +165,25 @@ function makeWriteNoteSource(): ToolSource {
   };
 }
 
-/** User tool set that pauses until write_note is approved. */
-export function makeApprovalGatedWriteNoteToolSet(): IToolSet {
-  return new ToolSet({
-    source: makeWriteNoteSource(),
-    selectors: {
-      enableTools: ['@all'],
-      disableTools: [],
-      preloadTools: [],
-      requireApprovalForTools: [WRITE_NOTE_TOOL_NAME],
-    },
-    preload: true,
-  });
+/** Approval-gated write_note tool set; `callTool` spy proves allow runs the source and deny does not. */
+export function makeApprovalGatedWriteNoteToolSet(): {
+  toolSet: IToolSet;
+  callTool: jest.Mock;
+} {
+  const callTool = jest.fn(() => Promise.resolve(toolResultResponse({ text: WRITE_NOTE_RESULT })));
+  return {
+    toolSet: new ToolSet({
+      source: makeWriteNoteSource(callTool),
+      selectors: {
+        enableTools: ['@all'],
+        disableTools: [],
+        preloadTools: [],
+        requireApprovalForTools: [WRITE_NOTE_TOOL_NAME],
+      },
+      preload: true,
+    }),
+    callTool,
+  };
 }
 
 /** Consume send() then execute(); return raw events and the generator result. */
