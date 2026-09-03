@@ -24,15 +24,9 @@ import { setCachedLocalSandboxSupport } from './sandbox/localRuntime';
 let configuration: typeof import('./config').default;
 let isOidcConfigured: typeof import('./config').isOidcConfigured;
 let isTrueFoundryModeEnabled: typeof import('./config').isTrueFoundryModeEnabled;
-let requireTrueforgeApiKey: typeof import('./config').requireTrueforgeApiKey;
 
 try {
-  ({
-    default: configuration,
-    isOidcConfigured,
-    isTrueFoundryModeEnabled,
-    requireTrueforgeApiKey,
-  } = await import('./config'));
+  ({ default: configuration, isOidcConfigured, isTrueFoundryModeEnabled } = await import('./config'));
 } catch (error) {
   console.error(
     'Failed to start server: Failed to load configuration:',
@@ -387,7 +381,6 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
         withTransaction,
         logger,
         baseUrl: `http://localhost:${String(configuration.PORT)}`,
-        trueforgeApiKey: requireTrueforgeApiKey(configuration),
       })
     : undefined;
 

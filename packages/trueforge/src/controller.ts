@@ -12,15 +12,13 @@ export function createController<TTransaction>(params: {
   withTransaction: WithTransaction<TTransaction>;
   logger: Logger;
   baseUrl: string;
-  trueforgeApiKey: string;
 }): Controller {
-  const { scheduleStore, withTransaction, logger, baseUrl, trueforgeApiKey } = params;
+  const { scheduleStore, withTransaction, logger, baseUrl } = params;
   return new Controller({
     loops: [
       scheduleDispatchLoop({
         scheduleStore,
         baseUrl,
-        trueforgeApiKey,
         withTransaction,
         logger,
       }),
@@ -37,7 +35,6 @@ export function runController<TTransaction>(params: {
   withTransaction: WithTransaction<TTransaction>;
   logger: Logger;
   baseUrl: string;
-  trueforgeApiKey: string;
   gracefulTimeoutSeconds: number;
   /** Releases what the caller opened for the loops, e.g. its database pool. */
   onStopped?: () => Promise<void>;

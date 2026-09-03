@@ -1,6 +1,7 @@
 import type { SessionHandle, Sessions, TurnInputItem } from '@truefoundry/trueforge-core/agent-session';
 import { TrueForge } from '@truefoundry/trueforge-sdk';
 import type { Logger } from 'winston';
+import { requireTrueforgeApiKey } from '../config';
 import type { IAgentStore } from '../db/agentStore';
 import {
   cronRunName,
@@ -52,14 +53,12 @@ export class ScheduleAgentNotFoundError extends Error {
  *
  * This call is hence idempotent.
  */
-function executeScheduledRun(input: {
-  baseUrl: string;
-  trueforgeApiKey: string;
-}): (item: ScheduleDispatchItem) => Promise<void> {
+function executeScheduledRun(input: { baseUrl: string }): (item: ScheduleDispatchItem) => Promise<void> {
+  const trueforgeApiKey = requireTrueforgeApiKey();
   return async ({ run, schedule }) => {
     const client = new TrueForge({
       baseUrl: input.baseUrl,
-      auth: { token: input.trueforgeApiKey },
+      auth: { token: trueforgeApiKey },
       headers: {
         'x-tf-tenant-id': schedule.tenant_id,
         'x-tf-subject': JSON.stringify(schedule.created_by_subject),
@@ -306,18 +305,17 @@ export async function dispatchScheduledRuns<TTransaction>(params: {
 export function scheduleDispatchLoop<TTransaction>(params: {
   scheduleStore: IScheduleStore<TTransaction>;
   baseUrl: string;
-  trueforgeApiKey: string;
   logger: Logger;
   withTransaction: WithTransaction<TTransaction>;
 }): ControlLoop {
-  const { scheduleStore, baseUrl, trueforgeApiKey, withTransaction, logger } = params;
+  const { scheduleStore, baseUrl, withTransaction, logger } = params;
   return {
     name: SCHEDULE_DISPATCH_LOOP_NAME,
     intervalMs: SCHEDULE_DISPATCH_INTERVAL_MS,
     async tick(signal: AbortSignal): Promise<void> {
       const result = await dispatchScheduledRuns({
         store: scheduleStore,
-        onTriggered: executeScheduledRun({ baseUrl, trueforgeApiKey }),
+        onTriggered: executeScheduledRun({ baseUrl }),
         logger,
         withTransaction,
         signal,
