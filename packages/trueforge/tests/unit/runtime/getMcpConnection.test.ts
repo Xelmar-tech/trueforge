@@ -1,5 +1,4 @@
-import { TENANT_ID } from '../../../src/apis/sessions';
-import { LOCAL_USER_CONTEXT } from '../../../src/auth/identity';
+import { STANDALONE_REQUEST_CONTEXT } from '../../../src/auth/identity';
 import { migrateSqliteToLatest } from '../../../src/db/migrateSqlite';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
@@ -64,7 +63,7 @@ describe('getMcpConnection', () => {
 
     try {
       const record = await mcpServerStore.upsertServer({
-        tenant_id: TENANT_ID,
+        tenant_id: 'default',
         name: 'oauth-mcp',
         manifest: {
           type: 'remote',
@@ -76,12 +75,12 @@ describe('getMcpConnection', () => {
       });
 
       const connection = await getMcpConnection({
-        tenant_id: TENANT_ID,
+        tenant_id: 'default',
         name: 'oauth-mcp',
         store: mcpServerStore,
         tokenStore,
         clientName: 'test-client',
-        userRef: LOCAL_USER_CONTEXT.userRef,
+        userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
       });
       expect(connection).toBeDefined();
       if (connection === undefined) {
@@ -114,7 +113,7 @@ describe('getMcpConnection', () => {
 
   it('returns Bearer headers when a usable token is already stored', async () => {
     const record = await mcpServerStore.upsertServer({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'tokened-mcp',
       manifest: {
         type: 'remote',
@@ -126,7 +125,7 @@ describe('getMcpConnection', () => {
     });
     await tokenStore.saveToken({
       id: record.id,
-      userRef: LOCAL_USER_CONTEXT.userRef,
+      userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
       token: {
         accessToken: 'live-access',
         refreshToken: null,
@@ -136,12 +135,12 @@ describe('getMcpConnection', () => {
     });
 
     const connection = await getMcpConnection({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'tokened-mcp',
       store: mcpServerStore,
       tokenStore,
       clientName: 'test-client',
-      userRef: LOCAL_USER_CONTEXT.userRef,
+      userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
     });
     expect(connection).toBeDefined();
     if (connection === undefined || typeof connection.headers !== 'function') {
@@ -154,7 +153,7 @@ describe('getMcpConnection', () => {
 
   it('returns empty static headers when the server has no auth', async () => {
     await mcpServerStore.upsertServer({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'open-mcp',
       manifest: {
         type: 'remote',
@@ -165,12 +164,12 @@ describe('getMcpConnection', () => {
     });
 
     const connection = await getMcpConnection({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'open-mcp',
       store: mcpServerStore,
       tokenStore,
       clientName: 'test-client',
-      userRef: LOCAL_USER_CONTEXT.userRef,
+      userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
     });
     expect(connection).toBeDefined();
     if (connection === undefined) {
@@ -183,7 +182,7 @@ describe('getMcpConnection', () => {
 
   it('returns configured static headers for header-auth servers', async () => {
     await mcpServerStore.upsertServer({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'header-mcp',
       manifest: {
         type: 'remote',
@@ -195,12 +194,12 @@ describe('getMcpConnection', () => {
     });
 
     const connection = await getMcpConnection({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'header-mcp',
       store: mcpServerStore,
       tokenStore,
       clientName: 'test-client',
-      userRef: LOCAL_USER_CONTEXT.userRef,
+      userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
     });
     expect(connection).toBeDefined();
     if (connection === undefined) {
@@ -213,7 +212,7 @@ describe('getMcpConnection', () => {
 
   it('skips local DCR for truefoundry servers even when wire auth is dcr', async () => {
     await mcpServerStore.upsertServer({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'tfy-mcp',
       manifest: {
         type: 'truefoundry',
@@ -225,12 +224,12 @@ describe('getMcpConnection', () => {
     });
 
     const connection = await getMcpConnection({
-      tenant_id: TENANT_ID,
+      tenant_id: 'default',
       name: 'tfy-mcp',
       store: mcpServerStore,
       tokenStore,
       clientName: 'test-client',
-      userRef: LOCAL_USER_CONTEXT.userRef,
+      userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
     });
     expect(connection).toEqual({
       url: 'https://gateway.example/mcp-server/tfy-mcp',
@@ -241,12 +240,12 @@ describe('getMcpConnection', () => {
   it('returns undefined when the server is not registered', async () => {
     await expect(
       getMcpConnection({
-        tenant_id: TENANT_ID,
+        tenant_id: 'default',
         name: 'missing-mcp',
         store: mcpServerStore,
         tokenStore,
         clientName: 'test-client',
-        userRef: LOCAL_USER_CONTEXT.userRef,
+        userRef: STANDALONE_REQUEST_CONTEXT.subject.id,
       }),
     ).resolves.toBeUndefined();
   });

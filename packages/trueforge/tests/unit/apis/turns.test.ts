@@ -6,9 +6,8 @@ import {
   type TurnStreamingEvent,
 } from '@truefoundry/trueforge-core/agent-session';
 import { createLogger } from 'winston';
-import { TENANT_ID } from '../../../src/apis/sessions';
 import { createTurnsRouter, turnStreamId } from '../../../src/apis/turns';
-import { LOCAL_USER_CONTEXT } from '../../../src/auth/identity';
+import { STANDALONE_REQUEST_CONTEXT } from '../../../src/auth/identity';
 import { migrateSqliteToLatest } from '../../../src/db/migrateSqlite';
 import { SqliteAgentStore } from '../../../src/db/sqlite/agent-store/SqliteAgentStore';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
@@ -30,7 +29,7 @@ describe('turns', () => {
       const sessions = new Sessions({ sessionStore });
 
       await sessionStore.createSession({
-        tenant_id: TENANT_ID,
+        tenant_id: 'default',
         session_id: 's1',
         created_by: 'someone-else',
         agent: {
@@ -60,7 +59,7 @@ describe('turns', () => {
           eventSubscriptions: new EventSubscriptionRegistry(undefined),
           sandboxProviderStore: new SqliteSandboxProviderStore(db),
           logger: createLogger({ silent: true }),
-          resolveUserContext: () => LOCAL_USER_CONTEXT,
+          resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
         }),
       );
 
@@ -134,8 +133,9 @@ describe('turns', () => {
         get: () =>
           Promise.resolve({
             session_id: 's1',
+            tenant_id: STANDALONE_REQUEST_CONTEXT.tenant_id,
             spec: AgentSpecSchema.parse({ model: { name: 'test-provider/test-model' } }),
-            record: { last_turn_id: null, created_by: LOCAL_USER_CONTEXT.userRef },
+            record: { last_turn_id: null, created_by: STANDALONE_REQUEST_CONTEXT.subject.id },
             createTurn: () =>
               Promise.resolve({
                 id: 'turn-non-stream',
@@ -179,7 +179,7 @@ describe('turns', () => {
           eventSubscriptions,
           sandboxProviderStore: new SqliteSandboxProviderStore(db),
           logger,
-          resolveUserContext: () => LOCAL_USER_CONTEXT,
+          resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
         }),
       );
 
@@ -205,7 +205,7 @@ describe('turns', () => {
 
       // Resumable stream must exist before the JSON response returns.
       await expect(
-        eventSubscriptions.get(turnStreamId(TENANT_ID, 's1', 'turn-non-stream')).assertSubscribable(),
+        eventSubscriptions.get(turnStreamId('default', 's1', 'turn-non-stream')).assertSubscribable(),
       ).resolves.toBeUndefined();
 
       releaseRest?.();
@@ -247,11 +247,13 @@ describe('turns', () => {
       const sessions = {
         get: () =>
           Promise.resolve({
+            session_id: 's1',
+            tenant_id: STANDALONE_REQUEST_CONTEXT.tenant_id,
             spec: agentSpec,
             record: {
               session_id: 's1',
               last_turn_id: null,
-              created_by: LOCAL_USER_CONTEXT.userRef,
+              created_by: STANDALONE_REQUEST_CONTEXT.subject.id,
               agent: { type: 'inline', spec: agentSpec },
             },
             createTurn: () =>
@@ -279,7 +281,7 @@ describe('turns', () => {
           eventSubscriptions: new EventSubscriptionRegistry(undefined),
           sandboxProviderStore: new SqliteSandboxProviderStore(db),
           logger,
-          resolveUserContext: () => LOCAL_USER_CONTEXT,
+          resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
         }),
       );
 
