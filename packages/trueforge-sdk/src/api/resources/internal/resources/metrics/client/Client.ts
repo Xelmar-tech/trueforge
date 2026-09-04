@@ -88,7 +88,7 @@ export class MetricsClient {
     }
 
     /**
-     * Return one chart for the caller's sessions on a named agent over an inclusive creation-time window. Uses hourly buckets for windows up to 24 hours and daily UTC buckets otherwise.
+     * Return chart data for sessions visible to the caller on a saved agent.
      *
      * @param {TrueForge.internal.GetChartDataMetricsRequest} request
      * @param {MetricsClient.RequestOptions} requestOptions - Request-specific configuration.
@@ -197,7 +197,7 @@ export class MetricsClient {
     }
 
     /**
-     * Aggregate the caller's session meters for a named agent over an inclusive creation-time window.
+     * Aggregate metrics for sessions visible to the caller on a saved agent.
      *
      * @param {TrueForge.internal.GetMetersMetricsRequest} request
      * @param {MetricsClient.RequestOptions} requestOptions - Request-specific configuration.

@@ -24,7 +24,7 @@ export class SessionsClient {
     }
 
     /**
-     * List the caller's sessions (newest first by default), token-paginated. Results are scoped to the authenticated identity via the session store's `created_by_subject.subject_id` filter (not a client query param). Optional `agent_id` filters to sessions bound to that named agent. Pass `page_token` to fetch the next page, keeping the other query params constant.
+     * List sessions owned by the caller or bound to saved agents they manage. Optional `agent_id` narrows the result. Results are token-paginated, newest first by default.
      *
      * @param {TrueForge.ListSessionsRequest} request
      * @param {SessionsClient.RequestOptions} requestOptions - Request-specific configuration.
@@ -259,7 +259,7 @@ export class SessionsClient {
     }
 
     /**
-     * Fetch a session by ID. Only the session creator may fetch it.
+     * Fetch a session by ID when the caller owns it or manages its saved agent.
      *
      * @param {string} session_id - Session identifier.
      * @param {SessionsClient.RequestOptions} requestOptions - Request-specific configuration.
@@ -694,7 +694,7 @@ export class SessionsClient {
     }
 
     /**
-     * List session events as `{ turn_id, event }` across the active turn branch (newest first), including persisted events from a running tip. Each turn contributes turn.created, content events (model.message, tool.call, …), and turn.done when terminal; streaming deltas are not included. Use `page_token` to paginate backward toward older events while retaining the original branch anchor. Only the session creator may list events.
+     * List persisted events across the active turn branch when the caller owns the session or manages its saved agent. Streaming deltas are excluded.
      *
      * @param {string} session_id - Session identifier.
      * @param {TrueForge.ListEventsSessionsRequest} request
@@ -827,7 +827,7 @@ export class SessionsClient {
     }
 
     /**
-     * List turns for a session (newest first by default), token-paginated. Only the session creator may list turns.
+     * List turns when the caller owns the session or manages its saved agent.
      *
      * @param {string} session_id - Session identifier.
      * @param {TrueForge.ListTurnsSessionsRequest} request
@@ -1314,7 +1314,7 @@ export class SessionsClient {
     }
 
     /**
-     * Fetch a single turn by ID. Only the session creator may fetch it.
+     * Fetch a turn when the caller owns the session or manages its saved agent.
      *
      * @param {string} session_id - Session identifier.
      * @param {string} turn_id - Turn identifier.
@@ -1417,7 +1417,7 @@ export class SessionsClient {
     }
 
     /**
-     * Download a file from the sandbox this turn ran in. Paths come from the assistant's `sandbox_artifacts` block. Only the session creator may download.
+     * Download a turn sandbox file when the caller can read the session.
      *
      * @throws {@link TrueForge.BadRequestError}
      * @throws {@link TrueForge.ForbiddenError}
@@ -1577,7 +1577,7 @@ export class SessionsClient {
     }
 
     /**
-     * Paginated persisted events for a turn (insertion order by default). Only the session creator may list events.
+     * List persisted turn events when the caller can read the session.
      *
      * @param {string} session_id - Session identifier.
      * @param {string} turn_id - Turn identifier.
@@ -1720,7 +1720,7 @@ export class SessionsClient {
     }
 
     /**
-     * Subscribe to the live SSE stream for a turn. Only the session creator may subscribe. Pass `after_sequence_number` to resume after a disconnect (exclusive — events after this sequence number are replayed).
+     * Subscribe to a live turn when the caller can read the session. Pass `after_sequence_number` to resume after a disconnect.
      */
     public subscribeToTurn(
         session_id: string,
