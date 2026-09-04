@@ -34,12 +34,15 @@ export function reconcileDraftSpecPreferences({
   models,
   skills,
   connectors,
+  connectorsHasMore = false,
   skillsEnabled,
 }: {
   agentSpec: AgentSpec;
   models: ModelSelection[];
   skills: AgentSkill[];
   connectors: ConnectorState[];
+  /** When more MCP pages remain, off-page selections must not be treated as deleted. */
+  connectorsHasMore?: boolean;
   skillsEnabled: boolean | undefined;
 }): Partial<AgentSpec> {
   const update: Partial<AgentSpec> = {};
@@ -55,9 +58,12 @@ export function reconcileDraftSpecPreferences({
     }
   }
 
-  const nextMcpServers = filterMounts(agentSpec.mcpServers, new Set(connectors.map(connector => connector.name)));
-  if (nextMcpServers !== agentSpec.mcpServers) {
-    update.mcpServers = nextMcpServers;
+  // Paginated catalogs only include loaded pages — prune MCP only once the full list is known.
+  if (!connectorsHasMore) {
+    const nextMcpServers = filterMounts(agentSpec.mcpServers, new Set(connectors.map(connector => connector.name)));
+    if (nextMcpServers !== agentSpec.mcpServers) {
+      update.mcpServers = nextMcpServers;
+    }
   }
 
   if (skillsEnabled === false) {
@@ -122,7 +128,7 @@ export function DraftSpecPreferenceBridge() {
   const updateAgentSpec = useTrueFoundryUpdateAgentSpec();
   const capabilities = useServerCapabilities();
   const sandboxEnabled = capabilities?.sandbox.enabled;
-  const { models, skills, connectors, loaded, error, ensureLoaded } = useDraftCatalog();
+  const { models, skills, connectors, connectorsHasMore, loaded, error, ensureLoaded } = useDraftCatalog();
   const isPlainDraft = mode.status === 'active' && mode.isMutable && mode.agentId == null && pendingSessionId == null;
   const preferenceKind = mode.status === 'active' && mode.isMutable && mode.isCreateAgent ? 'agent' : 'chat';
 
@@ -153,6 +159,7 @@ export function DraftSpecPreferenceBridge() {
       models,
       skills,
       connectors,
+      connectorsHasMore,
       skillsEnabled: capabilities?.skill.enabled,
     });
     if (Object.keys(update).length > 0) {
@@ -162,6 +169,7 @@ export function DraftSpecPreferenceBridge() {
     agentSpec,
     capabilities?.skill.enabled,
     connectors,
+    connectorsHasMore,
     error,
     isPlainDraft,
     loaded,

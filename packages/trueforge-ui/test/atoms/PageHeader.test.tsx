@@ -8,7 +8,7 @@ describe('PageHeader', () => {
   it('renders a string title with shared header chrome', () => {
     render(<PageHeader title="Agent Sessions" end={<button type="button">Filter</button>} />);
 
-    expect(screen.getByRole('banner')).toHaveClass('h-14');
+    expect(screen.getByRole('banner')).toHaveClass('min-h-14');
     expect(screen.getByRole('heading', { name: 'Agent Sessions' })).toHaveClass('text-md', 'font-semibold');
     expect(screen.getByRole('button', { name: 'Filter' })).toBeInTheDocument();
   });

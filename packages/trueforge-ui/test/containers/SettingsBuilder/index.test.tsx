@@ -96,6 +96,7 @@ describe('TruefoundrySettingsBuilder', () => {
     expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
 
     await openSettings();
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
 
     rerender(<TestShell server={createServer({ catalog: false })} />);
     expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
@@ -167,6 +168,15 @@ describe('TruefoundrySettingsBuilder', () => {
 
     expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
     expect(parentKeyDown).not.toHaveBeenCalled();
+  });
+
+  it('closes via the Back control', async () => {
+    render(<TestShell server={createServer()} />);
+    await openSettings();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
   });
 
   async function expectCatalogsRefreshOnClose(close: () => void) {

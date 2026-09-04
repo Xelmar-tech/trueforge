@@ -15,6 +15,8 @@ export type UseInfiniteScrollSentinelOptions = {
 /**
  * IntersectionObserver sentinel for linear infinite-scroll lists.
  * Attach `listRef` to the scroll container and `sentinelRef` to a footer element.
+ * Re-observes when `hasMore` / `loading` change so a still-visible sentinel (short
+ * filtered lists) continues requesting pages after each load settles.
  */
 export function useInfiniteScrollSentinel({
   enabled,
@@ -26,11 +28,7 @@ export function useInfiniteScrollSentinel({
   listRef: (node: HTMLElement | null) => void;
   sentinelRef: (node: HTMLElement | null) => void;
 } {
-  const hasMoreRef = useRef(hasMore);
-  const loadingRef = useRef(loading);
   const onLoadMoreRef = useRef(onLoadMore);
-  hasMoreRef.current = hasMore;
-  loadingRef.current = loading;
   onLoadMoreRef.current = onLoadMore;
 
   const [listEl, setListEl] = useState<HTMLElement | null>(null);
@@ -45,19 +43,18 @@ export function useInfiniteScrollSentinel({
   }, []);
 
   useEffect(() => {
-    if (!enabled || listEl == null || sentinelEl == null) return;
+    if (!enabled || !hasMore || loading || listEl == null || sentinelEl == null) return;
 
     const observer = new IntersectionObserver(
       entries => {
         if (!entries.some(entry => entry.isIntersecting)) return;
-        if (!hasMoreRef.current || loadingRef.current) return;
         onLoadMoreRef.current();
       },
       { root: listEl, rootMargin },
     );
     observer.observe(sentinelEl);
     return () => observer.disconnect();
-  }, [enabled, listEl, sentinelEl, rootMargin]);
+  }, [enabled, hasMore, loading, listEl, sentinelEl, rootMargin]);
 
   return { listRef, sentinelRef };
 }

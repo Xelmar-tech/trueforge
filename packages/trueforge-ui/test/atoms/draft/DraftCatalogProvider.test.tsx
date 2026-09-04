@@ -149,6 +149,22 @@ describe('DraftCatalogProvider', () => {
     });
   });
 
+  it('keeps off-page MCP mounts while more connector pages remain', () => {
+    const update = reconcileDraftSpecPreferences({
+      agentSpec: {
+        model: { name: 'live/model' },
+        mcpServers: [{ name: 'Available MCP' }, { name: 'Off-page MCP' }],
+      },
+      models: [{ id: 'live/model', name: 'live/model', provider: { name: 'Live' }, properties: {} }],
+      skills: [],
+      connectors: [{ id: 'available-mcp', name: 'Available MCP' }],
+      connectorsHasMore: true,
+      skillsEnabled: true,
+    });
+
+    expect(update).toEqual({});
+  });
+
   it('clears remembered skills when skills are unavailable', () => {
     const update = reconcileDraftSpecPreferences({
       agentSpec: {
