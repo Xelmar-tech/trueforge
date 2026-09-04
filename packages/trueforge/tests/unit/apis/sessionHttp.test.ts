@@ -395,7 +395,7 @@ describe('sessions HTTP agent binding', () => {
       '/',
       jsonInit('POST', {
         agent: { spec: inlineSpec },
-        metadata: { ['k'.repeat(41)]: 'v' },
+        metadata: { ['k'.repeat(33)]: 'v' },
       }),
     );
     expect(tooLongKey.status).toBe(400);

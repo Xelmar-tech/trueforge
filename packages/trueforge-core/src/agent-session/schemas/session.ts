@@ -11,7 +11,7 @@ const SESSION_METADATA_MAX_KEY_LENGTH = 32;
  * Metadata keys: alphanumeric start; then alphanumeric, `.`, `_`, `:`, `-`.
  * Bans `[]` (collide with deepObject / reserved `metadata[key][op]`) and whitespace.
  */
-const SESSION_METADATA_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,39}$/;
+const SESSION_METADATA_KEY_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,31}$/;
 /** Max value length for session metadata  */
 const SESSION_METADATA_MAX_VALUE_LENGTH = 128;
 /** Max number of keys in session metadata. */
