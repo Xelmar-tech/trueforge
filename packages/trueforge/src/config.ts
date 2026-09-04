@@ -797,6 +797,36 @@ export function getTrueForgeMode(config: ServerConfiguration = configuration): T
   return TrueForgeMode.Standalone;
 }
 
+/**
+ * Shared sandbox provider selected by env in TrueFoundry mode
+ * Daytona today; add a `tfy` branch when `TFY_SANDBOX_SERVER_URL` ships.
+ */
+export interface TrueFoundrySandboxProviderConfig {
+  type: 'daytona';
+  apiKey: string;
+  settingsServerUrl: string;
+}
+
+/**
+ * Returns the configured shared sandbox provider when `SANDBOX_ENABLED`, or undefined.
+ * Prefer Daytona when `SANDBOX_API_KEY` + `SANDBOX_SETTINGS_SERVER_URL` are set.
+ */
+export function resolveTrueFoundrySandboxProviderConfig(
+  config: ServerConfiguration = configuration,
+): TrueFoundrySandboxProviderConfig | undefined {
+  if (!config.SANDBOX_ENABLED) {
+    return undefined;
+  }
+  if (config.SANDBOX_API_KEY !== undefined && config.SANDBOX_SETTINGS_SERVER_URL !== undefined) {
+    return {
+      type: 'daytona',
+      apiKey: config.SANDBOX_API_KEY,
+      settingsServerUrl: config.SANDBOX_SETTINGS_SERVER_URL,
+    };
+  }
+  return undefined;
+}
+
 // TrueFoundry mode authenticates each caller with their own gateway token, so browser SSO must be
 // off — the two auth models are mutually exclusive.
 if (isTrueFoundryModeEnabled(configuration) && isOidcConfigured(configuration)) {
@@ -805,19 +835,12 @@ if (isTrueFoundryModeEnabled(configuration) && isOidcConfigured(configuration)) 
   );
 }
 
-// Shared Daytona sandbox in TrueFoundry mode needs a key and the settings-server URL (snapshot name
-// and lifecycle intervals come from that endpoint — not from env).
+// Shared sandbox in TrueFoundry mode: SANDBOX_ENABLED requires a provider (Daytona today).
 if (isTrueFoundryModeEnabled(configuration) && configuration.SANDBOX_ENABLED) {
-  if (configuration.SANDBOX_API_KEY === undefined) {
+  if (resolveTrueFoundrySandboxProviderConfig(configuration) === undefined) {
     throw new Error(
-      'SANDBOX_ENABLED is true in TrueFoundry mode but SANDBOX_API_KEY is not set. ' +
-        'Set SANDBOX_API_KEY, or set SANDBOX_ENABLED=false.',
-    );
-  }
-  if (configuration.SANDBOX_SETTINGS_SERVER_URL === undefined) {
-    throw new Error(
-      'SANDBOX_ENABLED is true in TrueFoundry mode but SANDBOX_SETTINGS_SERVER_URL is not set. ' +
-        'Set SANDBOX_SETTINGS_SERVER_URL, or set SANDBOX_ENABLED=false.',
+      'SANDBOX_ENABLED is true in TrueFoundry mode but no sandbox provider is configured. ' +
+        'Set SANDBOX_API_KEY + SANDBOX_SETTINGS_SERVER_URL, or set SANDBOX_ENABLED=false.',
     );
   }
 }
