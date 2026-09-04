@@ -21,8 +21,7 @@ export type AgentConfigEditorsProps = {
   skillsDisabled?: boolean;
   sandboxAvailable?: boolean;
   instructions?: string;
-  onInstructionsChange?: (value: string) => void;
-  onInstructionsBlur?: () => void;
+  onInstructionsSave?: (draft: AgentInstructionsDraft) => void;
   loadMcpTools?: (connectorId: string) => Promise<McpToolSelection[]>;
   onRefreshConnectors?: () => Promise<void>;
   onChange: (spec: AgentSpec) => void;
@@ -40,8 +39,7 @@ export function AgentConfigEditors({
   skillsDisabled = false,
   sandboxAvailable = false,
   instructions,
-  onInstructionsChange,
-  onInstructionsBlur,
+  onInstructionsSave,
   loadMcpTools,
   onRefreshConnectors,
   onChange,
@@ -98,14 +96,16 @@ export function AgentConfigEditors({
   const modelEditor = editor === 'model' || editor === 'model-settings' ? editor : null;
   const resourceEditor = editor === 'mcp' || editor === 'skills' ? editor : null;
   const saveInstructions = (draft: AgentInstructionsDraft) => {
+    if (onInstructionsSave !== undefined) {
+      onInstructionsSave(draft);
+      return;
+    }
     onChange(
       withInitialUserMessages({
         spec: { ...spec, instructions: draft.instructions || undefined },
         messages: draft.messages,
       }),
     );
-    onInstructionsChange?.(draft.instructions);
-    onInstructionsBlur?.();
   };
 
   return (

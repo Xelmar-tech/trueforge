@@ -24,7 +24,7 @@ describe('AgentConfigEditors', () => {
       spec: baseSpec,
       messages: [{ type: 'user.message', content: 'Existing message' }],
     });
-    const onInstructionsChange = vi.fn();
+    const onInstructionsSave = vi.fn();
     const onChange = vi.fn();
 
     render(
@@ -38,7 +38,7 @@ describe('AgentConfigEditors', () => {
           loading={false}
           error={null}
           instructions="Existing instructions"
-          onInstructionsChange={onInstructionsChange}
+          onInstructionsSave={onInstructionsSave}
           onChange={onChange}
           onClose={vi.fn()}
         />
@@ -51,7 +51,7 @@ describe('AgentConfigEditors', () => {
     fireEvent.change(screen.getByLabelText('Agent instructions'), {
       target: { value: 'Updated instructions' },
     });
-    expect(onInstructionsChange).not.toHaveBeenCalled();
+    expect(onInstructionsSave).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add User Message' }));
     fireEvent.change(screen.getByLabelText('User Message 2'), {
@@ -62,13 +62,11 @@ describe('AgentConfigEditors', () => {
     expect(onChange).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(onInstructionsChange).toHaveBeenCalledWith('Updated instructions');
-    expect(onChange).toHaveBeenCalledWith(
-      withInitialUserMessages({
-        spec: { ...spec, instructions: 'Updated instructions' },
-        messages: [{ type: 'user.message', content: 'New message' }],
-      }),
-    );
+    expect(onInstructionsSave).toHaveBeenCalledWith({
+      instructions: 'Updated instructions',
+      messages: [{ type: 'user.message', content: 'New message' }],
+    });
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('does not persist blank initial user messages', () => {
@@ -101,7 +99,7 @@ describe('AgentConfigEditors', () => {
 
   it('discards instruction changes when the drawer closes without saving', () => {
     const spec: AgentSpec = { model: { name: 'openai/gpt' }, instructions: 'Original' };
-    const onInstructionsChange = vi.fn();
+    const onInstructionsSave = vi.fn();
     const onChange = vi.fn();
     const onClose = vi.fn();
 
@@ -115,7 +113,7 @@ describe('AgentConfigEditors', () => {
           skills={[]}
           loading={false}
           error={null}
-          onInstructionsChange={onInstructionsChange}
+          onInstructionsSave={onInstructionsSave}
           onChange={onChange}
           onClose={onClose}
         />
@@ -125,7 +123,7 @@ describe('AgentConfigEditors', () => {
     fireEvent.change(screen.getByLabelText('Agent instructions'), { target: { value: 'Discarded' } });
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
 
-    expect(onInstructionsChange).not.toHaveBeenCalled();
+    expect(onInstructionsSave).not.toHaveBeenCalled();
     expect(onChange).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledOnce();
   });

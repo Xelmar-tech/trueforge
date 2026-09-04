@@ -170,10 +170,6 @@ function SaveAgentButtonContent({
     });
   };
 
-  const updateDraftInstructions = (instructions: string) => {
-    setDraftSpec((current: AgentSpec | null) => (current === null ? null : { ...current, instructions }));
-  };
-
   const isUpdateMode =
     shell?.mode.status === 'active' &&
     shell.mode.isMutable &&
@@ -245,8 +241,6 @@ function SaveAgentButtonContent({
           error={catalog.error}
           skillsDisabled={serverCapabilities?.skill.enabled !== true}
           sandboxAvailable={serverCapabilities?.sandbox.enabled === true}
-          instructions={draftSpec.instructions ?? ''}
-          onInstructionsChange={updateDraftInstructions}
           loadMcpTools={loadMcpTools}
           onRefreshConnectors={catalog.refreshConnectors}
           onChange={setDraftSpec}
