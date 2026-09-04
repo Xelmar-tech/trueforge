@@ -3,13 +3,22 @@
 import { useTrueFoundryAgentSpec, useTrueFoundryUpdateAgentSpec } from '@truefoundry/assistant-ui-runtime';
 import { useEffect } from 'react';
 
-import { withCapabilitiesSandbox } from '../../server/draftSpecPreferences.js';
+import { type DraftPreferenceKind, withCapabilitiesSandbox } from '../../server/draftSpecPreferences.js';
 import { useServerCapabilities } from '../../server/ServerContext.js';
 import { useShellMode } from '../../server/ShellModeContext.js';
 import type { AgentSkill, AgentSpec, ConnectorState, ModelSelection } from '../../server/types.js';
 import { mountName } from '../lib/mountName.js';
 import { useDraftCatalog } from './DraftCatalogProvider.js';
 import { modelPatchWithReasoningEffort } from './reasoningEffort.js';
+
+function readDraftSandboxEnabled(spec: AgentSpec): boolean | undefined {
+  if (spec.config === undefined) return undefined;
+  // `sandbox` is draft runtime config and may be absent from AgentRuntimeConfig typings.
+  const sandbox = Reflect.get(spec.config, 'sandbox');
+  if (typeof sandbox !== 'object' || sandbox === null) return undefined;
+  const enabled = Reflect.get(sandbox, 'enabled');
+  return typeof enabled === 'boolean' ? enabled : undefined;
+}
 
 function filterMounts<T extends object>(mounts: T[] | undefined, availableNames: Set<string>): T[] | undefined {
   if (mounts === undefined) return undefined;
@@ -70,10 +79,34 @@ export function reconcileDraftSpecPreferences({
 export function reconcileDraftSandbox({
   agentSpec,
   sandboxEnabled,
+  kind = 'agent',
 }: {
   agentSpec: AgentSpec;
   sandboxEnabled: boolean | null | undefined;
+  kind?: DraftPreferenceKind;
 }): Partial<AgentSpec> {
+  if (kind === 'chat') {
+    if (sandboxEnabled == null) return {};
+    const current = readDraftSandboxEnabled(agentSpec);
+    if (sandboxEnabled === true && current !== true) {
+      return {
+        config: {
+          ...agentSpec.config,
+          sandbox: { ...agentSpec.config?.sandbox, enabled: true },
+        },
+      };
+    }
+    if (sandboxEnabled === false && current === true) {
+      return {
+        config: {
+          ...agentSpec.config,
+          sandbox: { ...agentSpec.config?.sandbox, enabled: false },
+        },
+      };
+    }
+    return {};
+  }
+
   const nextSpec = withCapabilitiesSandbox(agentSpec, sandboxEnabled);
   return nextSpec === agentSpec ? {} : { config: nextSpec.config };
 }
@@ -104,9 +137,9 @@ export function DraftSpecPreferenceBridge() {
   }, [agentSpec, isPlainDraft, preferenceKind, rememberDraftSpec]);
 
   useEffect(() => {
-    // Sandbox / runtime config belongs to New Agent only.
-    if (!isPlainDraft || preferenceKind !== 'agent' || agentSpec == null || updateAgentSpec == null) return;
-    const update = reconcileDraftSandbox({ agentSpec, sandboxEnabled });
+    // New Chat mirrors capabilities onto the live draft; New Agent only disables when unavailable.
+    if (!isPlainDraft || agentSpec == null || updateAgentSpec == null) return;
+    const update = reconcileDraftSandbox({ agentSpec, sandboxEnabled, kind: preferenceKind });
     if (Object.keys(update).length > 0) {
       updateAgentSpec(update);
     }

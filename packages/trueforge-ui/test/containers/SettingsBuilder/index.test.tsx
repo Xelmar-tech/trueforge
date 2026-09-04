@@ -199,7 +199,7 @@ describe('TruefoundrySettingsBuilder', () => {
 
   it('refreshes composer catalogs when settings close', async () => {
     await expectCatalogsRefreshOnClose(() => {
-      fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+      fireEvent.keyDown(window, { key: 'Escape' });
     });
   });
 
@@ -217,7 +217,7 @@ describe('TruefoundrySettingsBuilder', () => {
       expect(screen.getByText('Skill settings content')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Switch to agent' }));
     expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
 
     rerender(<TestShell server={createServer()} />);

@@ -4,6 +4,7 @@ import { lazy, Suspense, useRef } from 'react';
 
 import { useAui } from '../assistant-ui.js';
 import { NamedAgentHeaderLabel } from '../atoms/NamedAgentHeaderLabel.js';
+import { PageHeader } from '../atoms/PageHeader.js';
 import { ShellActions } from '../atoms/ShellActions.js';
 import { auiButtonClass } from '../atoms/lib/buttonClasses.js';
 import { cn } from '../atoms/lib/cn.js';
@@ -60,16 +61,12 @@ export function DrawerLayout({ className }: { className?: string }) {
   return (
     <div className={cn('relative flex h-full min-h-0 w-full flex-col bg-primary-bg', className)}>
       {/* Keep ShellActions mounted across Settings open/close so host action-slot state persists. */}
-      <header className="flex shrink-0 items-center gap-1 border-b border-border bg-topbar-bg px-2 py-1.5">
-        {!overlayOpen ? (
-          <>
+      <PageHeader
+        className="bg-topbar-bg"
+        title={
+          !overlayOpen ? (
             <NamedAgentHeaderLabel />
-            <span className="min-w-0 flex-1" />
-            <ClearChatButton />
-            {!shell?.agentConfigOpen ? <SaveAgentButton /> : null}
-          </>
-        ) : libraryOpen || schedulesOpen ? (
-          <>
+          ) : libraryOpen || schedulesOpen ? (
             <button
               type="button"
               className={auiButtonClass({ variant: 'ghost', size: 'sm' })}
@@ -81,39 +78,46 @@ export function DrawerLayout({ className }: { className?: string }) {
               <Icon name="arrow-left" />
               Back to chat
             </button>
-            <span className="min-w-0 flex-1" />
-          </>
-        ) : (
-          <span className="min-w-0 flex-1" />
-        )}
-        <ShellActions key="shell-actions" />
-        {!overlayOpen ? (
+          ) : null
+        }
+        end={
           <>
-            {showNewActions ? (
-              <button
-                type="button"
-                aria-label="New Chat"
-                title="New Chat"
-                className={auiButtonClass({ variant: 'ghost', size: 'icon' })}
-                onClick={handleNewChat}
-              >
-                <Icon name="square-pen" />
-              </button>
+            {!overlayOpen ? (
+              <>
+                <ClearChatButton />
+                {!shell?.agentConfigOpen ? <SaveAgentButton /> : null}
+              </>
             ) : null}
-            {showNewActions && shell?.isComposerEnabled ? (
-              <button
-                type="button"
-                aria-label="New Agent"
-                title="New Agent"
-                className={auiButtonClass({ variant: 'ghost', size: 'icon' })}
-                onClick={handleNewAgent}
-              >
-                <Icon name="agent-2" />
-              </button>
+            <ShellActions key="shell-actions" />
+            {!overlayOpen ? (
+              <>
+                {showNewActions ? (
+                  <button
+                    type="button"
+                    aria-label="New Chat"
+                    title="New Chat"
+                    className={auiButtonClass({ variant: 'ghost', size: 'icon' })}
+                    onClick={handleNewChat}
+                  >
+                    <Icon name="square-pen" />
+                  </button>
+                ) : null}
+                {showNewActions && shell?.isComposerEnabled ? (
+                  <button
+                    type="button"
+                    aria-label="New Agent"
+                    title="New Agent"
+                    className={auiButtonClass({ variant: 'ghost', size: 'icon' })}
+                    onClick={handleNewAgent}
+                  >
+                    <Icon name="agent-2" />
+                  </button>
+                ) : null}
+              </>
             ) : null}
           </>
-        ) : null}
-      </header>
+        }
+      />
       <div className="flex min-h-0 min-w-0 flex-1">
         <div ref={mainRef} className="min-h-0 min-w-0 flex-1">
           {settingsOpen ? (
