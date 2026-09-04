@@ -99,12 +99,19 @@ describe('TrueFoundrySandboxProviderStore', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('writes and get-for-update are managed (424)', async () => {
+  it('writes and get-for-update are managed (424)', () => {
     const store = new TrueFoundrySandboxProviderStore({ accessToken: ACCESS_TOKEN });
-    const managed = { status: TRUEFOUNDRY_MANAGED_STATUS, message: TRUEFOUNDRY_MANAGED_MESSAGE };
+    const assertManaged = (run: () => unknown) => {
+      try {
+        run();
+        throw new Error('expected managed HTTPException');
+      } catch (error) {
+        expect(error).toMatchObject({ status: TRUEFOUNDRY_MANAGED_STATUS, message: TRUEFOUNDRY_MANAGED_MESSAGE });
+      }
+    };
 
-    await expect(store.getSandboxProviderForUpdate(TENANT, null as never)).rejects.toMatchObject(managed);
-    await expect(
+    assertManaged(() => store.getSandboxProviderForUpdate(TENANT, null as never));
+    assertManaged(() =>
       store.upsertSandboxProvider({
         tenant_id: TENANT,
         manifest: {
@@ -119,14 +126,14 @@ describe('TrueFoundrySandboxProviderStore', () => {
         status_reason: null,
         build_metadata: null,
       }),
-    ).rejects.toMatchObject(managed);
-    await expect(
+    );
+    assertManaged(() =>
       store.updateSandboxStatus({
         tenant_id: TENANT,
         status: 'ready',
         status_reason: null,
         build_metadata: null,
       }),
-    ).rejects.toMatchObject(managed);
+    );
   });
 });
