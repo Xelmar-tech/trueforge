@@ -99,7 +99,7 @@ function requireSingleString({ key, value }: { key: string; value: unknown }): s
  * - `metadata[key][…]=…` → rejected (only one bracket level is allowed)
  * - bare `metadata=…` → rejected (no JSON-string dual support)
  */
-export function foldListSessionsMetadataQuery(query: Record<string, unknown>): Record<string, unknown> {
+export function foldListSessionsMetadataQuery(query: object): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   const metadata: Record<string, string> = {};
 
@@ -173,8 +173,33 @@ export const ListSessionsRequestQuerySchema = z
       'Inclusive upper bound on `created_at` (ISO-8601 / RFC 3339).',
     ),
     agent_id: z.string().min(1).optional().describe('When set, only sessions bound to this agent id are returned.'),
+    metadata: SessionMetadataSchema.optional()
+      .openapi({
+        description: 'Exact metadata pairs as metadata[key]=value. Sessions must contain all pairs.',
+        param: { style: 'deepObject', explode: true },
+      })
+      .transform(metadata => (metadata === undefined || Object.keys(metadata).length === 0 ? undefined : metadata)),
   })
   .openapi('ListSessionsRequestQuery');
+
+export type ListSessionsRequestQuery = z.infer<typeof ListSessionsRequestQuerySchema>;
+
+/**
+ * Parse list-sessions query after folding Hono's flat `metadata[key]` params.
+ * OpenAPIHono's query validator cannot nest deepObject keys; callers pass `c.req.queries()`.
+ */
+export function parseListSessionsQuery(raw: object): ListSessionsRequestQuery {
+  return ListSessionsRequestQuerySchema.parse(foldListSessionsMetadataQuery(raw));
+}
+
+/** Normalize Hono `queries()` (string | string[]) into a flat record for parseListSessionsQuery. */
+export function honoQueriesToRecord(queries: Record<string, string[]>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, values] of Object.entries(queries)) {
+    out[key] = values.length === 1 ? values[0] : values;
+  }
+  return out;
+}
 
 export const GetSessionResponseSchema = z
   .object({
