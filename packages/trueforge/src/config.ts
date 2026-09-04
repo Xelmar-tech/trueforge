@@ -417,6 +417,22 @@ export interface SharedServerConfiguration {
    */
   SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD: number;
   /**
+   * When TrueFoundry mode is on, enable the shared Daytona sandbox for all tenants
+   * (settings-server snapshot; no per-tenant PUT). Env: `SANDBOX_ENABLED`. Default false.
+   */
+  SANDBOX_ENABLED: boolean;
+  /**
+   * Shared Daytona API key used when `SANDBOX_ENABLED` is true in TrueFoundry mode.
+   * Env: `SANDBOX_API_KEY`.
+   */
+  SANDBOX_API_KEY: string | undefined;
+  /**
+   * Trusted internal URL that returns Daytona snapshot name and lifecycle settings
+   * (`snapshotName`, intervals, `timeoutMs`). Used when `SANDBOX_ENABLED` is true in
+   * TrueFoundry mode. Env: `SANDBOX_SETTINGS_SERVER_URL`.
+   */
+  SANDBOX_SETTINGS_SERVER_URL: string | undefined;
+  /**
    * Max bytes for an HTTP request body. Env: `MAX_REQUEST_BODY_BYTES`. Default 30 MB.
    */
   MAX_REQUEST_BODY_BYTES: number;
@@ -631,6 +647,13 @@ const shared: SharedServerConfiguration = {
     raw: getEnv('SANDBOX_FILE_MAX_BYTES_FOR_DOWNLOAD'),
     defaultValue: 20_971_520,
   }),
+  SANDBOX_ENABLED: parseBoolean({
+    envKey: 'SANDBOX_ENABLED',
+    raw: getEnv('SANDBOX_ENABLED'),
+    defaultValue: false,
+  }),
+  SANDBOX_API_KEY: getEnv('SANDBOX_API_KEY', { required: false }),
+  SANDBOX_SETTINGS_SERVER_URL: getEnv('SANDBOX_SETTINGS_SERVER_URL', { required: false }),
   MAX_REQUEST_BODY_BYTES: parsePositiveInt({
     envKey: 'MAX_REQUEST_BODY_BYTES',
     raw: getEnv('MAX_REQUEST_BODY_BYTES'),
@@ -780,6 +803,23 @@ if (isTrueFoundryModeEnabled(configuration) && isOidcConfigured(configuration)) 
   throw new Error(
     'TRUEFOUNDRY_SERVICEFOUNDRY_SERVER_URL (TrueFoundry mode) and OIDC (SSO) cannot both be enabled at once.',
   );
+}
+
+// Shared Daytona sandbox in TrueFoundry mode needs a key and the settings-server URL (snapshot name
+// and lifecycle intervals come from that endpoint — not from env).
+if (isTrueFoundryModeEnabled(configuration) && configuration.SANDBOX_ENABLED) {
+  if (configuration.SANDBOX_API_KEY === undefined) {
+    throw new Error(
+      'SANDBOX_ENABLED is true in TrueFoundry mode but SANDBOX_API_KEY is not set. ' +
+        'Set SANDBOX_API_KEY, or set SANDBOX_ENABLED=false.',
+    );
+  }
+  if (configuration.SANDBOX_SETTINGS_SERVER_URL === undefined) {
+    throw new Error(
+      'SANDBOX_ENABLED is true in TrueFoundry mode but SANDBOX_SETTINGS_SERVER_URL is not set. ' +
+        'Set SANDBOX_SETTINGS_SERVER_URL, or set SANDBOX_ENABLED=false.',
+    );
+  }
 }
 
 /**
