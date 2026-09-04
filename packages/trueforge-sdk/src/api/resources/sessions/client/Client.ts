@@ -24,7 +24,7 @@ export class SessionsClient {
     }
 
     /**
-     * List the caller's sessions (newest first by default), token-paginated. Results are scoped to the authenticated identity via the session store's `created_by_subject.subject_id` filter (not a client query param). Optional `agent_id` filters to sessions bound to that named agent. Optional `source_type` / `source_id` filter by session provenance (schedule today; channel later). Pass `page_token` to fetch the next page, keeping the other query params constant.
+     * List the sessions (newest first by default).
      *
      * @param {TrueForge.ListSessionsRequest} request
      * @param {SessionsClient.RequestOptions} requestOptions - Request-specific configuration.

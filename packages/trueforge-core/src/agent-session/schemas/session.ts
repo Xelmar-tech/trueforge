@@ -78,9 +78,7 @@ export const SessionSourceScheduleSchema = z
   .strict()
   .openapi('SessionSourceSchedule');
 
-// Channel source arm: later (thread_id, …).
-
-/** How a session was created. Channel arm lands later; only schedule is written today. */
+/** How a session was created (schedule runs today). */
 export const SessionSourceSchema = z.discriminatedUnion('type', [SessionSourceScheduleSchema]).openapi('SessionSource');
 
 export type SessionSource = z.infer<typeof SessionSourceSchema>;
@@ -103,7 +101,7 @@ export const SessionSchema = z
     metrics: SessionMetricsSchema,
     metadata: SessionMetadataSchema,
     source: SessionSourceSchema.nullable().describe(
-      'How this session was created (schedule today; channel later). Null for interactive sessions.',
+      'How this session was created (e.g. a schedule run). Null for interactive sessions.',
     ),
   })
   .openapi('Session');

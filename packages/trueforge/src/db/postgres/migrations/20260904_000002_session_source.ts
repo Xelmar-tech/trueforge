@@ -2,7 +2,7 @@ import { sql, type Kysely } from 'kysely';
 import { SESSION_SOURCE_IDX } from '../../indexes';
 
 /**
- * Add nullable JSONB `source` on session (schedule/channel provenance).
+ * Add nullable JSONB `source` on session (schedule provenance).
  * Expression index for list filters; no denormalized scalar filter columns.
  * Runs inside the Migrator's transaction — do not nest `db.transaction()`.
  */

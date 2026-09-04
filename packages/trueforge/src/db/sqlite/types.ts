@@ -60,7 +60,7 @@ export interface SessionTable {
   session_id: string;
   /** Caller identity that created the session (immutable after create). */
   created_by_subject: JsonbColumn<CreatedBySubject>;
-  /** Optional provenance (schedule/channel). Null for interactive sessions. */
+  /** Optional provenance (e.g. schedule). Null for interactive sessions. */
   source: JsonbColumn<SessionSource> | null;
   /** Named registry binding; XOR with `agent_spec`. */
   agent_id: string | null;
