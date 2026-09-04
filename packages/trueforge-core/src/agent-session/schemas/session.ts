@@ -69,9 +69,13 @@ export const SessionAgentSchema = z
   .discriminatedUnion('type', [SessionAgentReferenceSchema, SessionAgentInlineSchema])
   .openapi('SessionAgent');
 
+export const SessionSourceTypeSchema = z.enum(['schedule']).openapi('SessionSourceType');
+
+export type SessionSourceType = z.infer<typeof SessionSourceTypeSchema>;
+
 export const SessionSourceScheduleSchema = z
   .object({
-    type: z.literal('schedule').describe('Session was created by a schedule run.'),
+    type: z.literal(SessionSourceTypeSchema.enum.schedule).describe('Session was created by a schedule run.'),
     id: z.string().min(1).describe('Schedule id.'),
     run_id: z.string().min(1).describe('Schedule run id.'),
   })
@@ -82,13 +86,6 @@ export const SessionSourceScheduleSchema = z
 export const SessionSourceSchema = z.discriminatedUnion('type', [SessionSourceScheduleSchema]).openapi('SessionSource');
 
 export type SessionSource = z.infer<typeof SessionSourceSchema>;
-/** Discriminator values of {@link SessionSourceSchema} — used by list `source_type`. */
-export type SessionSourceType = SessionSource['type'];
-
-/** List-filter schema: the `type` discriminator only (not the full source object). */
-export const SessionSourceTypeSchema = z
-  .enum(SessionSourceSchema.options.map(arm => arm.shape.type.value) as [SessionSourceType, ...SessionSourceType[]])
-  .openapi('SessionSourceType');
 
 export const SessionSchema = z
   .object({
