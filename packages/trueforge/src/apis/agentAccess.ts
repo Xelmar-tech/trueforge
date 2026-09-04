@@ -45,3 +45,20 @@ export async function listAccessibleAgents<TTransaction>(input: {
     external_ids: access.agent_external_ids,
   });
 }
+
+/** Resolve only external manager grants to internal agent ids for widening related-resource reads. */
+export async function resolveManagedAgentIds<TTransaction>(input: {
+  store: IAgentStore<TTransaction>;
+  context: RequestContext;
+  authorizer: ExternalAuthorizer;
+}): Promise<readonly string[]> {
+  const access = await input.authorizer.listAgentAccess({ context: input.context, action: 'manage' });
+  if (access.kind !== 'agent_external_ids' || access.agent_external_ids.length === 0) {
+    return [];
+  }
+  const agents = await input.store.listAgents({
+    tenant_id: input.context.tenant_id,
+    external_ids: access.agent_external_ids,
+  });
+  return agents.map(agent => agent.id);
+}

@@ -66,6 +66,8 @@ export interface ListSessionsInput {
   agent_id: string | undefined;
   /** When set, only sessions whose `created_by_subject.subject_id` matches. */
   created_by_subject_id: string | undefined;
+  /** Also include reference sessions bound to any of these agent ids, regardless of creator. */
+  include_agent_ids: readonly string[] | undefined;
 }
 
 /** Turn row fields without assembled snapshot (create input / listTurns). */
@@ -256,8 +258,9 @@ export interface ISessionStore<
    * (`order` defaults to `desc`, `session_id` tie-break). `page_token` is a
    * keyset cursor on `(updated_at, session_id)`. `start_timestamp` /
    * `end_timestamp` are inclusive instant bounds on `created_at`. Optional
-   * `agent_id` filters ref-bound sessions; optional `created_by_subject_id`
-   * filters by `created_by_subject.subject_id`. Does **not** bump
+   * `agent_id` filters ref-bound sessions. `created_by_subject_id` restricts
+   * by creator; `include_agent_ids` widens that creator predicate to reference
+   * sessions bound to those agents. Does **not** bump
    * `last_activity_timestamp_ms` (read path).
    */
   listSessions(

@@ -49,13 +49,14 @@ describe('sessions HTTP agent binding', () => {
   let app: OpenAPIHono;
   let agentStore: SqliteAgentStore;
   let sessionStore: SqliteSessionStore;
+  let sessionMetricsStore: SqliteSessionMetricsStore;
   let sessionDeps: SessionsRouterDeps;
 
   beforeEach(async () => {
     const db = createSqliteDb(':memory:');
     await migrateSqliteToLatest(db);
     sessionStore = new SqliteSessionStore(db);
-    const sessionMetricsStore = new SqliteSessionMetricsStore(db);
+    sessionMetricsStore = new SqliteSessionMetricsStore(db);
     const sessions = new Sessions({ sessionStore });
     const modelProviderStore = new SqliteModelProviderStore(db);
     const mcpServerStore = new SqliteMcpServerStore(db);
@@ -103,7 +104,9 @@ describe('sessions HTTP agent binding', () => {
       '/api/internal/metrics',
       createInternalMetricsRouter({
         sessionMetricsStore,
+        resolveAgentStore: deps.resolveAgentStore,
         resolveRequestContext: deps.resolveRequestContext,
+        externalAuthorizer: deps.externalAuthorizer,
       }),
     );
   });
@@ -231,6 +234,134 @@ describe('sessions HTTP agent binding', () => {
     expect(sessionsChart.data.graphs[0]?.graph_lines[0]?.values.reduce((sum, point) => sum + point.value, 0)).toBe(1);
   });
 
+  it('includes managed-agent sessions and metrics in reads but not mutations', async () => {
+    const managedAgent = await agentStore.createAgent({
+      tenant_id: 'default',
+      created_by_subject: {
+        subject_id: 'someone-else',
+        subject_type: 'user',
+        subject_display_name: 'someone-else',
+      },
+      name: 'managed-agent',
+      manifest: inlineSpec,
+      external_id: 'tf-managed-agent',
+    });
+    const unmanagedAgent = await agentStore.createAgent({
+      tenant_id: 'default',
+      created_by_subject: {
+        subject_id: 'someone-else',
+        subject_type: 'user',
+        subject_display_name: 'someone-else',
+      },
+      name: 'unmanaged-agent',
+      manifest: inlineSpec,
+      external_id: 'tf-unmanaged-agent',
+    });
+    await sessionStore.createSession({
+      tenant_id: 'default',
+      session_id: 'owned-inline-session',
+      created_by_subject: {
+        subject_id: STANDALONE_REQUEST_CONTEXT.subject.id,
+        subject_type: STANDALONE_REQUEST_CONTEXT.subject.type,
+        subject_display_name: STANDALONE_REQUEST_CONTEXT.subject.display_name,
+      },
+      agent: { type: 'inline', spec: inlineSpec },
+      custom: null,
+      metadata: {},
+      external_id: null,
+    });
+    await sessionStore.createSession({
+      tenant_id: 'default',
+      session_id: 'managed-session',
+      created_by_subject: {
+        subject_id: 'someone-else',
+        subject_type: 'user',
+        subject_display_name: 'someone-else',
+      },
+      agent: { type: 'reference', id: managedAgent.id, name: managedAgent.name },
+      custom: null,
+      metadata: {},
+      external_id: null,
+    });
+    await sessionStore.createSession({
+      tenant_id: 'default',
+      session_id: 'unmanaged-session',
+      created_by_subject: {
+        subject_id: 'someone-else',
+        subject_type: 'user',
+        subject_display_name: 'someone-else',
+      },
+      agent: { type: 'reference', id: unmanagedAgent.id, name: unmanagedAgent.name },
+      custom: null,
+      metadata: {},
+      external_id: null,
+    });
+
+    const managedAuthorizer: ExternalAuthorizer = {
+      listAgentAccess: ({ action }) =>
+        Promise.resolve(
+          action === 'manage'
+            ? { kind: 'agent_external_ids', agent_external_ids: ['tf-managed-agent'] }
+            : { kind: 'agent_external_ids', agent_external_ids: [] },
+        ),
+      canAccessAgent: () => Promise.resolve(false),
+    };
+    const managedDeps = {
+      ...sessionDeps,
+      requestReplyRouter: new RequestReplyRouter(),
+      externalAuthorizer: managedAuthorizer,
+    };
+    const managedApp = new OpenAPIHono();
+    managedApp.route('/', createSessionsRouter(managedDeps));
+    managedApp.route(
+      '/metrics',
+      createInternalMetricsRouter({
+        sessionMetricsStore,
+        resolveAgentStore: managedDeps.resolveAgentStore,
+        resolveRequestContext: managedDeps.resolveRequestContext,
+        externalAuthorizer: managedAuthorizer,
+      }),
+    );
+
+    const listed = await managedApp.request('/');
+    expect(listed.status).toBe(200);
+    const listBody = (await listed.json()) as { data: Array<{ id: string }> };
+    expect(new Set(listBody.data.map(session => session.id))).toEqual(
+      new Set(['owned-inline-session', 'managed-session']),
+    );
+    expect((await managedApp.request('/managed-session')).status).toBe(200);
+    expect((await managedApp.request('/managed-session/events')).status).toBe(200);
+    expect((await managedApp.request('/unmanaged-session')).status).toBe(403);
+    expect(
+      (await managedApp.request('/managed-session', jsonInit('PATCH', { metadata: { changed: 'true' } }))).status,
+    ).toBe(403);
+
+    const start = new Date(Date.now() - 60 * 60 * 1000);
+    const end = new Date(Date.now() + 60 * 60 * 1000);
+    const query = new URLSearchParams({
+      agent_id: managedAgent.id,
+      start_timestamp: start.toISOString(),
+      end_timestamp: end.toISOString(),
+    });
+    const metricsResponse = await managedApp.request(`/metrics/meters?${query.toString()}`);
+    expect(metricsResponse.status).toBe(200);
+    const metrics = GetSessionMetricsMeterResponseSchema.parse(await metricsResponse.json());
+    expect(metrics.data.meters.find(meter => meter.name === 'total_sessions')?.aggregate_value).toBe(1);
+
+    const chartResponse = await managedApp.request(
+      `/metrics/charts-data?${query.toString()}&chart_name=sessions_over_time`,
+    );
+    expect(chartResponse.status).toBe(200);
+    const chart = GetSessionMetricsChartDataResponseSchema.parse(await chartResponse.json());
+    expect(chart.data.graphs[0]?.graph_lines[0]?.values.reduce((sum, point) => sum + point.value, 0)).toBe(1);
+
+    query.set('agent_id', unmanagedAgent.id);
+    const unmanagedMetricsResponse = await managedApp.request(`/metrics/meters?${query.toString()}`);
+    expect(unmanagedMetricsResponse.status).toBe(200);
+    const unmanagedMetrics = GetSessionMetricsMeterResponseSchema.parse(await unmanagedMetricsResponse.json());
+    expect(unmanagedMetrics.data.meters.find(meter => meter.name === 'total_sessions')?.aggregate_value).toBe(0);
+  });
+
   it('returns the static session metrics charts', async () => {
     const response = await app.request('/api/internal/metrics/charts');
 
@@ -262,6 +393,26 @@ describe('sessions HTTP agent binding', () => {
       session_id: 'other-user-session',
       created_by_subject: { subject_id: 'someone-else', subject_type: 'user', subject_display_name: 'someone-else' },
       agent: { type: 'inline', spec: inlineSpec },
+      custom: null,
+      metadata: {},
+      external_id: null,
+    });
+    const callerOwnedAgent = await agentStore.createAgent({
+      tenant_id: 'default',
+      created_by_subject: {
+        subject_id: STANDALONE_REQUEST_CONTEXT.subject.id,
+        subject_type: STANDALONE_REQUEST_CONTEXT.subject.type,
+        subject_display_name: STANDALONE_REQUEST_CONTEXT.subject.display_name,
+      },
+      name: 'caller-owned-agent',
+      manifest: inlineSpec,
+      external_id: 'tf-caller-owned-agent',
+    });
+    await sessionStore.createSession({
+      tenant_id: 'default',
+      session_id: 'other-user-reference-session',
+      created_by_subject: { subject_id: 'someone-else', subject_type: 'user', subject_display_name: 'someone-else' },
+      agent: { type: 'reference', id: callerOwnedAgent.id, name: callerOwnedAgent.name },
       custom: null,
       metadata: {},
       external_id: null,
@@ -303,6 +454,24 @@ describe('sessions HTTP agent binding', () => {
     const getForbidden = await app.request('/other-user-session');
     expect(getForbidden.status).toBe(403);
     expect(await getForbidden.json()).toEqual(forbiddenBody);
+    expect((await app.request('/other-user-reference-session')).status).toBe(403);
+
+    const ownerScopeApp = new OpenAPIHono();
+    ownerScopeApp.route(
+      '/',
+      createSessionsRouter({
+        ...sessionDeps,
+        requestReplyRouter: new RequestReplyRouter(),
+        externalAuthorizer: {
+          listAgentAccess: () => Promise.resolve({ kind: 'owner' }),
+          canAccessAgent: () => Promise.resolve(true),
+        },
+      }),
+    );
+    expect((await ownerScopeApp.request('/other-user-reference-session')).status).toBe(403);
+    const ownerScopedListResponse = await ownerScopeApp.request('/');
+    const ownerScopedList = (await ownerScopedListResponse.json()) as { data: Array<{ id: string }> };
+    expect(ownerScopedList.data.some(session => session.id === 'other-user-reference-session')).toBe(false);
 
     const patchForbidden = await app.request('/other-user-session', jsonInit('PATCH', {}));
     expect(patchForbidden.status).toBe(403);

@@ -3,7 +3,7 @@ import { MAIN_THREAD_ID } from '../../../src/agent-session/models/TurnRecord';
 import type { PersistedTurnEvent } from '../../../src/agent-session/schemas/events';
 import { EventType } from '../../../src/agent-session/schemas/events';
 import { CancellationReason } from '../../../src/agent-session/schemas/turn';
-import type { ISessionStore } from '../../../src/agent-session/store/ISessionStore';
+import type { CreateSessionInput, ISessionStore } from '../../../src/agent-session/store/ISessionStore';
 import { decodeSessionEventPageToken } from '../../../src/agent-session/store/SessionEventPageToken';
 import {
   PreviousTurnRunningError,
@@ -216,6 +216,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
         end_timestamp: undefined,
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
       });
       expect(listed.data.map(s => s.session_id)).toContain('created-by-session');
       expect(listed.data.find(s => s.session_id === 'created-by-session')?.created_by_subject.subject_id).toBe(
@@ -242,6 +243,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const filtered = await store.listSessions({
         agent_id: 'agent-abc',
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -579,6 +581,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const listed = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -835,6 +838,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const desc = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -847,6 +851,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const asc = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -864,6 +869,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const first = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 2,
         page_token: undefined,
@@ -876,6 +882,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const second = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 2,
         page_token: first.pagination.next_page_token,
@@ -889,6 +896,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const all = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -904,6 +912,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const bounded = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         order: 'asc',
@@ -929,6 +938,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const listArgs = {
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         order: undefined,
         start_timestamp: undefined,
@@ -955,6 +965,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const listArgs = {
         agent_id: undefined,
         created_by_subject_id: undefined,
+        include_agent_ids: undefined,
         tenant_id: tenant,
         order: 'desc' as const,
         start_timestamp: undefined,
@@ -999,6 +1010,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const aliceOnly = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: 'alice',
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -1012,6 +1024,7 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
       const unmatched = await store.listSessions({
         agent_id: undefined,
         created_by_subject_id: 'nobody',
+        include_agent_ids: undefined,
         tenant_id: tenant,
         limit: 10,
         page_token: undefined,
@@ -1020,6 +1033,119 @@ export function runStoreContractSuite(createStore: () => ISessionStore) {
         end_timestamp: undefined,
       });
       expect(unmatched.data).toEqual([]);
+    });
+
+    it('widens the creator filter with include_agent_ids before pagination', async () => {
+      const store = createStore();
+      const create = (input: {
+        session_id: string;
+        owner: string;
+        agent: CreateSessionInput['agent'];
+      }): Promise<void> =>
+        store.createSession({
+          tenant_id: tenant,
+          session_id: input.session_id,
+          created_by_subject: {
+            subject_id: input.owner,
+            subject_type: 'user',
+            subject_display_name: input.owner,
+          },
+          agent: input.agent,
+          custom: null,
+          metadata: {},
+          external_id: null,
+        });
+
+      await create({ session_id: 'alice-inline', owner: 'alice', agent: { type: 'inline', spec: makeAgentSpec() } });
+      await create({
+        session_id: 'bob-managed',
+        owner: 'bob',
+        agent: { type: 'reference', id: 'managed-agent', name: null },
+      });
+      await create({
+        session_id: 'bob-other',
+        owner: 'bob',
+        agent: { type: 'reference', id: 'other-agent', name: null },
+      });
+      await create({ session_id: 'bob-inline', owner: 'bob', agent: { type: 'inline', spec: makeAgentSpec() } });
+      await store.createSession({
+        tenant_id: 'other-tenant',
+        session_id: 'other-tenant-managed',
+        created_by_subject: { subject_id: 'bob', subject_type: 'user', subject_display_name: 'bob' },
+        agent: { type: 'reference', id: 'managed-agent', name: null },
+        custom: null,
+        metadata: {},
+        external_id: null,
+      });
+
+      const widened = await store.listSessions({
+        agent_id: undefined,
+        created_by_subject_id: 'alice',
+        include_agent_ids: ['managed-agent'],
+        tenant_id: tenant,
+        limit: 1,
+        page_token: undefined,
+        order: undefined,
+        start_timestamp: undefined,
+        end_timestamp: undefined,
+      });
+      expect(widened.data).toHaveLength(1);
+      expect(widened.pagination.next_page_token).toBeDefined();
+
+      const next = await store.listSessions({
+        agent_id: undefined,
+        created_by_subject_id: 'alice',
+        include_agent_ids: ['managed-agent'],
+        tenant_id: tenant,
+        limit: 1,
+        page_token: widened.pagination.next_page_token,
+        order: undefined,
+        start_timestamp: undefined,
+        end_timestamp: undefined,
+      });
+      expect(new Set([...widened.data, ...next.data].map(session => session.session_id))).toEqual(
+        new Set(['alice-inline', 'bob-managed']),
+      );
+      expect(next.pagination.next_page_token).toBeUndefined();
+
+      const narrowedToOtherAgent = await store.listSessions({
+        agent_id: 'other-agent',
+        created_by_subject_id: 'alice',
+        include_agent_ids: ['managed-agent'],
+        tenant_id: tenant,
+        limit: 10,
+        page_token: undefined,
+        order: undefined,
+        start_timestamp: undefined,
+        end_timestamp: undefined,
+      });
+      expect(narrowedToOtherAgent.data).toEqual([]);
+
+      const futureOnly = await store.listSessions({
+        agent_id: undefined,
+        created_by_subject_id: 'alice',
+        include_agent_ids: ['managed-agent'],
+        tenant_id: tenant,
+        limit: 10,
+        page_token: undefined,
+        order: undefined,
+        start_timestamp: new Date(Date.now() + 60 * 60 * 1000),
+        end_timestamp: undefined,
+      });
+      expect(futureOnly.data).toEqual([]);
+
+      const emptyWidening = await store.listSessions({
+        agent_id: undefined,
+        created_by_subject_id: 'alice',
+        include_agent_ids: [],
+        tenant_id: tenant,
+        limit: 10,
+        page_token: undefined,
+        order: undefined,
+        start_timestamp: undefined,
+        end_timestamp: undefined,
+      });
+      expect(emptyWidening.data.map(session => session.session_id)).toEqual(['alice-inline']);
     });
   });
 

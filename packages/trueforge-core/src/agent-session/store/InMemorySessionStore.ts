@@ -275,7 +275,10 @@ export class InMemorySessionStore<
       }
       if (
         input.created_by_subject_id !== undefined &&
-        stored.record.created_by_subject.subject_id !== input.created_by_subject_id
+        stored.record.created_by_subject.subject_id !== input.created_by_subject_id &&
+        !(
+          stored.record.agent.type === 'reference' && input.include_agent_ids?.includes(stored.record.agent.id) === true
+        )
       ) {
         continue;
       }

@@ -110,6 +110,94 @@ describe('turns', () => {
       expect(downloadResponse.status).toBe(403);
       expect(await downloadResponse.json()).toEqual(forbiddenAccess);
     });
+
+    it('allows managed-agent turn reads but keeps create-turn owner-only', async () => {
+      const db = createSqliteDb(':memory:');
+      await migrateSqliteToLatest(db);
+      const sessionStore = new SqliteSessionStore(db);
+      const sessions = new Sessions({ sessionStore });
+      const agentStore = new SqliteAgentStore(db);
+      const agent = await agentStore.createAgent({
+        tenant_id: 'default',
+        created_by_subject: {
+          subject_id: 'someone-else',
+          subject_type: 'user',
+          subject_display_name: 'someone-else',
+        },
+        name: 'managed-turn-agent',
+        manifest: AgentSpecSchema.parse({
+          model: { name: 'test-provider/test-model' },
+          instructions: 'test',
+        }),
+        external_id: 'tf-managed-turn-agent',
+      });
+      await sessionStore.createSession({
+        tenant_id: 'default',
+        session_id: 'managed-session',
+        created_by_subject: {
+          subject_id: 'someone-else',
+          subject_type: 'user',
+          subject_display_name: 'someone-else',
+        },
+        agent: { type: 'reference', id: agent.id, name: agent.name },
+        custom: null,
+        metadata: {},
+        external_id: null,
+      });
+
+      const tokenStore = new SqliteOAuthTokenStore(db);
+      const app = new OpenAPIHono();
+      app.route(
+        '/',
+        createTurnsRouter({
+          sessions,
+          sessionStore,
+          activeTurns: new ActiveTurnRegistry(),
+          resolveModelProviderStore: () => new SqliteModelProviderStore(db),
+          resolveMcpServerStore: () => mcpServerStoreWithAuth(db, tokenStore),
+          skillStore: new SqliteSkillStore(db),
+          resolveAgentStore: () => agentStore,
+          eventSubscriptions: new EventSubscriptionRegistry(undefined),
+          sandboxProviderStore: new SqliteSandboxProviderStore(db),
+          logger: createLogger({ silent: true }),
+          resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
+          externalAuthorizer: {
+            listAgentAccess: ({ action }) =>
+              Promise.resolve(
+                action === 'manage'
+                  ? {
+                      kind: 'agent_external_ids',
+                      agent_external_ids: ['tf-managed-turn-agent'],
+                    }
+                  : { kind: 'agent_external_ids', agent_external_ids: [] },
+              ),
+            canAccessAgent: () => Promise.resolve(false),
+          },
+        }),
+      );
+
+      expect((await app.request('/managed-session/turns')).status).toBe(200);
+      expect((await app.request('/managed-session/turns/missing')).status).toBe(404);
+      expect((await app.request('/managed-session/turns/missing/events')).status).toBe(404);
+      expect((await app.request('/managed-session/turns/missing/subscribe')).status).toBe(404);
+      expect(
+        (
+          await app.request(
+            `/managed-session/turns/missing/download-sandbox-file?path=${encodeURIComponent('/workspace/file.txt')}`,
+          )
+        ).status,
+      ).toBe(404);
+
+      const createResponse = await app.request('/managed-session/turns', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ stream: false }),
+      });
+      expect(createResponse.status).toBe(403);
+      expect(await createResponse.json()).toEqual({
+        error: { message: 'Only the session creator can create turns' },
+      });
+    });
   });
 
   describe('create turn non-streaming', () => {

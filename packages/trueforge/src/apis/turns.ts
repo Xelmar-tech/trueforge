@@ -57,6 +57,7 @@ import {
   resolveSandboxProvider,
 } from '../runtime/sessionResources';
 import { checkSnapshotStatus } from '../sandbox/providerUtils';
+import { canReadSession, isSessionOwner } from './sessionAccess';
 
 export function toWireTurn(record: TurnRecordWithoutSnapshot): Turn {
   return {
@@ -511,17 +512,6 @@ export function resolveAfterSequenceNumber(c: Context, bodyAfterSequenceNumber?:
   return bodyAfterSequenceNumber;
 }
 
-/** True when the subject is the session creator (`created_by_subject.subject_id`). */
-function checkTurnAccess({
-  subject_id,
-  created_by_subject,
-}: {
-  subject_id: string;
-  created_by_subject: { subject_id: string };
-}): boolean {
-  return created_by_subject.subject_id === subject_id;
-}
-
 const FORBIDDEN_SESSION_ACCESS = 'Only the session creator can access this session';
 const FORBIDDEN_CREATE_TURN = 'Only the session creator can create turns';
 
@@ -538,12 +528,13 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
     if (!session) {
       return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
     }
-    if (
-      !checkTurnAccess({
-        subject_id: requestContext.subject.id,
-        created_by_subject: session.record.created_by_subject,
-      })
-    ) {
+    const canRead = await canReadSession({
+      session: session.record,
+      context: requestContext,
+      agentStore: deps.resolveAgentStore(c),
+      authorizer: deps.externalAuthorizer,
+    });
+    if (!canRead) {
       return c.json({ error: { message: FORBIDDEN_SESSION_ACCESS } }, 403);
     }
     try {
@@ -570,12 +561,13 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
     if (!session) {
       return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
     }
-    if (
-      !checkTurnAccess({
-        subject_id: requestContext.subject.id,
-        created_by_subject: session.record.created_by_subject,
-      })
-    ) {
+    const canRead = await canReadSession({
+      session: session.record,
+      context: requestContext,
+      agentStore: deps.resolveAgentStore(c),
+      authorizer: deps.externalAuthorizer,
+    });
+    if (!canRead) {
       return c.json({ error: { message: FORBIDDEN_SESSION_ACCESS } }, 403);
     }
     const turn = await session.getTurn(turnId);
@@ -602,12 +594,13 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
       if (!session) {
         return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
       }
-      if (
-        !checkTurnAccess({
-          subject_id: requestContext.subject.id,
-          created_by_subject: session.record.created_by_subject,
-        })
-      ) {
+      const canRead = await canReadSession({
+        session: session.record,
+        context: requestContext,
+        agentStore: deps.resolveAgentStore(c),
+        authorizer: deps.externalAuthorizer,
+      });
+      if (!canRead) {
         return c.json({ error: { message: FORBIDDEN_SESSION_ACCESS } }, 403);
       }
 
@@ -667,12 +660,13 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
     if (!session) {
       return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
     }
-    if (
-      !checkTurnAccess({
-        subject_id: requestContext.subject.id,
-        created_by_subject: session.record.created_by_subject,
-      })
-    ) {
+    const canRead = await canReadSession({
+      session: session.record,
+      context: requestContext,
+      agentStore: deps.resolveAgentStore(c),
+      authorizer: deps.externalAuthorizer,
+    });
+    if (!canRead) {
       return c.json({ error: { message: FORBIDDEN_SESSION_ACCESS } }, 403);
     }
     const turn = await session.getTurn(turnId);
@@ -706,12 +700,7 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
     if (!session) {
       return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
     }
-    if (
-      !checkTurnAccess({
-        subject_id: requestContext.subject.id,
-        created_by_subject: session.record.created_by_subject,
-      })
-    ) {
+    if (!isSessionOwner({ session: session.record, context: requestContext })) {
       return c.json({ error: { message: FORBIDDEN_CREATE_TURN } }, 403);
     }
 
@@ -798,12 +787,13 @@ export function createTurnsRouter(deps: TurnsRouterDeps) {
     if (!session) {
       return c.json({ error: { message: `Session not found: ${sessionId}` } }, 404);
     }
-    if (
-      !checkTurnAccess({
-        subject_id: requestContext.subject.id,
-        created_by_subject: session.record.created_by_subject,
-      })
-    ) {
+    const canRead = await canReadSession({
+      session: session.record,
+      context: requestContext,
+      agentStore: deps.resolveAgentStore(c),
+      authorizer: deps.externalAuthorizer,
+    });
+    if (!canRead) {
       return c.json({ error: { message: FORBIDDEN_SESSION_ACCESS } }, 403);
     }
     const turn = await session.getTurn(turnId);

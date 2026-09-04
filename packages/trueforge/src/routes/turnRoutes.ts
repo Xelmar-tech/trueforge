@@ -29,8 +29,7 @@ export const listTurnsRoute = createRoute({
   path: '/{session_id}/turns',
   tags: [OpenApiTag.AGENT_SESSIONS],
   summary: 'List turns in a session',
-  description:
-    'List turns for a session (newest first by default), token-paginated. Only the session creator may list turns.',
+  description: 'List turns when the caller owns the session or manages its saved agent.',
   'x-fern-sdk-group-name': ['sessions'],
   'x-fern-sdk-method-name': 'list_turns',
   'x-fern-pagination': TOKEN_PAGINATION,
@@ -49,7 +48,7 @@ export const listTurnsRoute = createRoute({
     },
     403: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
-      description: 'Caller is not the session creator.',
+      description: 'Caller cannot read the session.',
     },
     404: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
@@ -63,7 +62,7 @@ export const getTurnRoute = createRoute({
   path: '/{session_id}/turns/{turn_id}',
   tags: [OpenApiTag.AGENT_SESSIONS],
   summary: 'Get a turn',
-  description: 'Fetch a single turn by ID. Only the session creator may fetch it.',
+  description: 'Fetch a turn when the caller owns the session or manages its saved agent.',
   'x-fern-sdk-group-name': ['sessions'],
   'x-fern-sdk-method-name': 'get_turn',
   request: {
@@ -76,7 +75,7 @@ export const getTurnRoute = createRoute({
     },
     403: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
-      description: 'Caller is not the session creator.',
+      description: 'Caller cannot read the session.',
     },
     404: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
@@ -90,8 +89,7 @@ export const downloadSandboxFileRoute = createRoute({
   path: '/{session_id}/turns/{turn_id}/download-sandbox-file',
   tags: [OpenApiTag.AGENT_SESSIONS],
   summary: 'Download a file from the turn sandbox',
-  description:
-    "Download a file from the sandbox this turn ran in. Paths come from the assistant's `sandbox_artifacts` block. Only the session creator may download.",
+  description: 'Download a turn sandbox file when the caller can read the session.',
   'x-fern-sdk-group-name': ['sessions'],
   'x-fern-sdk-method-name': 'download_sandbox_file',
   request: {
@@ -109,7 +107,7 @@ export const downloadSandboxFileRoute = createRoute({
     },
     403: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
-      description: 'Caller is not the session creator.',
+      description: 'Caller cannot read the session.',
     },
     404: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
@@ -139,8 +137,7 @@ export const listTurnEventsRoute = createRoute({
   path: '/{session_id}/turns/{turn_id}/events',
   tags: [OpenApiTag.AGENT_SESSIONS],
   summary: 'List turn events',
-  description:
-    'Paginated persisted events for a turn (insertion order by default). Only the session creator may list events.',
+  description: 'List persisted turn events when the caller can read the session.',
   'x-fern-sdk-group-name': ['sessions'],
   'x-fern-sdk-method-name': 'list_turn_events',
   'x-fern-pagination': TOKEN_PAGINATION,
@@ -159,7 +156,7 @@ export const listTurnEventsRoute = createRoute({
     },
     403: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
-      description: 'Caller is not the session creator.',
+      description: 'Caller cannot read the session.',
     },
     404: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
@@ -248,7 +245,7 @@ export const subscribeTurnRoute = createRoute({
   tags: [OpenApiTag.AGENT_SESSIONS],
   summary: 'Subscribe to a running turn',
   description:
-    'Subscribe to the live SSE stream for a turn. Only the session creator may subscribe. Pass `after_sequence_number` to resume after a disconnect (exclusive — events after this sequence number are replayed).',
+    'Subscribe to a live turn when the caller can read the session. Pass `after_sequence_number` to resume after a disconnect.',
   'x-fern-sdk-group-name': ['sessions'],
   'x-fern-sdk-method-name': 'subscribe_to_turn',
   'x-fern-streaming': { format: 'sse', resumable: true },
@@ -271,7 +268,7 @@ export const subscribeTurnRoute = createRoute({
     },
     403: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },
-      description: 'Caller is not the session creator.',
+      description: 'Caller cannot read the session.',
     },
     404: {
       content: { 'application/json': { schema: RequestErrorResponseSchema } },

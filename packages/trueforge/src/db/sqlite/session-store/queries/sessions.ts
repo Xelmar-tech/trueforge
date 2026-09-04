@@ -262,7 +262,15 @@ export async function listSessions(
   if (input.agent_id !== undefined) {
     query = query.where('agent_id', '=', input.agent_id);
   }
-  if (input.created_by_subject_id !== undefined) {
+  const includeAgentIds = input.include_agent_ids;
+  if (input.created_by_subject_id !== undefined && includeAgentIds !== undefined && includeAgentIds.length > 0) {
+    query = query.where(eb =>
+      eb.or([
+        eb(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id),
+        eb('agent_id', 'in', [...includeAgentIds]),
+      ]),
+    );
+  } else if (input.created_by_subject_id !== undefined) {
     query = query.where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id);
   }
   if (input.start_timestamp !== undefined) {

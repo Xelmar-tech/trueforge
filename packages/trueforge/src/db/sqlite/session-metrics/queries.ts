@@ -19,7 +19,7 @@ async function fetchSessionMetricsAggregate(
   const start_timestamp = input.start_timestamp.toISOString();
   const end_timestamp = input.end_timestamp.toISOString();
   // Scan rows; fold via foldSessionMetricsAggregate (same as InMemory / Postgres).
-  const rows = await db
+  let query = db
     .selectFrom('session')
     .select([
       sql<number>`CAST(COALESCE(metrics->>'total_turns', 0) AS INTEGER)`.as('total_turns'),
@@ -28,10 +28,12 @@ async function fetchSessionMetricsAggregate(
     ])
     .where('tenant_id', '=', input.tenant_id)
     .where('agent_id', '=', input.agent_id)
-    .where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id)
     .where('created_at', '>=', start_timestamp)
-    .where('created_at', '<=', end_timestamp)
-    .execute();
+    .where('created_at', '<=', end_timestamp);
+  if (input.created_by_subject_id !== undefined) {
+    query = query.where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id);
+  }
+  const rows = await query.execute();
 
   return foldSessionMetricsAggregate(rows);
 }
@@ -45,7 +47,7 @@ async function fetchSessionMetricsBuckets(
   const end_timestamp = input.end_timestamp.toISOString();
   // Sparse buckets only; builders zero-fill missing intervals for the chart line.
   const bucketTimestamp = sql<number>`CAST(unixepoch(created_at) / ${step_seconds} AS INTEGER) * ${step_seconds}`;
-  const buckets = await db
+  let query = db
     .selectFrom('session')
     .select([
       bucketTimestamp.as('timestamp_seconds'),
@@ -55,9 +57,12 @@ async function fetchSessionMetricsBuckets(
     ])
     .where('tenant_id', '=', input.tenant_id)
     .where('agent_id', '=', input.agent_id)
-    .where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id)
     .where('created_at', '>=', start_timestamp)
-    .where('created_at', '<=', end_timestamp)
+    .where('created_at', '<=', end_timestamp);
+  if (input.created_by_subject_id !== undefined) {
+    query = query.where(sql`json_extract(created_by_subject, '$.subject_id')`, '=', input.created_by_subject_id);
+  }
+  const buckets = await query
     .groupBy(sql`1`)
     .orderBy('timestamp_seconds')
     .execute();
