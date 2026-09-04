@@ -1,4 +1,5 @@
 import { createAgentsRouter } from '../../../src/apis/agents';
+import { STANDALONE_REQUEST_CONTEXT } from '../../../src/auth/identity';
 import { migrateSqliteToLatest } from '../../../src/db/migrateSqlite';
 import { SqliteAgentStore } from '../../../src/db/sqlite/agent-store/SqliteAgentStore';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
@@ -78,12 +79,13 @@ describe('agents router', () => {
     await modelProviderStore.upsertProvider({ tenant_id: 'default', name: 'anthropic', manifest: modelProvider });
     agentStore = new SqliteAgentStore(db);
     router = createAgentsRouter({
-      agentStore,
+      resolveAgentStore: () => agentStore,
       resolveModelProviderStore: () => modelProviderStore,
       resolveMcpServerStore: () => new SqliteMcpServerStore(db),
       skillStore: new SqliteSkillStore(db),
       sandboxProviderStore: new SqliteSandboxProviderStore(db),
       withTransaction: callback => db.transaction().execute(callback),
+      resolveRequestContext: () => STANDALONE_REQUEST_CONTEXT,
     });
   });
 
@@ -167,6 +169,12 @@ describe('agents router', () => {
   it('POST rejects invalid bodies, unknown models, and duplicate names', async () => {
     const badName = await router.request('/', jsonInit('POST', { ...writeBody, name: 'Not A Name' }));
     expect(badName.status).toBe(400);
+
+    const reservedTfg = await router.request('/', jsonInit('POST', { ...writeBody, name: 'tfg' }));
+    expect(reservedTfg.status).toBe(400);
+
+    const reservedTrueforge = await router.request('/', jsonInit('POST', { ...writeBody, name: 'trueforge' }));
+    expect(reservedTrueforge.status).toBe(400);
 
     const unknownModel = await router.request(
       '/',

@@ -7,6 +7,7 @@
  */
 import type {
   AgentSpec,
+  CreatedBySubject,
   PersistedTurnEvent,
   SessionMetadata,
   SessionMetrics,
@@ -57,7 +58,7 @@ export interface SessionTable {
   tenant_id: string;
   session_id: string;
   /** Caller identity that created the session (immutable after create). */
-  created_by: string;
+  created_by_subject: JsonbColumn<CreatedBySubject>;
   /** Named registry binding; XOR with `agent_spec`. */
   agent_id: string | null;
   /**
@@ -222,6 +223,7 @@ export interface AgentTable {
   /** AgentSpec document; replaced whole on every upsert */
   manifest: JsonbColumn<AgentSpec>;
   external_id: string | null;
+  created_by_subject: JsonbColumn<CreatedBySubject>;
   created_at: string;
   updated_at: string;
 }
@@ -243,8 +245,7 @@ export interface ScheduleTable {
   manifest: JsonbColumn<ScheduleManifest>;
   /** `paused` stops triggering and drops the pending run; in-flight runs continue */
   status: ScheduleStatus;
-  /** Identity every run of this schedule executes as (`UserContext.userRef`) */
-  created_by: string;
+  created_by_subject: JsonbColumn<CreatedBySubject>;
   created_at: string;
   updated_at: string;
 }
@@ -264,8 +265,7 @@ export interface ScheduleRunTable {
   scheduled_for: string;
   /** `scheduled` | `triggered` | `failed` | `missed` — length ≤ 16 */
   status: ScheduleRunStatus;
-  /** `UserContext.userRef` of who triggered the run */
-  triggered_by: string;
+  created_by_subject: JsonbColumn<CreatedBySubject>;
   triggered_at: string | null;
   created_at: string;
   updated_at: string;
@@ -297,7 +297,7 @@ export interface McpServerTable {
 /**
  * PRIMARY KEY (oauth_server_id, user_id)
  * No `tenant_id` — already scoped to tenant via the FK. Tokens are per harness user
- * (`user_id` = `UserContext.userRef`); any tenant-scoped read resolves `oauth_server_id`
+ * (`user_id` = `RequestContext.subject.id`); any tenant-scoped read resolves `oauth_server_id`
  * through mcp_server (by tenant_id + name) first.
  */
 export interface OAuthTokenTable {
