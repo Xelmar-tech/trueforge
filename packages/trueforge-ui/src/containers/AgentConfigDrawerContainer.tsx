@@ -106,8 +106,6 @@ export function AgentConfigDrawerContainer({ showClose = false }: { showClose?: 
         model={model}
         skillsAvailable={capabilities?.skill.enabled === true}
         instructions={instructionDraft}
-        onInstructionsChange={onInstructionChange}
-        onInstructionsBlur={flushInstructions}
         onOpenEditor={setEditor}
         onChange={updateSpec}
         onClose={showClose ? closeDrawer : undefined}
@@ -122,6 +120,9 @@ export function AgentConfigDrawerContainer({ showClose = false }: { showClose?: 
         error={catalog.error}
         skillsDisabled={capabilities?.skill.enabled !== true}
         sandboxAvailable={capabilities?.sandbox.enabled === true}
+        instructions={instructionDraft}
+        onInstructionsChange={onInstructionChange}
+        onInstructionsBlur={flushInstructions}
         loadMcpTools={loadMcpTools}
         onRefreshConnectors={catalog.refreshConnectors}
         onChange={updateSpec}
