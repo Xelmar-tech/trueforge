@@ -10,6 +10,7 @@ import type {
 import { TRUEFOUNDRY_MANAGED_MESSAGE, TRUEFOUNDRY_MANAGED_STATUS } from './trueFoundryManaged';
 
 const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
+const SETTINGS_FETCH_TIMEOUT_MS = 10_000;
 
 const SANDBOX_DEFAULT_SETTINGS = {
   timeoutMs: 60_000,
@@ -48,9 +49,21 @@ async function resolveDaytonaSandboxSettings({
     return cachedRemoteDaytonaSettings.value;
   }
   // Deployment settings server (config), not tenant-configurable — trusted like CONTROL_PLANE_URL.
-  const response = await fetch(settingsServerUrl, {
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
-  });
+  let response: Response;
+  try {
+    response = await fetch(settingsServerUrl, {
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(SETTINGS_FETCH_TIMEOUT_MS),
+    });
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    throw new Error(
+      timedOut
+        ? `Sandbox settings endpoint timed out after ${String(SETTINGS_FETCH_TIMEOUT_MS / 1000)}s`
+        : 'Sandbox settings endpoint request failed',
+      { cause: error },
+    );
+  }
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Sandbox settings endpoint returned ${String(response.status)}: ${body}`);

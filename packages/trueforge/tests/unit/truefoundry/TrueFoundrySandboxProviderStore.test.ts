@@ -72,6 +72,7 @@ describe('TrueFoundrySandboxProviderStore', () => {
 
     expect(fetchMock).toHaveBeenCalledWith('https://settings.example/daytona/settings', {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ACCESS_TOKEN}` },
+      signal: expect.any(AbortSignal),
     });
     expect(record).toMatchObject({
       tenant_id: TENANT,
@@ -97,6 +98,15 @@ describe('TrueFoundrySandboxProviderStore', () => {
     await store.getSandboxProvider(TENANT);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('get fails when settings fetch times out', async () => {
+    const timeout = new Error('The operation was aborted due to timeout');
+    timeout.name = 'TimeoutError';
+    global.fetch = jest.fn().mockRejectedValue(timeout) as typeof fetch;
+    const store = new TrueFoundrySandboxProviderStore({ accessToken: ACCESS_TOKEN });
+
+    await expect(store.getSandboxProvider(TENANT)).rejects.toThrow('Sandbox settings endpoint timed out after 10s');
   });
 
   it('writes and get-for-update are managed (424)', () => {
