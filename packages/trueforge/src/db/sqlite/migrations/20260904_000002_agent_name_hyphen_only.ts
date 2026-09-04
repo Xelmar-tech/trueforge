@@ -3,7 +3,7 @@ import { planAgentNameHyphenRenames, type AgentNameRow } from '../../planAgentNa
 
 /**
  * SQLite mirror of postgres/migrations/20260904_000002_agent_name_hyphen_only.ts.
- * FKs off around the txn: schedule FK is ON DELETE CASCADE only (no ON UPDATE).
+ * Binding is `schedule.agent_id` → `agent(id)` — denormalized name updates need no FK toggle.
  */
 export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
   try {
@@ -16,30 +16,25 @@ export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
     }
 
     const now = new Date().toISOString();
-    await sql`PRAGMA foreign_keys = OFF`.execute(db);
-    try {
-      await db.transaction().execute(async trx => {
-        for (const rename of renames) {
-          await sql`
-            UPDATE agent
-            SET name = ${rename.to}, updated_at = ${now}
-            WHERE id = ${rename.id}
-          `.execute(trx);
-          await sql`
-            UPDATE session
-            SET agent_name = ${rename.to}
-            WHERE tenant_id = ${rename.tenant_id} AND agent_name = ${rename.from}
-          `.execute(trx);
-          await sql`
-            UPDATE schedule
-            SET agent_name = ${rename.to}
-            WHERE tenant_id = ${rename.tenant_id} AND agent_name = ${rename.from}
-          `.execute(trx);
-        }
-      });
-    } finally {
-      await sql`PRAGMA foreign_keys = ON`.execute(db);
-    }
+    await db.transaction().execute(async trx => {
+      for (const rename of renames) {
+        await sql`
+          UPDATE agent
+          SET name = ${rename.to}, updated_at = ${now}
+          WHERE id = ${rename.id}
+        `.execute(trx);
+        await sql`
+          UPDATE session
+          SET agent_name = ${rename.to}
+          WHERE tenant_id = ${rename.tenant_id} AND agent_name = ${rename.from}
+        `.execute(trx);
+        await sql`
+          UPDATE schedule
+          SET agent_name = ${rename.to}
+          WHERE tenant_id = ${rename.tenant_id} AND agent_name = ${rename.from}
+        `.execute(trx);
+      }
+    });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed agent name hyphen migration: ${detail}`, { cause: error });

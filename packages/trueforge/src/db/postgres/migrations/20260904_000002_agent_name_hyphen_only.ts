@@ -4,7 +4,7 @@ import { planAgentNameHyphenRenames, type AgentNameRow } from '../../planAgentNa
 /**
  * Rewrite agent names that contain "." or "_" to hyphen-only 2–64 form.
  * Updates `agent.name`, denormalized `session.agent_name`, and `schedule.agent_name`.
- * Drops `schedule_agent_name_fk` for the rename (ON DELETE CASCADE only — no ON UPDATE).
+ * Binding is `schedule.agent_id` → `agent(id)` — no name FK to drop/recreate.
  * Irreversible: originals are not retained.
  */
 export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
@@ -18,9 +18,6 @@ export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
     if (renames.length === 0) {
       return;
     }
-
-    // Parent key update would fail while schedules still reference the old name.
-    await sql`ALTER TABLE schedule DROP CONSTRAINT schedule_agent_name_fk`.execute(db);
 
     for (const rename of renames) {
       await sql`
@@ -39,14 +36,6 @@ export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
         WHERE tenant_id = ${rename.tenant_id} AND agent_name = ${rename.from}
       `.execute(db);
     }
-
-    await sql`
-      ALTER TABLE schedule
-      ADD CONSTRAINT schedule_agent_name_fk
-      FOREIGN KEY (tenant_id, agent_name)
-      REFERENCES agent (tenant_id, name)
-      ON DELETE CASCADE
-    `.execute(db);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed agent name hyphen migration: ${detail}`, { cause: error });
