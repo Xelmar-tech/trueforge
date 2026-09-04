@@ -1,8 +1,6 @@
 import { sql, type Kysely } from 'kysely';
 import { planAgentNameHyphenRenames, type AgentNameRow } from '../../planAgentNameHyphenRenames';
 
-const MIGRATION_ID = '20260904_000001_agent_name_hyphen_only';
-
 /**
  * Rewrite agent names that contain "." or "_" to hyphen-only 2–64 form.
  * Updates `agent.name`, denormalized `session.agent_name`, and `schedule.agent_name`.
@@ -51,11 +49,11 @@ export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
     `.execute(db);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed agent name hyphen migration (${MIGRATION_ID}): ${detail}`, { cause: error });
+    throw new Error(`Failed agent name hyphen migration: ${detail}`, { cause: error });
   }
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
   await sql`SET LOCAL lock_timeout = '5s'`.execute(db);
-  return Promise.reject(new Error(`${MIGRATION_ID} is not reversible`));
+  return Promise.reject(new Error(`This migration is not reversible`));
 }

@@ -1,10 +1,8 @@
 import { sql, type Kysely } from 'kysely';
 import { planAgentNameHyphenRenames, type AgentNameRow } from '../../planAgentNameHyphenRenames';
 
-const MIGRATION_ID = '20260904_000001_agent_name_hyphen_only';
-
 /**
- * SQLite mirror of postgres/migrations/20260904_000001_agent_name_hyphen_only.ts.
+ * SQLite mirror of postgres/migrations/20260904_000002_agent_name_hyphen_only.ts.
  * FKs off around the txn: schedule FK is ON DELETE CASCADE only (no ON UPDATE).
  */
 export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
@@ -44,11 +42,11 @@ export async function up<TDatabase>(db: Kysely<TDatabase>): Promise<void> {
     }
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Failed agent name hyphen migration (${MIGRATION_ID}): ${detail}`, { cause: error });
+    throw new Error(`Failed agent name hyphen migration: ${detail}`, { cause: error });
   }
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
   void db;
-  return Promise.reject(new Error(`${MIGRATION_ID} is not reversible`));
+  return Promise.reject(new Error(`This migration is not reversible`));
 }
