@@ -1,22 +1,74 @@
 import { HTTPException } from 'hono/http-exception';
-import { resolveTrueFoundrySandboxProviderConfig } from '../config';
+import { z } from 'zod';
+import configuration, { resolveTrueFoundrySandboxProviderConfig } from '../config';
 import type {
   ISandboxProviderStore,
   SandboxProviderRecord,
   UpdateSandboxStatusInput,
   UpsertSandboxProviderInput,
 } from '../db/sandboxProviderStore';
-import { resolveDaytonaSandboxSettings } from './resolveDaytonaSandboxSettings';
 import { TRUEFOUNDRY_MANAGED_MESSAGE, TRUEFOUNDRY_MANAGED_STATUS } from './trueFoundryManaged';
+
+const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+const SANDBOX_DEFAULT_SETTINGS = {
+  timeoutMs: 60_000,
+  autoStopIntervalInMinutes: 5,
+  autoArchiveIntervalInMinutes: 60,
+  autoDeleteIntervalInMinutes: 43_200,
+} as const;
+
+const DaytonaSandboxSettingsSchema = z.object({
+  snapshotName: z.string().min(1, 'snapshotName is required'),
+  autoStopIntervalInMinutes: z.number().default(SANDBOX_DEFAULT_SETTINGS.autoStopIntervalInMinutes),
+  autoArchiveIntervalInMinutes: z.number().default(SANDBOX_DEFAULT_SETTINGS.autoArchiveIntervalInMinutes),
+  autoDeleteIntervalInMinutes: z.number().default(SANDBOX_DEFAULT_SETTINGS.autoDeleteIntervalInMinutes),
+  timeoutMs: z.number().default(SANDBOX_DEFAULT_SETTINGS.timeoutMs),
+});
+
+type DaytonaSandboxSettings = z.infer<typeof DaytonaSandboxSettingsSchema>;
+
+let cachedRemoteDaytonaSettings:
+  | {
+      value: DaytonaSandboxSettings;
+      expiresAt: number;
+    }
+  | undefined;
+
+async function resolveDaytonaSandboxSettings({
+  accessToken,
+}: {
+  accessToken: string;
+}): Promise<DaytonaSandboxSettings> {
+  const settingsServerUrl = configuration.SANDBOX_SETTINGS_SERVER_URL;
+  if (settingsServerUrl === undefined) {
+    throw new Error('SANDBOX_SETTINGS_SERVER_URL is required when resolving Daytona sandbox settings');
+  }
+  if (cachedRemoteDaytonaSettings !== undefined && Date.now() < cachedRemoteDaytonaSettings.expiresAt) {
+    return cachedRemoteDaytonaSettings.value;
+  }
+  // Deployment settings server (config), not tenant-configurable — trusted like CONTROL_PLANE_URL.
+  const response = await fetch(settingsServerUrl, {
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Sandbox settings endpoint returned ${String(response.status)}: ${body}`);
+  }
+  const settings = DaytonaSandboxSettingsSchema.parse(await response.json());
+  cachedRemoteDaytonaSettings = { value: settings, expiresAt: Date.now() + SETTINGS_CACHE_TTL_MS };
+  return settings;
+}
+
+/** @internal Exported for tests. */
+export function __resetDaytonaSettingsCacheForTests(): void {
+  cachedRemoteDaytonaSettings = undefined;
+}
 
 function managed(): never {
   throw new HTTPException(TRUEFOUNDRY_MANAGED_STATUS, { message: TRUEFOUNDRY_MANAGED_MESSAGE });
 }
 
-/**
- * Shared Daytona sandbox for TrueFoundry mode: settings from env + settings-server,
- * not the tenant DB. Writes are managed (424).
- */
 export class TrueFoundrySandboxProviderStore<TTransaction = never> implements ISandboxProviderStore<TTransaction> {
   readonly #accessToken: string;
 
