@@ -23,7 +23,7 @@ Branch: `feat/automations`.
 - [x] `GET /api/v1/event-sources`, `POST /api/v1/event-sources/github/manifest`, public callback
 - [x] `GET /api/v1/events` (ledger listing with filters, for the picker)
 - [x] Settings → Event sources UI (manifest flow, health, delete)
-- [ ] Proof: real delivery → event row
+- [x] Proof: real delivery → event row
 
 ## 2. Automations core
 
@@ -34,7 +34,7 @@ Branch: `feat/automations`.
 - [x] SDK regen for automations
 - [x] controller loops: `event-coalesce`, `automation-dispatch`, `run-finalize`
 - [x] completion events emitted into the per-tenant internal `trueforge` source
-- [ ] GitHub actions for agents (acting as the App) — see DECISIONS.md
+- [x] GitHub actions for agents (acting as the App): built-in per-source MCP endpoint — see DECISIONS.md
 - [x] Proof (unit): burst of 4 events → 1 run with 4 event ids; hand-off creates 1 session + 1 turn
 
 ## 3. UI
@@ -61,7 +61,7 @@ Branch: `feat/automations`.
 
 ## 6. Deploy
 
-- [ ] Railway hosted mode (Postgres + Redis), public domain
-- [ ] GitHub App webhook pointed at it
+- [x] Railway hosted mode (Postgres + Redis), public domain
+- [x] GitHub App webhook pointed at it
 - [ ] Proof: step 5 repeated against the deployment
 - [ ] `HANDOFF.md`
