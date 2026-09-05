@@ -102,6 +102,16 @@ real identifiers (delivery ids, issue numbers, run ids, session ids). No credent
   `…/review`, session `01m1s38vw23erbdsw7baqkyxt7`) and `publish-dashboard` run
   `01m1s38j15kec2c5xjd6b2qexk` (lane `…/dashboard`, session `01m1s38w4jwt58cd5t4vj28c3b`),
   both `shadowed` (paused before their first tool call) within 45 s.
+- Fully armed chain (`review-plan` and `publish-dashboard` set to `armed` via
+  `PUT /api/v1/automations/{id}`, label re-applied at 15:35:53 UTC): `plan-mission` run
+  `01m1s3ch16j31pqpp2an2e0rqb` completed (the planner found the existing sub-issues and
+  commented "A plan is already published for this Mission…" instead of planning twice) and
+  emitted `plan.published` `01m1s3egcnwfkre04t0br1sqkm`; `review-plan` run
+  `01m1s3eggzbampnb1nd5bddvbv` completed — `ready-for-agent` added to #2 and #3, comment
+  "Plan reviewed: 2 tickets ready." on #1 — and emitted `plan.reviewed`
+  `01m1s3fwc0vvmra07bprgd0eda`; `publish-dashboard` run `01m1s3egh6g36zrca9a82q33xh` completed
+  with the "## Mission dashboard" table comment on #1. Label → plan → review → dashboard took
+  2 min 2 s wall clock, every GitHub write authored by `xelmar-foreman[bot]`.
 
 ## 6. Deploy — 2026-09-05
 
