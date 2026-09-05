@@ -80,8 +80,10 @@ export default defineRailway(_ctx => {
       RAILWAY_DOCKERFILE_PATH: 'Dockerfile.dev',
       STANDALONE: 'false',
       DATABASE_URL: db.env.DATABASE_URL,
-      // Reaches the app over Railway private networking (no public egress).
-      SERVER_URL: 'http://${{trueforge.RAILWAY_PRIVATE_DOMAIN}}:${{trueforge.PORT}}',
+      // `${{trueforge.PORT}}` expands to "" (PORT is injected at runtime, not a service variable),
+      // and the image binds 0.0.0.0 while the private network is IPv6-only. The public edge
+      // works today; switch back to the private domain once the image binds `::`.
+      SERVER_URL: 'https://${{trueforge.RAILWAY_PUBLIC_DOMAIN}}',
     },
   });
 
