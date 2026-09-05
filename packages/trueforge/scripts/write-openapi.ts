@@ -24,6 +24,8 @@ import configuration from '../src/config';
 import { McpServerWithAuthStore } from '../src/db/McpServerWithAuthStore';
 import { SqliteAgentStore } from '../src/db/sqlite/agent-store/SqliteAgentStore';
 import { createSqliteDb } from '../src/db/sqlite/client';
+import { SqliteEventSourceStore } from '../src/db/sqlite/event-source-store/SqliteEventSourceStore';
+import { SqliteEventStore } from '../src/db/sqlite/event-store/SqliteEventStore';
 import { SqliteMcpServerStore } from '../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
 import { SqliteModelProviderStore } from '../src/db/sqlite/model-provider-store/SqliteModelProviderStore';
 import { SqliteSandboxProviderStore } from '../src/db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore';
@@ -80,6 +82,8 @@ const app = createServerApp({
   sandboxProviderStore: new SqliteSandboxProviderStore(db),
   resolveAgentStore: () => agentStore,
   scheduleStore: new SqliteScheduleStore(db),
+  eventSourceStore: new SqliteEventSourceStore(db),
+  eventStore: new SqliteEventStore(db),
   sessionStore,
   sessionMetricsStore: new SqliteSessionMetricsStore(db),
   sessions: new Sessions({ sessionStore }),

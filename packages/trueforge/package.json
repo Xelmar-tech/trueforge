@@ -66,6 +66,7 @@
     "@hono/swagger-ui": "^0.2.2",
     "@hono/zod-openapi": "^1.6.1",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "@octokit/app": "^16.1.4",
     "@truefoundry/trueforge-core": "workspace:*",
     "@truefoundry/trueforge-sdk": "workspace:*",
     "better-sqlite3": "^13.0.3",
@@ -84,6 +85,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@octokit/webhooks-types": "^7.6.1",
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
     "@types/better-sqlite3": "^7.6.13",

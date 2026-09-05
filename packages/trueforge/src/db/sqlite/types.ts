@@ -25,6 +25,14 @@ import type {
 } from '@truefoundry/trueforge-core/core';
 import type { CurrentContextUsage } from '@truefoundry/trueforge-core/core/runtime/contextUsage';
 import type { ColumnType, Generated, JSONColumnType } from 'kysely';
+import type { JsonObject } from '../../connectors/types';
+import type { EventSummary } from '../../schemas/event';
+import type {
+  EventSourceKind,
+  EventSourceManifest,
+  EventSourceSecrets,
+  EventSourceStatus,
+} from '../../schemas/eventSource';
 import type { McpServerManifest } from '../../schemas/mcpServer';
 import type { ModelProviderManifest } from '../../schemas/modelProvider';
 import type { SandboxBuildMetadata, SandboxBuildStatus, SandboxProviderManifest } from '../../schemas/sandboxProvider';
@@ -323,6 +331,50 @@ export interface OAuthPendingAuthorizationTable {
   created_at: string;
 }
 
+/**
+ * One connected provider (a GitHub App).
+ * PRIMARY KEY (id); UNIQUE (tenant_id, name)
+ */
+export interface EventSourceTable {
+  /** application-generated (ulid) */
+  id: string;
+  tenant_id: string;
+  kind: EventSourceKind;
+  name: string;
+  /** `pending` | `active` | `error` — length ≤ 16 */
+  status: EventSourceStatus;
+  /** EventSourceManifest document; `app` is null while pending */
+  manifest: JsonbColumn<EventSourceManifest>;
+  /** Connector credentials; SQL NULL while pending. Never selected by listings. */
+  secrets: JsonbColumn<EventSourceSecrets> | null;
+  /** One-time GitHub manifest-flow nonce; unique while set */
+  manifest_state: string | null;
+  last_delivery_at: string | null;
+  created_by_subject: JsonbColumn<CreatedBySubject>;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * One accepted webhook delivery.
+ * PRIMARY KEY (id); UNIQUE (source_id, delivery_id); FK (source_id) → event_source(id) ON DELETE CASCADE
+ */
+export interface EventTable {
+  /** application-generated (ulid) */
+  id: string;
+  tenant_id: string;
+  source_id: string;
+  /** connector event kind, e.g. `issues.labeled` */
+  kind: string;
+  subject_key: string;
+  delivery_id: string;
+  summary: JsonbColumn<EventSummary>;
+  payload: JsonbColumn<JsonObject>;
+  received_at: string;
+  /** set once the coalesce loop has matched the event; NULL = unrouted */
+  routed_at: string | null;
+}
+
 export interface Database {
   session: SessionTable;
   turn: TurnTable;
@@ -337,6 +389,8 @@ export interface Database {
   agent: AgentTable;
   schedule: ScheduleTable;
   schedule_run: ScheduleRunTable;
+  event_source: EventSourceTable;
+  event: EventTable;
   mcp_server: McpServerTable;
   oauth_token: OAuthTokenTable;
   oauth_pending_authorization: OAuthPendingAuthorizationTable;

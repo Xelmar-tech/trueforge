@@ -14,6 +14,8 @@ import { createAgentsRouter } from './apis/agents';
 import { createAuthRouter } from './apis/auth';
 import { createCapabilitiesRouter } from './apis/capabilities';
 import { createCatalogRouter } from './apis/catalog';
+import { createEventSourcesRouter, createGithubManifestCallbackRouter } from './apis/eventSources';
+import { createEventsRouter } from './apis/events';
 import { createMcpOAuthRouter } from './apis/mcpOAuth';
 import { createMcpServersRouter } from './apis/mcpServers';
 import { createModelsRouter } from './apis/models';
@@ -23,6 +25,7 @@ import { createInternalSessionsRouter, createSessionsRouter } from './apis/sessi
 import { createSettingsRouter } from './apis/settings';
 import { createAvailableSkillsRouter } from './apis/skills';
 import { createTurnsRouter } from './apis/turns';
+import { createWebhooksRouter } from './apis/webhooks';
 import type { Authenticator } from './auth/authenticator';
 import type { Authorizer } from './auth/authorizer';
 import { resolveRequestContext } from './auth/identity';
@@ -31,8 +34,11 @@ import type { McpCatalog } from './catalog/McpCatalog';
 import type { ModelCatalog } from './catalog/ModelCatalog';
 import type { SandboxCatalog } from './catalog/SandboxCatalog';
 import type { SkillCatalog } from './catalog/SkillCatalog';
-import configuration, { getTrueForgeAuthMode, TrueForgeAuthMode } from './config';
+import configuration, { getPublicBaseUrl, getTrueForgeAuthMode, TrueForgeAuthMode } from './config';
+import { githubConnector } from './connectors/github/webhook';
 import type { IAgentStore } from './db/agentStore';
+import type { IEventSourceStore } from './db/eventSourceStore';
+import type { IEventStore } from './db/eventStore';
 import type { IMcpServerWithAuthStore } from './db/mcpServerStore';
 import type { IModelProviderStore } from './db/modelProviderStore';
 import type { ISandboxProviderStore } from './db/sandboxProviderStore';
@@ -180,6 +186,8 @@ export interface ServerDeps<TTransaction> {
   skillStore: ISkillStore<TTransaction>;
   sandboxProviderStore: ISandboxProviderStore<TTransaction>;
   scheduleStore: IScheduleStore<TTransaction>;
+  eventSourceStore: IEventSourceStore<TTransaction>;
+  eventStore: IEventStore<TTransaction>;
   sessionStore: ISessionStore;
   sessionMetricsStore: ISessionMetricsStore;
   sessions: Sessions;
@@ -258,6 +266,24 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
       authMiddleware,
     ),
   );
+  // Provider webhooks and the GitHub manifest callback are public: providers and browser redirects
+  // carry no user credential. Both verify their own input (HMAC signature; one-time state).
+  app.route(
+    '/api/v1/webhooks',
+    createWebhooksRouter({
+      eventSourceStore: deps.eventSourceStore,
+      eventStore: deps.eventStore,
+      connectors: { github: githubConnector },
+      logger: deps.logger,
+    }),
+  );
+  app.route(
+    '/api/v1/event-sources/github',
+    createGithubManifestCallbackRouter({
+      eventSourceStore: deps.eventSourceStore,
+      logger: deps.logger,
+    }),
+  );
   // Public MCP OAuth callbacks (local DCR + TrueFoundry/SFY) must be registered before the gated
   // `/mcp-servers` mount so `withAuth` cannot intercept IdP redirects to `/api/v1/mcp-servers/oauth/*`.
   app.route(
@@ -328,6 +354,28 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
         withTransaction: deps.withTransaction,
         resolveRequestContext,
         authorizer: deps.authorizer,
+      }),
+      authMiddleware,
+    ),
+  );
+  app.route(
+    '/api/v1/event-sources',
+    withAdminAuth(
+      createEventSourcesRouter({
+        eventSourceStore: deps.eventSourceStore,
+        withTransaction: deps.withTransaction,
+        resolveRequestContext,
+        getPublicBaseUrl: () => getPublicBaseUrl(),
+      }),
+      adminAuthMiddleware,
+    ),
+  );
+  app.route(
+    '/api/v1/events',
+    withAuth(
+      createEventsRouter({
+        eventStore: deps.eventStore,
+        resolveRequestContext,
       }),
       authMiddleware,
     ),

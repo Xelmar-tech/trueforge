@@ -67,6 +67,8 @@ import { SkillCatalog } from './catalog/SkillCatalog';
 import { type DistributedServerConfiguration } from './config';
 import { createController } from './controller';
 import type { IAgentStore } from './db/agentStore';
+import type { IEventSourceStore } from './db/eventSourceStore';
+import type { IEventStore } from './db/eventStore';
 import type { IMcpServerStore, IMcpServerWithAuthStore } from './db/mcpServerStore';
 import { McpServerWithAuthStore } from './db/McpServerWithAuthStore';
 import type { IModelProviderStore } from './db/modelProviderStore';
@@ -105,6 +107,8 @@ interface ServerPersistence<TTransaction> {
   skillStore: ISkillStore<TTransaction>;
   sandboxProviderStore: ISandboxProviderStore<TTransaction>;
   scheduleStore: IScheduleStore<TTransaction>;
+  eventSourceStore: IEventSourceStore<TTransaction>;
+  eventStore: IEventStore<TTransaction>;
   destroyDb: () => Promise<void>;
   redis: RedisClientType | undefined;
   /** One shared client for TrueFoundry store resolvers + auth; undefined when TrueFoundry mode is off. */
@@ -222,6 +226,8 @@ async function createStandalonePersistence(options: {
       import('./db/sqlite/sandbox-provider-store/SqliteSandboxProviderStore'),
       import('./db/sqlite/agent-store/SqliteAgentStore'),
       import('./db/sqlite/schedule-store/SqliteScheduleStore'),
+      import('./db/sqlite/event-source-store/SqliteEventSourceStore'),
+      import('./db/sqlite/event-store/SqliteEventStore'),
     ]),
   ]);
   const [
@@ -234,6 +240,8 @@ async function createStandalonePersistence(options: {
     { SqliteSandboxProviderStore },
     { SqliteAgentStore },
     { SqliteScheduleStore },
+    { SqliteEventSourceStore },
+    { SqliteEventStore },
   ] = sqliteStores;
 
   const db = createSqliteDb(sqlitePath);
@@ -260,6 +268,8 @@ async function createStandalonePersistence(options: {
     skillStore: new SqliteSkillStore(db),
     sandboxProviderStore: new SqliteSandboxProviderStore(db),
     scheduleStore: new SqliteScheduleStore(db),
+    eventSourceStore: new SqliteEventSourceStore(db),
+    eventStore: new SqliteEventStore(db),
     destroyDb: () => db.destroy(),
     redis: undefined,
     serviceFoundryClient: undefined,
@@ -295,6 +305,8 @@ async function createDistributedPersistence(options: {
       import('./db/postgres/sandbox-provider-store/PostgresSandboxProviderStore'),
       import('./db/postgres/agent-store/PostgresAgentStore'),
       import('./db/postgres/schedule-store/PostgresScheduleStore'),
+      import('./db/postgres/event-source-store/PostgresEventSourceStore'),
+      import('./db/postgres/event-store/PostgresEventStore'),
     ]),
   ]);
   const [
@@ -307,6 +319,8 @@ async function createDistributedPersistence(options: {
     { PostgresSandboxProviderStore },
     { PostgresAgentStore },
     { PostgresScheduleStore },
+    { PostgresEventSourceStore },
+    { PostgresEventStore },
   ] = postgresStores;
 
   const db = createDb({
@@ -346,6 +360,8 @@ async function createDistributedPersistence(options: {
     skillStore: new PostgresSkillStore(db),
     sandboxProviderStore: new PostgresSandboxProviderStore(db),
     scheduleStore: new PostgresScheduleStore(db),
+    eventSourceStore: new PostgresEventSourceStore(db),
+    eventStore: new PostgresEventStore(db),
     destroyDb: () => db.destroy(),
     redis: await connectRedis({ url: redisUrl, logger }),
     serviceFoundryClient,
@@ -365,6 +381,8 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
     skillStore,
     sandboxProviderStore,
     scheduleStore,
+    eventSourceStore,
+    eventStore,
     destroyDb,
     redis,
     serviceFoundryClient,
@@ -425,6 +443,8 @@ async function createServerRuntime<TTransaction>(persistence: ServerPersistence<
     skillStore,
     sandboxProviderStore,
     scheduleStore,
+    eventSourceStore,
+    eventStore,
     sessionStore,
     sessionMetricsStore,
     sessions: new Sessions({ sessionStore }),
