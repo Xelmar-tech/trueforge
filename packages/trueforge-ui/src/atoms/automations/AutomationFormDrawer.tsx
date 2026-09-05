@@ -26,6 +26,8 @@ export type AutomationFormDrawerProps = {
   mode: 'create' | 'edit';
   automation?: Automation;
   initialAgentId?: string;
+  /** Open straight on the Test screen (edit mode only). */
+  initialView?: 'form' | 'test';
   onSaved?: () => void;
 };
 
@@ -76,6 +78,7 @@ export function AutomationFormDrawer({
   mode,
   automation,
   initialAgentId = '',
+  initialView = 'form',
   onSaved,
 }: AutomationFormDrawerProps) {
   const automationServer = useAutomationServer();
@@ -149,13 +152,13 @@ export function AutomationFormDrawer({
     if (isEdit && automation != null) {
       setForm(formFromAutomation(automation));
       setAgentId(automation.agentId);
-      setView({ kind: 'form' });
+      setView(initialView === 'test' ? { kind: 'test', automation } : { kind: 'form' });
       return;
     }
     setForm(defaultAutomationFormValues());
     setAgentId(initialAgentId);
     setView({ kind: 'form' });
-  }, [open, isEdit, automation, initialAgentId]);
+  }, [open, isEdit, automation, initialAgentId, initialView]);
 
   const agentOptions = useMemo(
     () => agents.map(agent => ({ agentId: libraryAgentId(agent), name: agent.name })),

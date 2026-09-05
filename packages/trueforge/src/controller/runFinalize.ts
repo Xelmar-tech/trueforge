@@ -11,7 +11,8 @@ import type { ControlLoop } from './Controller';
 export const FINALIZE_BATCH_LIMIT = 50;
 
 /** Turns fetched per session when looking for the latest one; automation sessions are short. */
-const TURN_SCAN_LIMIT = 50;
+// The turns API caps `limit` at 25; a run session holds one turn, two on retry.
+const TURN_SCAN_LIMIT = 25;
 
 /** Gap between passes; a turn takes minutes, so polling every 15s is plenty. */
 const RUN_FINALIZE_INTERVAL_MS = 15_000;

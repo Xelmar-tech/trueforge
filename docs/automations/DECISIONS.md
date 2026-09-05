@@ -34,7 +34,7 @@ Deviations from the design documents, and choices the documents left open.
   `tool.approval_required`; the finalize loop records those pending actions as the run's
   `outcome` and marks it `shadowed`. No new runtime feature.
 - **Latest turn.** `listTurns` gives no order guarantee the loop can rely on, so the
-  finalize loop scans up to 50 turns and takes the newest `createdAt`.
+  finalize loop scans up to 25 turns (the API's cap) and takes the newest `createdAt`.
 - **Replay subject.** A replay run's subject is `<subject>~replay:<event_id>` so it can
   never collide with a live coalesce window for the same subject.
 - **UI port types.** `AutomationServer` and its DTOs are declared in

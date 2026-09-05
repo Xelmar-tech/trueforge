@@ -147,6 +147,14 @@ describe('AutomationsPage', () => {
     expect(screen.getByRole('button', { name: 'Add condition' })).toBeTruthy();
   });
 
+  it('opens the Test screen from the row, not the form', async () => {
+    renderPage();
+    await screen.findByText('plan-mission');
+    fireEvent.click(screen.getByRole('button', { name: 'Test plan-mission' }));
+    expect(await screen.findByText('Test Automation')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('issues.labeled')).toBeNull();
+  });
+
   it('pauses an automation through update and reloads', async () => {
     const updateAutomation = vi.fn(async () => ({ ...sampleAutomation, status: 'paused' as const }));
     const { automationServer } = renderPage([sampleAutomation], { updateAutomation });

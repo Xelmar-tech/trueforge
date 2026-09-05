@@ -34,7 +34,10 @@ import { formatTriggerSummary } from './triggerLabels.js';
 
 type AgentOption = { agentId: string; name: string };
 
-type DrawerState = { kind: 'closed' } | { kind: 'create'; agentId?: string } | { kind: 'edit'; automation: Automation };
+type DrawerState =
+  | { kind: 'closed' }
+  | { kind: 'create'; agentId?: string }
+  | { kind: 'edit'; automation: Automation; view?: 'form' | 'test' };
 
 type ModeFilter = 'all' | 'shadow' | 'armed' | 'paused';
 
@@ -383,7 +386,7 @@ export function AutomationsPage() {
                     <TableCell className="text-right">
                       <AutomationRowActions
                         automation={automation}
-                        onTest={() => setDrawer({ kind: 'edit', automation })}
+                        onTest={() => setDrawer({ kind: 'edit', automation, view: 'test' })}
                         onEdit={() => setDrawer({ kind: 'edit', automation })}
                         onTogglePause={() => void handleTogglePause(automation)}
                         onDelete={() => setPendingDelete(automation)}
@@ -420,6 +423,7 @@ export function AutomationsPage() {
         }}
         mode={drawer.kind === 'edit' ? 'edit' : 'create'}
         {...(drawer.kind === 'edit' ? { automation: drawer.automation } : {})}
+        {...(drawer.kind === 'edit' && drawer.view != null ? { initialView: drawer.view } : {})}
         {...(drawer.kind === 'create' && drawer.agentId != null ? { initialAgentId: drawer.agentId } : {})}
         onSaved={reload}
       />
