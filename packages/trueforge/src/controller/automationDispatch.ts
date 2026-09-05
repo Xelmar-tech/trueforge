@@ -87,11 +87,21 @@ export function shadowAgentSpec(spec: TrueForgeApi.AgentSpec): TrueForgeApi.Agen
  *
  * Idempotent on retry.
  */
+/** Agents are addressed by immutable id on the API; automations name them. */
+async function agentSpecByName(client: AutomationRunApiClient, name: string): Promise<TrueForgeApi.AgentSpec> {
+  const { data: agents } = await client.agents.list();
+  const match = agents.find(agent => agent.name === name);
+  if (match === undefined) {
+    throw new Error(`Agent not found: ${name}`);
+  }
+  return match.manifest;
+}
+
 export function executeAutomationRun(client: AutomationRunApiClient): (handoff: AutomationHandoff) => Promise<string> {
   return async ({ run, automation, events }) => {
     const agent: TrueForgeApi.CreateSessionAgent =
       run.mode === 'shadow'
-        ? { spec: shadowAgentSpec((await client.agents.get(automation.agent_name)).data.manifest) }
+        ? { spec: shadowAgentSpec(await agentSpecByName(client, automation.agent_name)) }
         : { name: automation.agent_name };
 
     const { data: session } = await client.internal.sessions.getOrCreateByExternalId({

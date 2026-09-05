@@ -178,9 +178,9 @@ describe('executeAutomationRun', () => {
     };
     const client = {
       agents: {
-        get: jest.fn(async (name: string) => {
-          calls.push(`agents.get ${name}`);
-          return { data: { id: 'agent-1', name, manifest: agentSpec, createdBySubject: SUBJECT } };
+        list: jest.fn(async () => {
+          calls.push('agents.list');
+          return { data: [{ id: 'agent-1', name: 'planner', manifest: agentSpec, createdBySubject: SUBJECT }] };
         }),
       },
       internal: {
@@ -220,7 +220,7 @@ describe('executeAutomationRun', () => {
     const { automation, run } = await setup('shadow');
     const { client, calls, agentSpec } = fakeClient();
     await executeAutomationRun(client)({ run, automation, events: [] });
-    expect(calls[0]).toBe('agents.get planner');
+    expect(calls[0]).toBe('agents.list');
     expect(calls[1]).toBe(`getOrCreate ${run.id} spec`);
     expect(shadowAgentSpec(agentSpec).mcpServers?.[0]?.requireApprovalForTools).toEqual(['@all']);
   });
