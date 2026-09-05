@@ -10,6 +10,7 @@ function snap(partial: Partial<ShellSnapshot>): ShellSnapshot {
     sessionsOpen: false,
     libraryAgentId: null,
     schedulesOpen: false,
+    automationsOpen: false,
     mode: { status: 'idle' },
     agentConfigMode: 'AgentLibraryWithComposer',
     ...partial,

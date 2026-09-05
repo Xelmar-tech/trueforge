@@ -67,6 +67,7 @@ import {
   TriangleAlert,
   Wrench,
   X,
+  Zap,
 } from 'lucide-react';
 import type { SVGProps } from 'react';
 
@@ -126,6 +127,7 @@ const defaults: Record<string, IconEntry> = {
   check: Check,
   pencil: Pencil,
   play: Play,
+  zap: Zap,
   pause: Pause,
   calendar: Calendar,
   'calendar-clock': CalendarClock,

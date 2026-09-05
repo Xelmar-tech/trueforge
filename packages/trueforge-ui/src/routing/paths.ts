@@ -8,6 +8,7 @@ const DEFAULTS = {
   library: '/library',
   libraryAgent: '/library/:agentId',
   schedules: '/schedules',
+  automations: '/automations',
   agent: '/agents/:agentName',
   session: '/sessions/:sessionId',
   sessionsBrowser: '/sessions',
@@ -34,6 +35,7 @@ export function resolveRoutesConfig(routes?: RoutesConfig): ResolvedRoutes {
     library: resolveOptional(paths?.library, DEFAULTS.library),
     libraryAgent: resolveOptional(paths?.libraryAgent, DEFAULTS.libraryAgent),
     schedules: resolveOptional(paths?.schedules, DEFAULTS.schedules),
+    automations: resolveOptional(paths?.automations, DEFAULTS.automations),
     agent: resolveOptional(paths?.agent, DEFAULTS.agent),
     session: resolveOptional(paths?.session, DEFAULTS.session),
     sessionsBrowser: resolveOptional(paths?.sessionsBrowser, DEFAULTS.sessionsBrowser),
@@ -67,6 +69,8 @@ export function buildPath(place: RoutePlace, routes: ResolvedRoutes): string | n
       return routes.libraryAgent == null ? null : fillTemplate(routes.libraryAgent, place.agentId);
     case 'schedules':
       return routes.schedules;
+    case 'automations':
+      return routes.automations;
     case 'agent':
       return routes.agent == null ? null : fillTemplate(routes.agent, place.agentName);
     case 'session':
@@ -190,6 +194,9 @@ export function matchPath(pathname: string, routes: ResolvedRoutes): RoutePlace 
   }
   if (routes.schedules != null && normalized === routes.schedules) {
     return { type: 'schedules' };
+  }
+  if (routes.automations != null && normalized === routes.automations) {
+    return { type: 'automations' };
   }
   if (routes.agent != null) {
     const agentName = matchTemplate(routes.agent, segments);

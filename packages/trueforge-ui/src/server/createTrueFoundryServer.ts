@@ -7,6 +7,7 @@ import type {
   AgentSessionsServer,
   AgentSkill,
   AgentSpec,
+  AutomationServer,
   CatalogServer,
   ConnectorState,
   ModelSelection,
@@ -47,6 +48,8 @@ export type CreateTrueFoundryServerOptions<
   metrics?: TMetrics;
   /** Schedules listing + CRUD. Optional. */
   schedules?: TSchedules;
+  /** Event-driven automations, the event ledger and event sources. Optional. */
+  automations?: AutomationServer;
 };
 
 export type TrueFoundryServer<
@@ -67,6 +70,7 @@ export type TrueFoundryServer<
     sessions?: TSessions;
     metrics?: TMetrics;
     schedules?: TSchedules;
+    automations?: AutomationServer;
   };
 
 /**
@@ -149,6 +153,7 @@ export function createTrueFoundryServer<
     ...(opts.sessions != null ? { sessions: opts.sessions } : {}),
     ...(opts.metrics != null ? { metrics: opts.metrics } : {}),
     ...(opts.schedules != null ? { schedules: opts.schedules } : {}),
+    ...(opts.automations != null ? { automations: opts.automations } : {}),
   };
   return server;
 }

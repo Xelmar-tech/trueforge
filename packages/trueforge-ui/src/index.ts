@@ -30,6 +30,16 @@ export type {
   ThemePreset,
 } from './theme/types.js';
 
+export { AutomationFormDrawer } from './atoms/automations/AutomationFormDrawer.js';
+export type { AutomationFormDrawerProps } from './atoms/automations/AutomationFormDrawer.js';
+export { AutomationLastRunsCell } from './atoms/automations/AutomationLastRunsCell.js';
+export { AutomationModeBadge } from './atoms/automations/AutomationModeBadge.js';
+export { AutomationRunChip } from './atoms/automations/AutomationRunChip.js';
+export { AutomationsPage } from './atoms/automations/AutomationsPage.js';
+export { TestAutomationScreen } from './atoms/automations/TestAutomationScreen.js';
+export type { TestAutomationScreenProps } from './atoms/automations/TestAutomationScreen.js';
+export { AutomationsButton } from './atoms/AutomationsButton.js';
+export type { AutomationsButtonProps } from './atoms/AutomationsButton.js';
 export { BottomSheet } from './atoms/primitives/BottomSheet.js';
 export type { BottomSheetProps } from './atoms/primitives/BottomSheet.js';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './atoms/primitives/Button.js';
@@ -285,9 +295,11 @@ export {
   ServerProvider,
   useAgentMetricsServer,
   useAgentSessionsServer,
+  useAutomationServer,
   useCatalogServer,
   useOptionalAgentMetricsServer,
   useOptionalAgentSessionsServer,
+  useOptionalAutomationServer,
   useOptionalCatalogServer,
   useOptionalScheduleServer,
   useOptionalServer,

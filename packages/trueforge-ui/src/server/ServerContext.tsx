@@ -7,17 +7,24 @@ import type {
   AgentMetricsServer,
   AgentSessionsServer,
   AgentUIServer,
+  AutomationServer,
   CatalogServer,
   ScheduleServer,
 } from './types.js';
 
-const ServerContext = createContext<AgentUIServer | null>(null);
+/**
+ * The runtime's `AgentUIServer` plus the fork's optional automations port. Hosts pass a
+ * `TrueFoundryServer`, which carries it; plain `AgentUIServer` values simply have none.
+ */
+export type UiServer = AgentUIServer & { automations?: AutomationServer };
+
+const ServerContext = createContext<UiServer | null>(null);
 const ServerCapabilitiesContext = createContext<{
   capabilities: AgentBuilderCapabilitiesResponse['data'] | null;
   refresh: () => void;
 } | null>(null);
 
-export function ServerProvider({ server, children }: { server: AgentUIServer; children: ReactNode }) {
+export function ServerProvider({ server, children }: { server: UiServer; children: ReactNode }) {
   const [capabilities, setCapabilities] = useState<AgentBuilderCapabilitiesResponse['data'] | null>(null);
   const cancelActiveRequestRef = useRef<(() => void) | null>(null);
   const refreshCapabilities = useCallback(() => {
@@ -56,7 +63,7 @@ export function ServerProvider({ server, children }: { server: AgentUIServer; ch
   );
 }
 
-export function useServer(): AgentUIServer {
+export function useServer(): UiServer {
   const server = useContext(ServerContext);
   if (server == null) {
     throw new Error('useServer must be used within a ServerProvider.');
@@ -64,7 +71,7 @@ export function useServer(): AgentUIServer {
   return server;
 }
 
-export function useOptionalServer(): AgentUIServer | null {
+export function useOptionalServer(): UiServer | null {
   return useContext(ServerContext);
 }
 
@@ -122,4 +129,18 @@ export function useScheduleServer(): ScheduleServer {
 
 export function useOptionalScheduleServer(): ScheduleServer | null {
   return useOptionalServer()?.schedules ?? null;
+}
+
+export function useAutomationServer(): AutomationServer {
+  const server = useServer();
+  if (server.automations == null) {
+    throw new Error(
+      'useAutomationServer requires AgentUIServer.automations. Pass automations to createTrueFoundryServer.',
+    );
+  }
+  return server.automations;
+}
+
+export function useOptionalAutomationServer(): AutomationServer | null {
+  return useOptionalServer()?.automations ?? null;
 }

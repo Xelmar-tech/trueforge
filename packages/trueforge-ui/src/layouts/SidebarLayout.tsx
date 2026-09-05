@@ -31,6 +31,9 @@ const TruefoundrySettingsBuilder = lazy(() => import('../containers/SettingsBuil
 const SchedulesPage = lazy(() =>
   import('../atoms/schedules/SchedulesPage.js').then(m => ({ default: m.SchedulesPage })),
 );
+const AutomationsPage = lazy(() =>
+  import('../atoms/automations/AutomationsPage.js').then(m => ({ default: m.AutomationsPage })),
+);
 
 const brandLogoClassName = 'h-5 w-5 max-w-40 shrink-0 object-contain';
 const railWidthClassName = 'w-18';
@@ -47,12 +50,14 @@ function SidebarNav(): ReactNode {
   const AgentsLibraryButton = useSlot('AgentsLibraryButton');
   const SessionsBrowserButton = useSlot('SessionsBrowserButton');
   const SchedulesButton = useSlot('SchedulesButton');
+  const AutomationsButton = useSlot('AutomationsButton');
   const showNewActions = shell?.isNewChatEnabled !== false;
   const overlayOpen =
     shell?.settingsOpen === true ||
     shell?.libraryOpen === true ||
     shell?.sessionsOpen === true ||
-    shell?.schedulesOpen === true;
+    shell?.schedulesOpen === true ||
+    shell?.automationsOpen === true;
   const mode = shell?.mode;
   const newChatSelected = !overlayOpen && mode?.status === 'active' && mode.isMutable && !mode.isCreateAgent;
   const newAgentSelected = !overlayOpen && mode != null && shellIsCreateAgent(mode);
@@ -66,6 +71,7 @@ function SidebarNav(): ReactNode {
     }
     shell?.setSettingsOpen(false);
     shell?.setSchedulesOpen(false);
+    shell?.setAutomationsOpen(false);
     void Promise.resolve(aui.threads().switchToNewThread()).catch(() => undefined);
   };
 
@@ -114,6 +120,7 @@ function SidebarNav(): ReactNode {
       <AgentsLibraryButton compact />
       <SessionsBrowserButton compact />
       <SchedulesButton compact />
+      <AutomationsButton compact />
     </nav>
   );
 }
@@ -179,7 +186,8 @@ export function SidebarLayout({ className }: { className?: string }) {
   const libraryOpen = shell?.libraryOpen === true;
   const sessionsOpen = shell?.sessionsOpen === true;
   const schedulesOpen = shell?.schedulesOpen === true;
-  const overlayOpen = settingsOpen || libraryOpen || sessionsOpen || schedulesOpen;
+  const automationsOpen = shell?.automationsOpen === true;
+  const overlayOpen = settingsOpen || libraryOpen || sessionsOpen || schedulesOpen || automationsOpen;
   const showAgentConfig =
     shell != null && shellIsCreateAgent(shell.mode) && !overlayOpen && (!isMobile || shell.agentConfigOpen);
   const hasChatHeaderContent = useChatHeaderContentVisible();
@@ -295,6 +303,22 @@ export function SidebarLayout({ className }: { className?: string }) {
               }
             >
               <SchedulesPage />
+            </Suspense>
+          ) : automationsOpen ? (
+            <Suspense
+              fallback={
+                <div
+                  className="flex h-full items-center justify-center"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <Spinner size={28} className="text-text-primary" />
+                  <span className="sr-only">Loading</span>
+                </div>
+              }
+            >
+              <AutomationsPage />
             </Suspense>
           ) : isIdle ? (
             <SelectAgentEmptyState />

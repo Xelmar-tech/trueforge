@@ -5,6 +5,7 @@ import { createTrueFoundryServer } from '../../server/createTrueFoundryServer.js
 import type { CatalogServer } from '../../server/types.js';
 import { createHarnessAgentMetricsServer } from './agentMetricsServer.js';
 import { createHarnessAgentSessionsServer } from './agentSessionsServer.js';
+import { createAutomationServer } from './automations/automationServer.js';
 import { createHarnessBuilderServer } from './builderServer.js';
 import { createConnectorCatalog } from './catalogs/connectorCatalog.js';
 import { createModelProviderCatalog } from './catalogs/modelProviderCatalog.js';
@@ -20,6 +21,14 @@ export {
   createHarnessAgentSessionsServer,
   type CreateHarnessAgentSessionsServerOptions,
 } from './agentSessionsServer.js';
+export {
+  createAutomationServer,
+  toWireManifest as toHarnessAutomationManifest,
+  toUiAutomation,
+  toUiAutomationRun,
+  toUiEvent,
+  toUiEventSource,
+} from './automations/automationServer.js';
 export {
   createHarnessBuilderServer,
   modelProviderLogosByName,
@@ -87,5 +96,6 @@ export function createTrueForgeAgentUIServer(options: CreateTrueForgeAgentUIServ
     sessions: createHarnessAgentSessionsServer({ ...clientOptions, client }),
     metrics: createHarnessAgentMetricsServer({ ...clientOptions, client }),
     schedules: createScheduleServer({ client }),
+    automations: createAutomationServer({ client }),
   });
 }

@@ -44,6 +44,7 @@ export function ShellRouteSync({
     sessionsOpen: shell.sessionsOpen,
     libraryAgentId: shell.libraryAgentId,
     schedulesOpen: shell.schedulesOpen,
+    automationsOpen: shell.automationsOpen,
     pendingSessionId: shell.pendingSessionId,
     activeRemoteId,
     mode: shell.mode,
@@ -115,6 +116,9 @@ export function ShellRouteSync({
         case 'schedules':
           shell.setSchedulesOpen(true);
           return;
+        case 'automations':
+          shell.setAutomationsOpen(true);
+          return;
         case 'session':
           shell.setLibraryOpen(false);
           if (shell.pendingSessionId === target.sessionId || activeRemoteId === target.sessionId) return;
@@ -128,6 +132,7 @@ export function ShellRouteSync({
           shell.setSettingsOpen(false);
           shell.setLibraryOpen(false);
           shell.setSchedulesOpen(false);
+          shell.setAutomationsOpen(false);
           switch (shell.agentConfigMode) {
             case 'AgentLibrary':
               shell.openLibraryHome();
@@ -168,6 +173,8 @@ export function ShellRouteSync({
       shell.openLibraryAgent(urlPlace.agentId);
     } else if (urlPlace.type === 'schedules') {
       shell.setSchedulesOpen(true);
+    } else if (urlPlace.type === 'automations') {
+      shell.setAutomationsOpen(true);
     } else {
       const chatPlace = deriveChatPlace(snapshot);
       if (!placesEqual(chatPlace, urlPlace)) applyPlace(urlPlace);

@@ -11,6 +11,7 @@ import {
   type DraftPreferenceKind,
 } from './draftSpecPreferences.js';
 import {
+  useOptionalAutomationServer,
   useOptionalCatalogServer,
   useOptionalRefreshServerCapabilities,
   useOptionalScheduleServer,
@@ -65,7 +66,7 @@ export type SelectLibraryAgentRequest = {
   agentSpec?: AgentSpec;
 };
 
-export type SettingsSection = 'models' | 'connectors' | 'skills' | 'sandbox';
+export type SettingsSection = 'models' | 'connectors' | 'skills' | 'sandbox' | 'sources';
 
 type ShellModeContextValue = {
   mode: ShellMode;
@@ -94,6 +95,9 @@ type ShellModeContextValue = {
   closeLibraryAgent: () => void;
   schedulesOpen: boolean;
   setSchedulesOpen: (open: boolean) => void;
+  /** Automations main-pane overlay (sidebar layout). */
+  automationsOpen: boolean;
+  setAutomationsOpen: (open: boolean) => void;
   /**
    * Bind from Agents (Try = immutable, Edit = mutable + agentSpec).
    * Prefer this over `selectAgent` / `openDraft` when both fields are available.
@@ -210,6 +214,7 @@ export function ShellModeProvider({
   const catalog = useOptionalCatalogServer();
   const refreshCapabilities = useOptionalRefreshServerCapabilities();
   const scheduleServer = useOptionalScheduleServer();
+  const automationServer = useOptionalAutomationServer();
   const chatSeedRef = useRef(
     readDraftSpecPreferences('chat') ?? selectDraftSpecPreferences(mutableSeedFromConfig(agentConfig), 'chat'),
   );
@@ -233,12 +238,15 @@ export function ShellModeProvider({
   const [sessionsOpenState, setSessionsOpenState] = useState(false);
   const [libraryAgentId, setLibraryAgentId] = useState<string | null>(null);
   const [schedulesOpenState, setSchedulesOpenState] = useState(false);
+  const [automationsOpenState, setAutomationsOpenState] = useState(false);
   const [historyAgentFilter, setHistoryAgentFilter] = useState<string | null>(null);
   const [pendingSessionId, setPendingSessionId] = useState<string | undefined>(undefined);
   const settingsEnabled = isSettingsChromeEnabled({ catalog, capabilities });
   const settingsOpen = settingsEnabled && settingsOpenState;
   const schedulesEnabled = scheduleServer != null;
   const schedulesOpen = schedulesEnabled && schedulesOpenState;
+  const automationsEnabled = automationServer != null;
+  const automationsOpen = automationsEnabled && automationsOpenState;
   const libraryOpen = isLibraryEnabled && libraryOpenState;
   const sessionsOpen = sessionsOpenState;
   const setSessionsOpen = useCallback((open: boolean) => {
@@ -248,6 +256,7 @@ export function ShellModeProvider({
       setLibraryOpenState(false);
       setLibraryAgentId(null);
       setSchedulesOpenState(false);
+      setAutomationsOpenState(false);
     } else {
       replaceSessionShareSearch({ view: null });
     }
@@ -261,6 +270,7 @@ export function ShellModeProvider({
         setAgentConfigOpenState(false);
         setSessionsOpen(false);
         setSchedulesOpenState(false);
+        setAutomationsOpenState(false);
       }
       setLibraryAgentId(null);
       setLibraryOpenState(open);
@@ -274,6 +284,7 @@ export function ShellModeProvider({
       setAgentConfigOpenState(false);
       setSessionsOpen(false);
       setSchedulesOpenState(false);
+      setAutomationsOpenState(false);
       setLibraryOpenState(true);
       setLibraryAgentId(agentId);
     },
@@ -293,6 +304,7 @@ export function ShellModeProvider({
         setLibraryAgentId(null);
         setSessionsOpen(false);
         setSchedulesOpenState(false);
+        setAutomationsOpenState(false);
       }
       setSettingsOpenState(settingsEnabled && open);
     },
@@ -306,6 +318,7 @@ export function ShellModeProvider({
         setLibraryAgentId(null);
         setSessionsOpen(false);
         setSchedulesOpenState(false);
+        setAutomationsOpenState(false);
       }
       setAgentConfigOpenState(open);
     },
@@ -319,11 +332,33 @@ export function ShellModeProvider({
         setLibraryOpenState(false);
         setLibraryAgentId(null);
         setSessionsOpen(false);
+        setAutomationsOpenState(false);
       }
       setSchedulesOpenState(schedulesEnabled && open);
     },
     [schedulesEnabled, setSessionsOpen],
   );
+
+  const setAutomationsOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setSettingsOpenState(false);
+        setAgentConfigOpenState(false);
+        setLibraryOpenState(false);
+        setLibraryAgentId(null);
+        setSessionsOpen(false);
+        setSchedulesOpenState(false);
+      }
+      setAutomationsOpenState(automationsEnabled && open);
+    },
+    [automationsEnabled, setSessionsOpen],
+  );
+
+  useEffect(() => {
+    if (!automationsEnabled) {
+      setAutomationsOpenState(false);
+    }
+  }, [automationsEnabled]);
 
   useEffect(() => {
     if (!settingsEnabled) {
@@ -602,6 +637,8 @@ export function ShellModeProvider({
       closeLibraryAgent,
       schedulesOpen,
       setSchedulesOpen,
+      automationsOpen,
+      setAutomationsOpen,
       selectLibraryAgent,
       bindMutableAgent,
       selectAgent,
@@ -639,6 +676,8 @@ export function ShellModeProvider({
       closeLibraryAgent,
       schedulesOpen,
       setSchedulesOpen,
+      automationsOpen,
+      setAutomationsOpen,
       selectLibraryAgent,
       bindMutableAgent,
       selectAgent,

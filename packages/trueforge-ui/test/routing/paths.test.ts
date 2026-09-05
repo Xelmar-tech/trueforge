@@ -19,6 +19,7 @@ describe('resolveRoutesConfig', () => {
       library: '/library',
       libraryAgent: '/library/:agentId',
       schedules: '/schedules',
+      automations: '/automations',
       agent: '/agents/:agentName',
       session: '/sessions/:sessionId',
       sessionsBrowser: '/sessions',

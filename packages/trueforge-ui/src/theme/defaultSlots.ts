@@ -36,6 +36,7 @@ import { AssistantMessageBubble } from '../atoms/AssistantMessageBubble.js';
 import { AttachmentCard } from '../atoms/AttachmentCard.js';
 import { AttachmentPickerButton } from '../atoms/AttachmentPickerButton.js';
 import { AttachmentPreviewDialog } from '../atoms/AttachmentPreviewDialog.js';
+import { AutomationsButton } from '../atoms/AutomationsButton.js';
 import { ChatFileDownload } from '../atoms/ChatFileDownload.js';
 import { ClearChatButton } from '../atoms/ClearChatButton.js';
 import { CodeEditor } from '../atoms/CodeEditor.js';
@@ -222,6 +223,7 @@ export const defaultSlots = {
   AgentCodeSnippets,
   AgentCodeBlock,
   SchedulesButton,
+  AutomationsButton,
   SaveAgentButton,
   SaveAgentForm,
   SaveAgentFormFields,

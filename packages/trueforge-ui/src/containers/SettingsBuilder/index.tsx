@@ -8,7 +8,11 @@ import { cn } from '@/atoms/lib/cn.js';
 import { useCompactLayout } from '@/atoms/lib/CompactLayoutContext.js';
 import { Spinner } from '@/atoms/primitives/Spinner.js';
 import { Icon } from '@/icons/Icon.js';
-import { useOptionalCatalogServer, useOptionalRefreshServerCapabilities } from '@/server/ServerContext.js';
+import {
+  useOptionalAutomationServer,
+  useOptionalCatalogServer,
+  useOptionalRefreshServerCapabilities,
+} from '@/server/ServerContext.js';
 import { useShellMode, type SettingsSection } from '@/server/ShellModeContext.js';
 
 // Section modules (and their list/catalog APIs) load only when that tab mounts.
@@ -16,6 +20,7 @@ const ModelSettings = lazy(() => import('./ModelSettings.js'));
 const ConnectorSettings = lazy(() => import('./ConnectorSettings.js'));
 const SkillSettings = lazy(() => import('./SkillSettings.js'));
 const SandboxSettings = lazy(() => import('./SandboxSettings.js'));
+const EventSourceSettings = lazy(() => import('./EventSourceSettings.js'));
 
 function SettingsSectionFallback() {
   return (
@@ -35,6 +40,7 @@ const TruefoundrySettingsBuilder = () => {
   const compact = useCompactLayout();
   const hasSkills = catalog?.skillCatalog != null;
   const hasSandbox = catalog?.sandboxCatalog != null;
+  const hasSources = useOptionalAutomationServer() != null;
 
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
@@ -56,7 +62,19 @@ const TruefoundrySettingsBuilder = () => {
     if (!hasSandbox && section === 'sandbox') {
       setSettingsOpen(settingsOpen, 'models');
     }
-  }, [hasSkills, hasSandbox, section, settingsOpen, setSettingsOpen]);
+    if (!hasSources && section === 'sources') {
+      setSettingsOpen(settingsOpen, 'models');
+    }
+  }, [hasSkills, hasSandbox, hasSources, section, settingsOpen, setSettingsOpen]);
+
+  // The GitHub manifest callback lands on /settings?section=sources; open that tab once.
+  useEffect(() => {
+    if (!settingsOpen || !hasSources) return;
+    const requested = new URLSearchParams(window.location.search).get('section');
+    if (requested === 'sources' && section !== 'sources') {
+      setSettingsOpen(true, 'sources');
+    }
+  }, [settingsOpen, hasSources, section, setSettingsOpen]);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -74,13 +92,13 @@ const TruefoundrySettingsBuilder = () => {
     Array<{
       id: SettingsSection;
       label: string;
-      icon: 'cpu' | 'plug' | 'lightbulb' | 'cube';
+      icon: 'cpu' | 'plug' | 'lightbulb' | 'cube' | 'zap';
     }>
   >(() => {
     const baseSections: Array<{
       id: SettingsSection;
       label: string;
-      icon: 'cpu' | 'plug' | 'lightbulb' | 'cube';
+      icon: 'cpu' | 'plug' | 'lightbulb' | 'cube' | 'zap';
     }> = [
       { id: 'models', label: 'Models', icon: 'cpu' },
       { id: 'connectors', label: 'Connectors', icon: 'plug' },
@@ -91,8 +109,11 @@ const TruefoundrySettingsBuilder = () => {
     if (hasSandbox) {
       baseSections.push({ id: 'sandbox', label: 'Sandbox providers', icon: 'cube' });
     }
+    if (hasSources) {
+      baseSections.push({ id: 'sources', label: 'Event sources', icon: 'zap' });
+    }
     return baseSections;
-  }, [hasSkills, hasSandbox]);
+  }, [hasSkills, hasSandbox, hasSources]);
 
   if (!settingsOpen || !catalog) return null;
 
@@ -151,6 +172,7 @@ const TruefoundrySettingsBuilder = () => {
               {section === 'connectors' ? <ConnectorSettings /> : null}
               {section === 'skills' && hasSkills ? <SkillSettings /> : null}
               {section === 'sandbox' && hasSandbox ? <SandboxSettings /> : null}
+              {section === 'sources' && hasSources ? <EventSourceSettings /> : null}
             </Suspense>
           </div>
         </section>
