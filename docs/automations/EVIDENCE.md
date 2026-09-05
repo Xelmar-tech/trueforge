@@ -51,6 +51,58 @@ real identifiers (delivery ids, issue numbers, run ids, session ids). No credent
   internal `trueforge` source with the source event's summary and the run/session ids;
   a second finalize pass is a no-op.
 
+## 4. Shadow + replay — 2026-09-05 (against the Railway deployment)
+
+- `POST /api/v1/automations/01m1s1vsy420fnm6y72dnqt1fa/replay` with event
+  `01m1s1ervmw423k63d8r8ttsvk` → 201, run `01m1s248hzbdkj2168rcm60avk` (subject
+  `Xelmar-tech/trueforge-automations-dogfood#1~replay:01m1s1ervmw423k63d8r8ttsvk`, lane
+  `Xelmar-tech/trueforge-automations-dogfood/planning`, mode `shadow`).
+- The dispatcher created session `01m1s2491jj2h77fq1bjw1xj9h` with the inline shadow spec
+  (`llm-router/gpt-5.5`, connector `xelmar-foreman` with every tool behind approval). Turn
+  `01m1s2493s0f0mhkn2vswt1f89.fg9ztq` listed the eight tools, read their schemas, then paused
+  (`tool.approval_required`, action `01m1s24n5109d46t9g3sdbv4bg`) on
+  `get_issue(Xelmar-tech/trueforge-automations-dogfood, 1)` and
+  `list_sub_issues(Xelmar-tech/trueforge-automations-dogfood, 1)`. Nothing was written to GitHub
+  (issue #1 unchanged). 16,828 tokens.
+- Two defects found and fixed by this run: the first attempt failed with "Agent not found:
+  foreman-planner" (agents are addressed by id; commit `7b8b43ee` resolves by name), and the run
+  then stayed `triggered` because the finalize loop asked `listTurns` for 50 turns while the API
+  caps `limit` at 25 (commit `1adba898`).
+
+- From the UI (deployed bundle `index-BpwsJyle.js`): Automations → **Test plan-mission** opened
+  the Test screen; the picker offered the recorded event "Sep 5, 3:02 PM · #1 · Mission: smoke
+  test…"; **Replay in shadow** produced run `01m1s331qbd0jc0rsx2xt2aana` shown as
+  "Shadowed · 14s", session `01m1s332afc5emttsdy0achsz9`, outcome "Paused before
+  tool.approval_required", with an **Open session** link. **Arm automation** switched the row's
+  badge to Armed (manifest `mode: armed`).
+
+## 5. Dogfood — 2026-09-05 (live, against the Railway deployment)
+
+- Setup: `docs/automations/dogfood/apply.sh` → agents `foreman-planner`, `plan-reviewer`,
+  `dashboard-scribe` (201 each; model `llm-router/gpt-5.5`; connector `xelmar-foreman`) and
+  automations `plan-mission` `01m1s1vsy420fnm6y72dnqt1fa`, `review-plan`
+  `01m1s1vtn8qa73yanqznes6jy2`, `publish-dashboard` `01m1s1vve08cwywf471vpt7ydj` (201 each).
+- Trigger: `ready-for-planning` removed and re-added on issue #1 at 15:32:13 UTC → events
+  `01m1s35nbp71j3jdcrx68y551b` (`issues.unlabeled`) and `01m1s35tnmbm76fsd0dvwncpbg`
+  (`issues.labeled`, delivery `f7e65550-a93e-11f1-8d70-95f085287b82`). Only the labeled event
+  matched the typed condition.
+- Run `01m1s35z044b2m218qgnkpvngy` (armed): `coalescing` for the 30 s window, `triggered` at
+  15:32:56 with session `01m1s36wccnnjja3eqe962faah`, `completed` at 15:33:50. The planner
+  called `get_issue`, `list_sub_issues`, `list_comments`, `create_issue` ×2, `create_comment`
+  (53,104 tokens).
+- GitHub, all authored by `app/xelmar-foreman`: issues #2 "Create the CONTRIBUTING.md
+  foundation" and #3 "Add the contribution review checklist" (labels `ticket`, `draft`), both
+  attached as sub-issues of #1 (`GET /repos/.../issues/1/sub_issues` lists #2, #3), and one
+  comment on #1 ("Published draft sub-issues: …"). No human account acted.
+- The App's own writes came back through the webhook as events (`issues.opened`/`labeled` for
+  #2 and #3, `issue_comment.created` on #1) — the ledger sees what the agents do.
+- Completion emitted `plan.published` `01m1s38hzdr1hs8ak5hg79zyeq` into the internal
+  `trueforge` source (delivery `01m1s35z044b2m218qgnkpvngy:plan.published`), which woke both
+  downstream automations: `review-plan` run `01m1s38j107ygkj75wzqd49ay8` (lane
+  `…/review`, session `01m1s38vw23erbdsw7baqkyxt7`) and `publish-dashboard` run
+  `01m1s38j15kec2c5xjd6b2qexk` (lane `…/dashboard`, session `01m1s38w4jwt58cd5t4vj28c3b`),
+  both `shadowed` (paused before their first tool call) within 45 s.
+
 ## 6. Deploy — 2026-09-05
 
 - Railway project `trueforge-automations` (`315b2031-eca5-4188-9e6c-a0e66d12a4a3`),

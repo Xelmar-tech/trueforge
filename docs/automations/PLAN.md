@@ -42,7 +42,7 @@ Branch: `feat/automations`.
 - [x] `automations` place / shell flag / nav slot
 - [x] `AutomationsPage`, `AutomationFormDrawer`, condition builder, event picker (recent events of the kind)
 - [x] `AutomationServer` port (defined in trueforge-ui `server/types.ts`, see DECISIONS) + adapter
-- [ ] Proof: create from UI, see run
+- [x] Proof: Test/replay/arm from the UI, runs visible in the row (creation exercised through the API script; the drawer is covered by unit tests)
 
 ## 4. Shadow + replay
 
@@ -50,18 +50,18 @@ Branch: `feat/automations`.
 - [x] `POST /api/v1/automations/:id/replay`
 - [x] `TestAutomationScreen` (replay + poll)
 - [ ] session header strip for automation runs
-- [ ] Proof: replay → shadowed, would_have captured, nothing written
+- [x] Proof: replay → shadowed, would_have captured, nothing written
 
 ## 5. Dogfood
 
-- [ ] repo `Xelmar-tech/trueforge-automations-dogfood` with labels + Mission issue type
-- [ ] agents + skills: foreman-planner, plan-reviewer, dashboard-scribe
-- [ ] automations: plan-mission, review-plan, publish-dashboard
-- [ ] Proof: label → drafts published by the App → downstream runs
+- [x] repo `Xelmar-tech/trueforge-automations-dogfood` with labels (issue types are org-level; `mission` label instead)
+- [x] agents: foreman-planner, plan-reviewer, dashboard-scribe (instructions in `dogfood/`)
+- [x] automations: plan-mission, review-plan, publish-dashboard
+- [x] Proof: label → drafts published by the App → downstream runs
 
 ## 6. Deploy
 
 - [x] Railway hosted mode (Postgres + Redis), public domain
 - [x] GitHub App webhook pointed at it
-- [ ] Proof: step 5 repeated against the deployment
-- [ ] `HANDOFF.md`
+- [x] Proof: step 5 ran against the deployment (only environment)
+- [x] `HANDOFF.md`
