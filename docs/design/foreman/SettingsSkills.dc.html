@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root{--paper:#F7F5F0;--surface:#FFFFFF;--ink:#171614;--ink-2:#5F5A52;--ink-3:#8A847A;--line:#E6E1D8;--line-2:#D4CDC0;--signal:#E4572E;--signal-ink:#B23F1B;--font:"Schibsted Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+    a{color:var(--signal-ink);text-decoration:none} a:hover{color:var(--signal)}
+    .micro{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+    .mono{font-family:var(--mono)}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink)}
+    .btn-sm{height:30px;padding:0 10px;font-size:12px}
+    .btn-primary{background:var(--signal);border-color:var(--signal);color:#fff}
+    .chip{font-family:var(--mono);font-size:12px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
+    .nav{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:8px;color:var(--ink-2);font-weight:500;border:1px solid transparent}
+    .nav.active{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:700}
+    .tab{height:34px;display:flex;align-items:center;padding:0 12px;border-radius:8px;color:var(--ink-2);font-weight:500;font-size:13px}
+    .tab.on{background:var(--surface);border:1px solid var(--line);color:var(--ink);font-weight:700}
+    .tabgroup{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding:10px 12px 4px}
+    .th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:0 16px;height:40px;display:flex;align-items:center}
+    .td{padding:0 16px;height:58px;display:flex;align-items:center;border-top:1px solid var(--line);min-width:0;gap:8px;font-size:13px}
+    .code{font-family:var(--mono);font-size:11px;line-height:1.7;white-space:pre-wrap;color:var(--ink-2)}
+  </style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;background:#F7F5F0;overflow:hidden">
+  <aside style="width:236px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #E6E1D8;padding:16px 12px;box-sizing:border-box;gap:4px">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px 16px">
+      <div style="display:flex;align-items:center;gap:10px"><svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg><div style="display:flex;flex-direction:column;line-height:1.1"><span style="font-weight:800;letter-spacing:-.02em">Xelmar</span><span style="font-size:11px;color:#8A847A">Foreman · Pro</span></div></div>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#8A847A" stroke-width="1.75" stroke-linecap="round"><path d="M5 6l3-3 3 3M5 10l3 3 3-3"></path></svg>
+    </div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>Overview</div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"></path></svg>Automations</div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M10 8.5v7l5.5-3.5z"></path></svg>Runs</div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>Ledger</div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="5" y="5" width="14" height="14" rx="3"></rect><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path><rect x="9" y="9" width="6" height="6" rx="1"></rect></svg>Agents</div>
+    <div class="nav"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"></path></svg>Sessions</div>
+    <div style="flex:1"></div>
+    <div class="nav active"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 6h10M4 12h2M10 12h10M4 18h12"></path><circle cx="16" cy="6" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg>Settings</div>
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 10px 4px"><div style="width:28px;height:28px;border-radius:999px;background:#E4572E;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px">AA</div><div style="display:flex;flex-direction:column;line-height:1.15"><span style="font-weight:600;font-size:13px">Aaron</span><span style="font-size:11px;color:#8A847A">Owner</span></div></div>
+  </aside>
+
+  <main style="flex:1;display:flex;flex-direction:column;min-width:0">
+    <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid #E6E1D8;flex-shrink:0">
+      <div style="font-size:22px;font-weight:800;letter-spacing:-.025em">Workspace settings</div>
+    </header>
+    <section style="flex:1;display:grid;grid-template-columns:200px minmax(0, 1fr);overflow:hidden">
+      <div style="padding:16px 12px;border-right:1px solid #E6E1D8;display:flex;flex-direction:column;gap:2px">
+        <div class="tabgroup">Workspace</div><div class="tab">General</div><div class="tab">Members</div><div class="tab">API keys</div><div class="tab">Billing</div>
+        <div class="tabgroup">Connect</div><div class="tab">Sources</div><div class="tab">Credentials</div><div class="tab">Quota</div><div class="tab">Tool connectors</div><div class="tab on">Skills</div><div class="tab">Sandbox</div>
+        <div class="tabgroup">Care</div><div class="tab">Notifications</div><div class="tab" style="color:#C7392B">Danger zone</div>
+      </div>
+
+      <div style="padding:22px 28px;display:grid;grid-template-columns:minmax(0, 1fr) 380px;gap:20px;overflow:hidden">
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-end">
+            <div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:700;font-size:16px">Skills</div><div style="font-size:13px;color:#5F5A52">Reusable instructions and scripts an agent can load. A skill is a folder with a SKILL.md; agents pick from this library.</div></div>
+            <div style="display:flex;gap:8px"><span class="btn">Import from GitHub</span><span class="btn btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>New skill</span></div>
+          </div>
+          <div class="card" style="overflow:hidden">
+            <div style="display:grid;grid-template-columns:minmax(0, 1.3fr) 110px minmax(0, 1fr) 120px">
+              <div class="th">Skill</div><div class="th">Source</div><div class="th">Used by</div><div class="th">Updated</div>
+              <div class="td" style="background:#F7F5F0"><div style="display:flex;flex-direction:column;line-height:1.2;min-width:0"><span style="font-weight:700">mission-planning</span><span style="font-size:12px;color:#8A847A">How to split a Mission into independent, ordered tickets</span></div></div><div class="td" style="background:#F7F5F0"><span class="chip">workspace</span></div><div class="td" style="background:#F7F5F0">foreman-planner</div><div class="td" style="color:#5F5A52;background:#F7F5F0">Sep 5</div>
+              <div class="td"><div style="display:flex;flex-direction:column;line-height:1.2;min-width:0"><span style="font-weight:700">github-conventions</span><span style="font-size:12px;color:#8A847A">Label names, ticket sections, comment etiquette for this org</span></div></div><div class="td"><span class="chip">workspace</span></div><div class="td">foreman-planner · plan-reviewer · triage-clerk</div><div class="td" style="color:#5F5A52">Sep 5</div>
+              <div class="td"><div style="display:flex;flex-direction:column;line-height:1.2;min-width:0"><span style="font-weight:700">plan-review-checklist</span><span style="font-size:12px;color:#8A847A">What a ticket must have before it is ready for an agent</span></div></div><div class="td"><span class="chip">workspace</span></div><div class="td">plan-reviewer</div><div class="td" style="color:#5F5A52">Sep 5</div>
+              <div class="td"><div style="display:flex;flex-direction:column;line-height:1.2;min-width:0"><span style="font-weight:700">dashboard-table</span><span style="font-size:12px;color:#8A847A">The Mission dashboard format and refresh rules</span></div></div><div class="td"><span class="chip">workspace</span></div><div class="td">dashboard-scribe</div><div class="td" style="color:#5F5A52">Sep 5</div>
+              <div class="td"><div style="display:flex;flex-direction:column;line-height:1.2;min-width:0"><span style="font-weight:700">issue-triage</span><span style="font-size:12px;color:#8A847A">Reproduction checklist and the clarifying-question template</span></div></div><div class="td"><span class="chip">github</span></div><div class="td">triage-clerk</div><div class="td" style="color:#5F5A52">Sep 4</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:#8A847A">Skills run inside the sandbox; an agent without a sandbox cannot use them. Configure sandboxes under Settings · Sandbox.</div>
+        </div>
+
+        <div class="card" style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700">mission-planning</span><span class="btn btn-sm">Edit</span></div>
+          <div class="micro">SKILL.md</div>
+          <div class="code" style="border:1px solid #E6E1D8;border-radius:8px;padding:12px 14px;background:#F7F5F0;flex:1;overflow:hidden">---
+name: mission-planning
+description: Split a Mission into 2–5 independent, ordered tickets an agent can pick up without questions.
+---
+
+## When to use
+The Mission issue is labeled ready-for-planning and has no sub-issues.
+
+## Ticket shape
+- Title: imperative, under 70 characters
+- Sections: Why · Scope · Acceptance criteria · Out of scope
+- Every acceptance criterion is verifiable
+
+## Never
+- Plan twice. If sub-issues exist, comment and stop.
+- Invent code work for a documentation-only Mission.</div>
+          <div style="font-size:12px;color:#8A847A">Files: SKILL.md · templates/ticket.md</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+</body>
+</html>

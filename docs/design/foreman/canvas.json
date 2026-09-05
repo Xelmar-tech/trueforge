@@ -56,12 +56,12 @@
     { "file": "Ledger.dc.html", "x": 3040, "y": 3180, "w": 1440, "h": 900, "title": "Ledger", "page": "page-1" },
     { "file": "Agents.dc.html", "x": 0, "y": 4200, "w": 1440, "h": 900, "title": "Agents", "page": "page-1" },
     {
-      "file": "Connections.dc.html",
+      "file": "AgentComposer.dc.html",
       "x": 1520,
       "y": 4200,
       "w": 1440,
       "h": 900,
-      "title": "Connections",
+      "title": "New agent (TrueForge composer, restyled)",
       "page": "page-1"
     },
     {
@@ -71,6 +71,42 @@
       "w": 1440,
       "h": 900,
       "title": "Settings · Members",
+      "page": "page-1"
+    },
+    {
+      "file": "Connections.dc.html",
+      "x": 0,
+      "y": 5220,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings · Sources & model access",
+      "page": "page-1"
+    },
+    {
+      "file": "SettingsCredentials.dc.html",
+      "x": 1520,
+      "y": 5220,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings · Credentials",
+      "page": "page-1"
+    },
+    {
+      "file": "SettingsQuota.dc.html",
+      "x": 3040,
+      "y": 5220,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings · Quota",
+      "page": "page-1"
+    },
+    {
+      "file": "SettingsSkills.dc.html",
+      "x": 0,
+      "y": 6240,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings · Skills",
       "page": "page-1"
     },
     {
@@ -98,7 +134,7 @@
       "x": 1520,
       "y": 0,
       "w": 420,
-      "text": "Factory Foreman — redesign v1\n\nDirection A (this page): industrial editorial. Warm paper, graphite ink, one signal orange, Schibsted Grotesk + JetBrains Mono. Deliberately nothing from TrueForge: no dark rail, no indigo, no glass.\n\nRow 2: auth is new — TrueForge only had an OIDC redirect. Sign in / create workspace / onboarding are designed from scratch.\nRows 3–5: every app surface, with real data from today's dogfood run.\n\nPage 'Directions' holds two low-fi alternates (B dark control room, C Swiss) if A is not it.",
+      "text": "Factory Foreman — redesign v1\n\nDirection A (this page): industrial editorial. Warm paper, graphite ink, one signal orange, Schibsted Grotesk + JetBrains Mono. Deliberately nothing from TrueForge's skin: no dark rail, no indigo, no glass.\n\nMechanics are TrueForge's: the New agent board mirrors its composer (model, instructions, skills, tools, runtime, try-it chat); Sessions stays in the nav; Settings keeps its tabs and gains the connect pages.\n\nRow 2: auth is new. Rows 3–4: automations, runs, ledger. Row 5: agents + members. Rows 6–7: everything you connect lives under Settings — sources, credentials (the proxy's auth files), quota windows, skills.\n\nPage 'Directions' holds two low-fi alternates (B dark control room, C Swiss) if A is not it.",
       "page": "page-1"
     },
     {
@@ -115,6 +151,14 @@
       "y": 1140,
       "w": 300,
       "text": "Auth model assumed: GitHub OAuth as the primary sign-in (the same org that owns the App), magic-link email as the fallback, optional enterprise IdP. No passwords.",
+      "page": "page-1"
+    },
+    {
+      "id": "proxy-note",
+      "x": 4560,
+      "y": 5220,
+      "w": 320,
+      "text": "Credentials and Quota are the CLI proxy console's two pages (auth files, quota management) restyled 1:1: same cards, health strips, plan chips, reset expiries, 5-hour vs weekly windows, timeline. Connect buttons: 'Sign in to a provider' (OAuth) and 'Upload file'.",
       "page": "page-1"
     }
   ],
