@@ -5,11 +5,19 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { sessionIsCreateAgent } from '../atoms/lib/sessionCreateAgent.js';
 import { useOptionalCatalogServer, useOptionalServer, useServerCapabilities } from '../server/ServerContext.js';
-import { useShellMode } from '../server/ShellModeContext.js';
+import { useShellMode, type SettingsSection } from '../server/ShellModeContext.js';
 import { isSettingsChromeEnabled } from '../server/settingsChrome.js';
 import { deriveChatPlace, derivePlace } from './derivePlace.js';
 import { buildPath, matchLocation, placesEqual, sanitizeSearchForPlace } from './paths.js';
 import type { ResolvedRoutes, RoutePlace, ShellSnapshot } from './types.js';
+
+const SETTINGS_SECTIONS: readonly SettingsSection[] = ['models', 'connectors', 'skills', 'sandbox', 'sources'];
+
+/** The settings tab named by `?section=`, when it is one we know. */
+export function settingsSectionFromSearch(search: string): SettingsSection | undefined {
+  const requested = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('section');
+  return SETTINGS_SECTIONS.find(section => section === requested);
+}
 
 /**
  * Single bidirectional bridge between shell state and the URL. Mounted under
@@ -164,7 +172,8 @@ export function ShellRouteSync({
     const settingsOnBoot = settingsChromeEnabled && (initialSettingsOpen || urlPlace.type === 'settings');
 
     if (urlPlace.type === 'settings') {
-      if (settingsChromeEnabled) shell.setSettingsOpen(true);
+      // `/settings?section=sources` (the GitHub manifest callback) lands on that tab directly.
+      if (settingsChromeEnabled) shell.setSettingsOpen(true, settingsSectionFromSearch(location.search));
     } else if (urlPlace.type === 'library') {
       shell.setLibraryOpen(true);
     } else if (urlPlace.type === 'sessionsBrowser') {
