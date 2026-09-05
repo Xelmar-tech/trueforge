@@ -2,6 +2,7 @@
 
 import { AgentsClient } from "./api/resources/agents/client/Client.js";
 import { AuthClient } from "./api/resources/auth/client/Client.js";
+import { AutomationsClient } from "./api/resources/automations/client/Client.js";
 import { CatalogsClient } from "./api/resources/catalogs/client/Client.js";
 import { EventSourcesClient } from "./api/resources/eventSources/client/Client.js";
 import { EventsClient } from "./api/resources/events/client/Client.js";
@@ -27,6 +28,7 @@ export class TrueForge {
     protected readonly _options: NormalizedClientOptionsWithAuth<TrueForge.Options>;
     protected _agents: AgentsClient | undefined;
     protected _auth: AuthClient | undefined;
+    protected _automations: AutomationsClient | undefined;
     protected _server: ServerClient | undefined;
     protected _eventSources: EventSourcesClient | undefined;
     protected _events: EventsClient | undefined;
@@ -49,6 +51,10 @@ export class TrueForge {
 
     public get auth(): AuthClient {
         return (this._auth ??= new AuthClient(this._options));
+    }
+
+    public get automations(): AutomationsClient {
+        return (this._automations ??= new AutomationsClient(this._options));
     }
 
     public get server(): ServerClient {

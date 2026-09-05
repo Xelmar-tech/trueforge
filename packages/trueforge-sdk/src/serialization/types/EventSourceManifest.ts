@@ -3,19 +3,14 @@
 import type * as TrueForge from "../../api/index.js";
 import * as core from "../../core/index.js";
 import type * as serializers from "../index.js";
-import { GithubAppConfig } from "./GithubAppConfig.js";
+import { EventSourceManifestApp } from "./EventSourceManifestApp.js";
+import { EventSourceManifestOne } from "./EventSourceManifestOne.js";
 
-export const EventSourceManifest: core.serialization.ObjectSchema<
+export const EventSourceManifest: core.serialization.Schema<
     serializers.EventSourceManifest.Raw,
     TrueForge.EventSourceManifest
-> = core.serialization.object({
-    app: GithubAppConfig.nullable(),
-    kind: core.serialization.stringLiteral("github"),
-});
+> = core.serialization.undiscriminatedUnion([EventSourceManifestApp, EventSourceManifestOne]);
 
 export declare namespace EventSourceManifest {
-    export interface Raw {
-        app?: GithubAppConfig.Raw | null;
-        kind: "github";
-    }
+    export type Raw = EventSourceManifestApp.Raw | EventSourceManifestOne.Raw;
 }

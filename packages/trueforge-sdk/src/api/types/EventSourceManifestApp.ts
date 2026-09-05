@@ -2,4 +2,7 @@
 
 import type * as TrueForge from "../index.js";
 
-export type EventSourceManifest = TrueForge.EventSourceManifestApp | TrueForge.EventSourceManifestOne;
+export interface EventSourceManifestApp {
+    app: TrueForge.GithubAppConfig | null;
+    kind: "github";
+}

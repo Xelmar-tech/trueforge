@@ -5,8 +5,8 @@ import * as core from "../../core/index.js";
 import type * as serializers from "../index.js";
 
 export const EventSourceKind: core.serialization.Schema<serializers.EventSourceKind.Raw, TrueForge.EventSourceKind> =
-    core.serialization.stringLiteral("github");
+    core.serialization.enum_(["github", "trueforge"]);
 
 export declare namespace EventSourceKind {
-    export type Raw = "github";
+    export type Raw = "github" | "trueforge";
 }

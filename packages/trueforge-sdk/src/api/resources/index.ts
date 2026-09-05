@@ -1,6 +1,8 @@
 export * from "./agents/client/requests/index.js";
 export * as agents from "./agents/index.js";
 export * as auth from "./auth/index.js";
+export * from "./automations/client/requests/index.js";
+export * as automations from "./automations/index.js";
 export * as catalogs from "./catalogs/index.js";
 export * from "./eventSources/client/requests/index.js";
 export * as eventSources from "./eventSources/index.js";

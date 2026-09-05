@@ -1,5 +1,7 @@
 export * from "./agents/client/requests/index.js";
 export * as agents from "./agents/index.js";
+export * from "./automations/client/requests/index.js";
+export * as automations from "./automations/index.js";
 export * from "./eventSources/client/requests/index.js";
 export * as eventSources from "./eventSources/index.js";
 export * as internal from "./internal/index.js";

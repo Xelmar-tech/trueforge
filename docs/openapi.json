@@ -337,6 +337,217 @@
         },
         "type": "object"
       },
+      "Automation": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_by_subject": {
+            "$ref": "#/components/schemas/CreatedBySubject"
+          },
+          "id": {
+            "type": "string"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AutomationManifest"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "agent_name",
+          "name",
+          "manifest",
+          "created_by_subject",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "AutomationManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "coalesce_seconds": {
+            "default": 30,
+            "description": "Events about one subject arriving within this window share one run.",
+            "maximum": 3600,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "emit": {
+            "default": [],
+            "description": "Event kinds written to the internal source when a run completes.",
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "type": "array"
+          },
+          "lane": {
+            "default": [],
+            "description": "Runs with the same rendered lane key execute one at a time. Empty = no lane.",
+            "items": {
+              "$ref": "#/components/schemas/LanePart"
+            },
+            "maxItems": 8,
+            "type": "array"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/AutomationMode"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AutomationStatus"
+          },
+          "task": {
+            "description": "First user message sent to the agent. The coalesced events are appended as JSON.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/Trigger"
+          }
+        },
+        "required": [
+          "trigger",
+          "task"
+        ],
+        "type": "object"
+      },
+      "AutomationMode": {
+        "default": "shadow",
+        "enum": [
+          "shadow",
+          "armed"
+        ],
+        "type": "string"
+      },
+      "AutomationRun": {
+        "additionalProperties": false,
+        "properties": {
+          "automation_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_by_subject": {
+            "$ref": "#/components/schemas/CreatedBySubject"
+          },
+          "event_ids": {
+            "description": "Ledger events coalesced into this run, oldest first.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "finished_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "lane_key": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "mode": {
+            "$ref": "#/components/schemas/AutomationMode"
+          },
+          "outcome": {
+            "additionalProperties": {},
+            "description": "Terminal details: required actions for a shadowed run, emitted event ids, or the error.",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "scheduled_for": {
+            "description": "When the coalesce window closes and the run may start.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "session_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/AutomationRunStatus"
+          },
+          "subject_key": {
+            "type": "string"
+          },
+          "triggered_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "automation_id",
+          "subject_key",
+          "lane_key",
+          "status",
+          "mode",
+          "event_ids",
+          "session_id",
+          "scheduled_for",
+          "triggered_at",
+          "finished_at",
+          "outcome",
+          "created_by_subject",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "AutomationRunStatus": {
+        "enum": [
+          "coalescing",
+          "triggered",
+          "waiting",
+          "completed",
+          "shadowed",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "AutomationStatus": {
+        "default": "active",
+        "enum": [
+          "active",
+          "paused"
+        ],
+        "type": "string"
+      },
       "AvailableMCPServer": {
         "additionalProperties": false,
         "properties": {
@@ -845,6 +1056,68 @@
         },
         "type": "object"
       },
+      "Condition": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "description": "Dotted path into the event payload, e.g. `label.name`.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "op": {
+            "$ref": "#/components/schemas/ConditionOperator"
+          },
+          "value": {
+            "$ref": "#/components/schemas/ConditionValue"
+          }
+        },
+        "required": [
+          "field",
+          "op"
+        ],
+        "type": "object"
+      },
+      "ConditionOperator": {
+        "enum": [
+          "eq",
+          "neq",
+          "in",
+          "not_in",
+          "contains",
+          "exists",
+          "not_exists"
+        ],
+        "type": "string"
+      },
+      "ConditionValue": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "maxItems": 64,
+            "type": "array"
+          }
+        ],
+        "description": "Comparison value; omitted for `exists` / `not_exists`."
+      },
       "ConfiguredMCPServer": {
         "additionalProperties": false,
         "properties": {
@@ -973,6 +1246,26 @@
           }
         },
         "required": [
+          "name",
+          "manifest"
+        ],
+        "type": "object"
+      },
+      "CreateAutomationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "agent_name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/AutomationManifest"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          }
+        },
+        "required": [
+          "agent_name",
           "name",
           "manifest"
         ],
@@ -1229,6 +1522,10 @@
         "properties": {},
         "type": "object"
       },
+      "DeleteAutomationResponse": {
+        "properties": {},
+        "type": "object"
+      },
       "DeleteEventSourceResponse": {
         "properties": {},
         "type": "object"
@@ -1419,7 +1716,8 @@
       },
       "EventSourceKind": {
         "enum": [
-          "github"
+          "github",
+          "trueforge"
         ],
         "type": "string"
       },
@@ -1441,6 +1739,21 @@
             "required": [
               "kind",
               "app"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "enum": [
+                  "trueforge"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
             ],
             "type": "object"
           }
@@ -1499,6 +1812,37 @@
           "title",
           "actor",
           "label"
+        ],
+        "type": "object"
+      },
+      "EventTrigger": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "description": "Connector event kind, e.g. `issues.labeled`.",
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "source_id": {
+            "description": "Event source the events come from.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "event"
+            ],
+            "type": "string"
+          },
+          "when": {
+            "$ref": "#/components/schemas/When"
+          }
+        },
+        "required": [
+          "type",
+          "source_id",
+          "kind"
         ],
         "type": "object"
       },
@@ -1619,6 +1963,17 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/Agent"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "GetAutomationResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Automation"
           }
         },
         "required": [
@@ -2025,6 +2380,53 @@
         ],
         "type": "object"
       },
+      "LanePart": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "path": {
+                "description": "Dotted path into the event payload.",
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "field"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": [
+                  "literal"
+                ],
+                "type": "string"
+              },
+              "value": {
+                "maxLength": 64,
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "value"
+            ],
+            "type": "object"
+          }
+        ]
+      },
       "LargeToolResponseConfig": {
         "default": {
           "enabled": true
@@ -2049,6 +2451,38 @@
         },
         "required": [
           "data"
+        ],
+        "type": "object"
+      },
+      "ListAutomationRunsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AutomationRun"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "ListAutomationsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Automation"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/TokenPagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
         ],
         "type": "object"
       },
@@ -3228,6 +3662,31 @@
           "max"
         ],
         "type": "string"
+      },
+      "ReplayAutomationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "description": "Ledger event to replay.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id"
+        ],
+        "type": "object"
+      },
+      "ReplayAutomationResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/AutomationRun"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
       },
       "RequestErrorResponse": {
         "properties": {
@@ -4595,6 +5054,19 @@
         ],
         "type": "object"
       },
+      "Trigger": {
+        "discriminator": {
+          "mapping": {
+            "event": "#/components/schemas/EventTrigger"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/EventTrigger"
+          }
+        ]
+      },
       "TrueFoundryModelProvider": {
         "additionalProperties": false,
         "properties": {
@@ -5095,6 +5567,22 @@
         ],
         "type": "object"
       },
+      "UpdateAutomationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "manifest": {
+            "$ref": "#/components/schemas/AutomationManifest"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          }
+        },
+        "required": [
+          "name",
+          "manifest"
+        ],
+        "type": "object"
+      },
       "UpdateMCPServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -5301,6 +5789,23 @@
           "event_id",
           "created"
         ],
+        "type": "object"
+      },
+      "When": {
+        "additionalProperties": false,
+        "default": {
+          "all": []
+        },
+        "properties": {
+          "all": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Condition"
+            },
+            "maxItems": 16,
+            "type": "array"
+          }
+        },
         "type": "object"
       },
       "ZaiModelProvider": {
@@ -6088,6 +6593,475 @@
           "auth"
         ],
         "x-fern-sdk-method-name": "me"
+      }
+    },
+    "/api/v1/automations": {
+      "get": {
+        "description": "List automations for the tenant, newest first. Optionally filter by `agent_names`.",
+        "parameters": [
+          {
+            "description": "Page size. Defaults to 25",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "description": "Page size. Defaults to 25",
+              "maximum": 25,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque token from a previous response `next_page_token`.",
+            "in": "query",
+            "name": "page_token",
+            "required": false,
+            "schema": {
+              "description": "Opaque token from a previous response `next_page_token`.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by one or more agent names (comma-separated). When set, at least one name is required.",
+            "in": "query",
+            "name": "agent_names",
+            "required": false,
+            "schema": {
+              "description": "Filter by one or more agent names (comma-separated). When set, at least one name is required.",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAutomationsResponse"
+                }
+              }
+            },
+            "description": "Paginated matching automations."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameters or page token."
+          }
+        },
+        "summary": "List automations",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-pagination": {
+          "cursor": "$request.page_token",
+          "next_cursor": "$response.pagination.next_page_token",
+          "results": "$response.data"
+        },
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "list"
+      },
+      "post": {
+        "description": "Bind an agent to an event trigger. The automation starts in the mode its manifest declares (shadow by default).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAutomationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAutomationResponse"
+                }
+              }
+            },
+            "description": "Created."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid manifest, or the trigger names an unknown event source."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The agent does not exist or is not accessible."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "An automation with this name already exists."
+          }
+        },
+        "summary": "Create an automation",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "create"
+      }
+    },
+    "/api/v1/automations/{automation_id}": {
+      "delete": {
+        "description": "Delete an automation and its run history. Sessions already started keep running.",
+        "parameters": [
+          {
+            "description": "Immutable automation identifier.",
+            "in": "path",
+            "name": "automation_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable automation identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteAutomationResponse"
+                }
+              }
+            },
+            "description": "Deleted, or already absent."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The caller is not the automation creator."
+          }
+        },
+        "summary": "Delete an automation",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "delete"
+      },
+      "get": {
+        "description": "Fetch one automation by id.",
+        "parameters": [
+          {
+            "description": "Immutable automation identifier.",
+            "in": "path",
+            "name": "automation_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable automation identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAutomationResponse"
+                }
+              }
+            },
+            "description": "The automation."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The caller is not the automation creator."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "Get an automation",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "get"
+      },
+      "put": {
+        "description": "Replace the name and manifest. Open coalesce windows keep their original settings.",
+        "parameters": [
+          {
+            "description": "Immutable automation identifier.",
+            "in": "path",
+            "name": "automation_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable automation identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAutomationResponse"
+                }
+              }
+            },
+            "description": "Updated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid manifest, or the trigger names an unknown event source."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The caller is not the automation creator."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Not found."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "An automation with this name already exists."
+          }
+        },
+        "summary": "Replace an automation",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "update"
+      }
+    },
+    "/api/v1/automations/{automation_id}/replay": {
+      "post": {
+        "description": "Run the automation against one recorded event in shadow mode: the agent pauses before its first gated tool call and nothing is written. Returns the run, which the dispatch loop picks up immediately.",
+        "parameters": [
+          {
+            "description": "Immutable automation identifier.",
+            "in": "path",
+            "name": "automation_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable automation identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplayAutomationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayAutomationResponse"
+                }
+              }
+            },
+            "description": "Replay run created."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The event belongs to another source or kind than the trigger."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The caller is not the automation creator."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Automation or event not found."
+          }
+        },
+        "summary": "Replay a recorded event",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "replay"
+      }
+    },
+    "/api/v1/automations/{automation_id}/runs": {
+      "get": {
+        "description": "Runs of one automation, newest first: open coalesce windows and finished runs alike.",
+        "parameters": [
+          {
+            "description": "Immutable automation identifier.",
+            "in": "path",
+            "name": "automation_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable automation identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListAutomationRunsResponse"
+                }
+              }
+            },
+            "description": "Runs of the automation."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "The caller is not the automation creator."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "List runs of an automation",
+        "tags": [
+          "Automations"
+        ],
+        "x-fern-sdk-group-name": [
+          "automations"
+        ],
+        "x-fern-sdk-method-name": "list_runs"
       }
     },
     "/api/v1/capabilities": {
@@ -9604,6 +10578,9 @@
     },
     {
       "name": "Events"
+    },
+    {
+      "name": "Automations"
     },
     {
       "name": "Agent Sessions"
