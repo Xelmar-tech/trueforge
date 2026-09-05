@@ -13,7 +13,9 @@ import {
   GithubManifestExchangeError,
   githubWebhookUrl,
 } from '../connectors/github/manifest';
+import { sourceToolsUrl, sourceToolToken } from '../connectors/github/tools';
 import { EventSourceNameConflictError, type EventSourceRecord, type IEventSourceStore } from '../db/eventSourceStore';
+import type { IMcpServerStore } from '../db/mcpServerStore';
 import type { WithTransaction } from '../db/transaction';
 import {
   createGithubManifestRoute,
@@ -21,8 +23,9 @@ import {
   getEventSourceRoute,
   githubManifestCallbackRoute,
   listEventSourcesRoute,
+  registerSourceConnectorRoute,
 } from '../routes/eventSourceRoutes';
-import type { EventSource } from '../schemas/eventSource';
+import type { EventSource, GithubSourceSecrets } from '../schemas/eventSource';
 
 /** A manifest flow left unfinished this long is dead: GitHub codes expire after one hour. */
 const MANIFEST_STATE_TTL_MS = 60 * 60 * 1000;
@@ -32,6 +35,7 @@ export const MANIFEST_CALLBACK_LANDING_PATH = '/settings';
 
 export interface EventSourcesRouterDeps<TTransaction> {
   eventSourceStore: IEventSourceStore<TTransaction>;
+  mcpServerStore: Pick<IMcpServerStore<TTransaction>, 'upsertServer'>;
   withTransaction: WithTransaction<TTransaction>;
   resolveRequestContext: ResolveRequestContext;
   /** Public origin GitHub can reach; throws when the server has none configured. */
@@ -40,9 +44,44 @@ export interface EventSourcesRouterDeps<TTransaction> {
 
 export interface GithubManifestCallbackRouterDeps<TTransaction> {
   eventSourceStore: IEventSourceStore<TTransaction>;
+  mcpServerStore: Pick<IMcpServerStore<TTransaction>, 'upsertServer'>;
   logger: Logger;
+  /** Public origin agents' MCP client calls back into; throws when the server has none configured. */
+  getPublicBaseUrl: () => string;
   /** Injected for tests; defaults to global fetch. */
   fetchImpl?: typeof fetch;
+}
+
+/**
+ * Registers (or refreshes) the MCP connector through which agents act as the App behind a
+ * GitHub source. The row is named after the source; its bearer token is derived from the
+ * webhook secret, so nothing new is stored and rotation is a re-registration.
+ */
+export async function registerSourceConnector<TTransaction>(input: {
+  source: EventSourceRecord;
+  secrets: GithubSourceSecrets;
+  publicBaseUrl: string;
+  mcpServerStore: Pick<IMcpServerStore<TTransaction>, 'upsertServer'>;
+}): Promise<{ mcp_server_name: string; url: string }> {
+  const url = sourceToolsUrl({ publicBaseUrl: input.publicBaseUrl, sourceId: input.source.id });
+  const app = input.source.manifest.kind === 'github' ? input.source.manifest.app : null;
+  await input.mcpServerStore.upsertServer({
+    tenant_id: input.source.tenant_id,
+    name: input.source.name,
+    manifest: {
+      type: 'remote',
+      name: input.source.name,
+      url,
+      description: `GitHub issues and comments, acting as the ${app?.app_slug ?? input.source.name} App.`,
+      auth: {
+        type: 'header',
+        headers: {
+          Authorization: `Bearer ${sourceToolToken({ sourceId: input.source.id, webhookSecret: input.secrets.webhook_secret })}`,
+        },
+      },
+    },
+  });
+  return { mcp_server_name: input.source.name, url };
 }
 
 export function toWireEventSource(record: EventSourceRecord, publicBaseUrl: string | null): EventSource {
@@ -144,11 +183,36 @@ export function createEventSourcesRouter<TTransaction>(deps: EventSourcesRouterD
     );
   };
 
+  const registerConnectorHandler: RouteHandler<typeof registerSourceConnectorRoute> = async c => {
+    const { source_id: sourceId } = c.req.valid('param');
+    const requestContext = deps.resolveRequestContext(c);
+    const source = await deps.eventSourceStore.getSource({ tenant_id: requestContext.tenant_id, id: sourceId });
+    if (source === undefined || source.status === 'pending' || source.manifest.kind !== 'github') {
+      return c.json({ error: { message: `Active GitHub event source not found: ${sourceId}` } }, 404);
+    }
+    const publicBaseUrl = safePublicBaseUrl(deps.getPublicBaseUrl);
+    if (publicBaseUrl === null) {
+      return c.json({ error: { message: 'Set PUBLIC_BASE_URL before registering the tools connector' } }, 400);
+    }
+    const secrets = await deps.eventSourceStore.getSecrets(source.id);
+    if (secrets === null) {
+      return c.json({ error: { message: `Active GitHub event source not found: ${sourceId}` } }, 404);
+    }
+    const data = await registerSourceConnector({
+      source,
+      secrets: secrets.github,
+      publicBaseUrl,
+      mcpServerStore: deps.mcpServerStore,
+    });
+    return c.json({ data }, 200);
+  };
+
   const router = new OpenAPIHono();
   router.openapi(listEventSourcesRoute, listHandler);
   router.openapi(createGithubManifestRoute, createGithubManifestHandler);
   router.openapi(getEventSourceRoute, getHandler);
   router.openapi(deleteEventSourceRoute, deleteHandler);
+  router.openapi(registerSourceConnectorRoute, registerConnectorHandler);
   return router;
 }
 
@@ -179,13 +243,21 @@ export function createGithubManifestCallbackRouter<TTransaction>(deps: GithubMan
         code,
         ...(deps.fetchImpl === undefined ? {} : { fetchImpl: deps.fetchImpl }),
       });
-      await deps.eventSourceStore.activateGithubSource({
+      const activated = await deps.eventSourceStore.activateGithubSource({
         tenant_id: source.tenant_id,
         id: source.id,
         app: conversion.app,
         secrets: conversion.secrets,
       });
       deps.logger.info('GitHub event source activated', { source_id: source.id, app_slug: conversion.app.app_slug });
+      if (activated !== undefined) {
+        await registerSourceConnector({
+          source: activated,
+          secrets: conversion.secrets,
+          publicBaseUrl: deps.getPublicBaseUrl(),
+          mcpServerStore: deps.mcpServerStore,
+        });
+      }
       return c.redirect(landingPath({ isSuccess: true, sourceId: source.id }), 302);
     } catch (error) {
       if (error instanceof GithubManifestExchangeError) {

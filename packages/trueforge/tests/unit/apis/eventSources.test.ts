@@ -1,14 +1,17 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { createEventSourcesRouter, createGithubManifestCallbackRouter } from '../../../src/apis/eventSources';
 import type { RequestContext } from '../../../src/auth/identity';
+import { sourceToolToken } from '../../../src/connectors/github/tools';
 import { migrateSqliteToLatest } from '../../../src/db/migrateSqlite';
 import { createSqliteDb } from '../../../src/db/sqlite/client';
 import { SqliteEventSourceStore } from '../../../src/db/sqlite/event-source-store/SqliteEventSourceStore';
+import { SqliteMcpServerStore } from '../../../src/db/sqlite/mcp-server-store/SqliteMcpServerStore';
 import { RequestErrorResponseSchema } from '../../../src/schemas/errors';
 import {
   CreateGithubManifestResponseSchema,
   GetEventSourceResponseSchema,
   ListEventSourcesResponseSchema,
+  RegisterSourceConnectorResponseSchema,
 } from '../../../src/schemas/eventSource';
 
 const ADMIN: RequestContext = {
@@ -40,14 +43,21 @@ async function setup(options: { publicBaseUrl?: string | null; fetchImpl?: typeo
   const db = createSqliteDb(':memory:');
   await migrateSqliteToLatest(db);
   const eventSourceStore = new SqliteEventSourceStore(db);
+  const mcpServerStore = new SqliteMcpServerStore(db);
   const publicBaseUrl = options.publicBaseUrl === undefined ? PUBLIC_BASE_URL : options.publicBaseUrl;
+  const getPublicBaseUrl = () => {
+    if (publicBaseUrl === null) throw new Error('PUBLIC_BASE_URL is required');
+    return publicBaseUrl;
+  };
 
   const app = new OpenAPIHono();
   app.route(
     '/github',
     createGithubManifestCallbackRouter({
       eventSourceStore,
+      mcpServerStore,
       logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() } as never,
+      getPublicBaseUrl,
       ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
     }),
   );
@@ -55,15 +65,13 @@ async function setup(options: { publicBaseUrl?: string | null; fetchImpl?: typeo
     '/',
     createEventSourcesRouter({
       eventSourceStore,
+      mcpServerStore,
       withTransaction: callback => db.transaction().execute(callback),
       resolveRequestContext: () => ADMIN,
-      getPublicBaseUrl: () => {
-        if (publicBaseUrl === null) throw new Error('PUBLIC_BASE_URL is required');
-        return publicBaseUrl;
-      },
+      getPublicBaseUrl,
     }),
   );
-  return { app, eventSourceStore };
+  return { app, eventSourceStore, mcpServerStore };
 }
 
 async function startManifest(app: OpenAPIHono, body: unknown) {
@@ -167,6 +175,26 @@ describe('event sources API', () => {
     // The state is single use.
     const again = await app.request(`/github/callback?code=one-time&state=${data.state}`, { redirect: 'manual' });
     expect(again.status).toBe(400);
+  });
+
+  test('activation registers the built-in tools connector; register_connector refreshes it', async () => {
+    const { app, mcpServerStore } = await setup({ fetchImpl: fetchStub(conversionResponse) });
+    const data = await startedManifest(app, { name: 'github-dogfood' });
+    await app.request(`/github/callback?code=c&state=${data.state}`, { redirect: 'manual' });
+
+    const expectedUrl = `${PUBLIC_BASE_URL}/api/v1/event-sources/${data.source_id}/mcp`;
+    const registered = await mcpServerStore.getServer({ tenant_id: 'default', name: 'github-dogfood' });
+    expect(registered?.manifest).toMatchObject({ type: 'remote', name: 'github-dogfood', url: expectedUrl });
+    const token = sourceToolToken({ sourceId: data.source_id, webhookSecret: 'shh-hook' });
+    expect(registered?.manifest.auth).toEqual({ type: 'header', headers: { Authorization: `Bearer ${token}` } });
+
+    const res = await app.request(`/${data.source_id}/connector`, { method: 'POST' });
+    expect(res.status).toBe(200);
+    expect(RegisterSourceConnectorResponseSchema.parse(await res.json()).data).toEqual({
+      mcp_server_name: 'github-dogfood',
+      url: expectedUrl,
+    });
+    expect((await app.request('/missing/connector', { method: 'POST' })).status).toBe(404);
   });
 
   test('callback with a rejected code redirects with isSuccess=false', async () => {

@@ -5,8 +5,21 @@ Deviations from the design documents, and choices the documents left open.
 - **Model access.** The user's gateway (`https://llm-router.abuusama.dev/v1`) is registered
   as a TrueForge `custom` model provider through the settings API; the key is read from the
   `LLM_ROUTER_API_KEY` environment variable and never written to disk in this repo.
-- **GitHub App auth.** `@octokit/app` and `@octokit/webhooks` instead of porting Foreman's
-  hand-written JWT and HMAC code: less code, maintained upstream.
+- **GitHub App auth.** `node:crypto` for both the webhook HMAC and the App JWT
+  (`connectors/github/appAuth.ts`): the octokit packages are ESM-only and break the Jest
+  (CJS) suite, and the whole flow is one signature plus two REST calls. `@octokit/app` was
+  removed; `@octokit/webhooks-types` stays for payload types.
+- **Agents act as the App through a built-in MCP endpoint.** Each active GitHub source serves
+  `POST /api/v1/event-sources/{source_id}/mcp` (stateless streamable HTTP, JSON responses).
+  Its tools call GitHub with an installation token minted from the stored private key; the
+  bearer token the core presents is `HMAC(webhook_secret, "source-tools:" + source_id)`, so
+  nothing new is stored. The manifest callback upserts an MCP connector named after the
+  source with that header; `POST /event-sources/{id}/connector` re-registers it. No PAT, no
+  human identity, no third-party MCP server.
+- **Controller reaches the API over the public edge on Railway.** `${{trueforge.PORT}}`
+  expands to an empty string (PORT is injected at runtime, not a service variable) and the
+  image binds `0.0.0.0` while Railway's private network is IPv6-only. `SERVER_URL` is the
+  public domain until the image binds `::`.
 - **Sandbox.** No Daytona in v1. The planner publishes through GitHub tools; the
   `review-plan` automation is the validation step.
 - **No `@octokit/webhooks-methods`.** The package is ESM-only and Jest could not resolve it;
@@ -32,6 +45,6 @@ Deviations from the design documents, and choices the documents left open.
 - **Event picker scope.** The drawer's picker lists the latest 25 recorded events of the
   chosen kind; conditions are applied server-side when a run starts, not client-side in the
   picker (listing rows carry no payload).
-- **Agents acting as the App.** Deferred to step 5: the dogfood agents will use a GitHub MCP
-  server configured in TrueForge Settings → Connectors. A built-in per-source MCP server that
-  mints installation tokens is the follow-up once the flow is proven end to end.
+- **Deleting a source leaves its connector row.** The connector stops working (401 from the
+  endpoint once the source is gone) but is not removed; the Connectors tab shows it and a
+  human deletes it. Cascading the delete is a later change.

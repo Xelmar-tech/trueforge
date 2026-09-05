@@ -84,6 +84,19 @@ export const ListEventSourcesResponseSchema = z
   .openapi('ListEventSourcesResponse');
 export const DeleteEventSourceResponseSchema = z.object({}).openapi('DeleteEventSourceResponse');
 
+/** The connector row through which agents act as the App behind a source. */
+export const RegisterSourceConnectorResponseSchema = z
+  .object({
+    data: z
+      .object({
+        mcp_server_name: z.string().min(1).describe('Name of the MCP connector to give an agent.'),
+        url: z.url().describe('Built-in MCP endpoint of this source.'),
+      })
+      .strict(),
+  })
+  .strict()
+  .openapi('RegisterSourceConnectorResponse');
+
 /** Starts the GitHub App manifest flow for a new source. */
 export const CreateGithubManifestRequestSchema = z
   .object({

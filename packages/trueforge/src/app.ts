@@ -15,8 +15,8 @@ import { createAuthRouter } from './apis/auth';
 import { createAutomationsRouter } from './apis/automations';
 import { createCapabilitiesRouter } from './apis/capabilities';
 import { createCatalogRouter } from './apis/catalog';
-import { createEventSourcesRouter, createGithubManifestCallbackRouter } from './apis/eventSources';
 import { createEventsRouter } from './apis/events';
+import { createEventSourcesRouter, createGithubManifestCallbackRouter } from './apis/eventSources';
 import { createMcpOAuthRouter } from './apis/mcpOAuth';
 import { createMcpServersRouter } from './apis/mcpServers';
 import { createModelsRouter } from './apis/models';
@@ -25,6 +25,7 @@ import { createInternalMetricsRouter } from './apis/sessionMetrics';
 import { createInternalSessionsRouter, createSessionsRouter } from './apis/sessions';
 import { createSettingsRouter } from './apis/settings';
 import { createAvailableSkillsRouter } from './apis/skills';
+import { createSourceToolsRouter } from './apis/sourceTools';
 import { createTurnsRouter } from './apis/turns';
 import { createWebhooksRouter } from './apis/webhooks';
 import type { Authenticator } from './auth/authenticator';
@@ -284,6 +285,17 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
     '/api/v1/event-sources/github',
     createGithubManifestCallbackRouter({
       eventSourceStore: deps.eventSourceStore,
+      mcpServerStore: deps.resolveMcpServerStore(),
+      logger: deps.logger,
+      getPublicBaseUrl: () => getPublicBaseUrl(),
+    }),
+  );
+  // Built-in per-source MCP endpoint agents call as the App. Bearer-authenticated by itself,
+  // so it sits before the admin-gated `/event-sources` mount like the callback above.
+  app.route(
+    '/api/v1/event-sources',
+    createSourceToolsRouter({
+      eventSourceStore: deps.eventSourceStore,
       logger: deps.logger,
     }),
   );
@@ -366,6 +378,7 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
     withAdminAuth(
       createEventSourcesRouter({
         eventSourceStore: deps.eventSourceStore,
+        mcpServerStore: deps.resolveMcpServerStore(),
         withTransaction: deps.withTransaction,
         resolveRequestContext,
         getPublicBaseUrl: () => getPublicBaseUrl(),

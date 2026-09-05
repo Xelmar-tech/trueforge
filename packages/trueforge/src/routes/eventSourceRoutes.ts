@@ -11,6 +11,7 @@ import {
   DeleteEventSourceResponseSchema,
   GetEventSourceResponseSchema,
   ListEventSourcesResponseSchema,
+  RegisterSourceConnectorResponseSchema,
 } from '../schemas/eventSource';
 import { OpenApiTag } from './openapiTags';
 
@@ -76,6 +77,32 @@ export const deleteEventSourceRoute = createRoute({
     200: {
       content: { 'application/json': { schema: DeleteEventSourceResponseSchema } },
       description: 'Deleted, or already absent.',
+    },
+  },
+});
+
+export const registerSourceConnectorRoute = createRoute({
+  method: 'post',
+  path: '/{source_id}/connector',
+  tags: [OpenApiTag.EVENT_SOURCES],
+  summary: 'Register the built-in GitHub tools connector',
+  description:
+    'Create or refresh the MCP connector through which agents act as the App behind this source. The manifest callback does this automatically; call it for a source connected before the connector existed.',
+  'x-fern-sdk-group-name': ['event_sources'],
+  'x-fern-sdk-method-name': 'register_connector',
+  request: { params: EventSourceIdParamsSchema },
+  responses: {
+    200: {
+      content: { 'application/json': { schema: RegisterSourceConnectorResponseSchema } },
+      description: 'The connector row agents can be given.',
+    },
+    400: {
+      content: { 'application/json': { schema: RequestErrorResponseSchema } },
+      description: 'The server has no public base URL.',
+    },
+    404: {
+      content: { 'application/json': { schema: RequestErrorResponseSchema } },
+      description: 'Not found, or not an active GitHub source.',
     },
   },
 });
