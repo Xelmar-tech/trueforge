@@ -111,6 +111,9 @@ export function createEventSourcesRouter<TTransaction>(deps: EventSourcesRouterD
   const listHandler: RouteHandler<typeof listEventSourcesRoute> = async c => {
     const requestContext = deps.resolveRequestContext(c);
     const publicBaseUrl = safePublicBaseUrl(deps.getPublicBaseUrl);
+    // The tenant's internal source always exists, so downstream automations can be built
+    // before the first run emits into it.
+    await deps.eventSourceStore.ensureInternalSource({ tenant_id: requestContext.tenant_id });
     const sources = await deps.eventSourceStore.listSources({ tenant_id: requestContext.tenant_id });
     return c.json({ data: sources.map(source => toWireEventSource(source, publicBaseUrl)) }, 200);
   };

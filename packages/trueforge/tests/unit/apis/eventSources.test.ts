@@ -217,8 +217,10 @@ describe('event sources API', () => {
     const listRes = await app.request('/');
     expect(listRes.status).toBe(200);
     const listBody = ListEventSourcesResponseSchema.parse(await listRes.json());
-    expect(listBody.data).toHaveLength(1);
-    expect(listBody.data[0]?.webhook_url).toBe(`${PUBLIC_BASE_URL}/api/v1/webhooks/${data.source_id}`);
+    // The GitHub source plus the tenant's internal `trueforge` source, which listing ensures.
+    expect(listBody.data.map(source => source.kind).sort()).toEqual(['github', 'trueforge']);
+    const github = listBody.data.find(source => source.kind === 'github');
+    expect(github?.webhook_url).toBe(`${PUBLIC_BASE_URL}/api/v1/webhooks/${data.source_id}`);
     expect(JSON.stringify(listBody)).not.toContain('shh-');
     expect(JSON.stringify(listBody)).not.toContain('PRIVATE KEY');
 
