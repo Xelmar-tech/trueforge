@@ -24,7 +24,7 @@ export default defineRailway(_ctx => {
   const app = service('trueforge', {
     // Deploys from this repository's default branch. Forks: change owner/repo
     // (and optionally branch) to build your own copy.
-    source: github('truefoundry/trueforge'),
+    source: github('Xelmar-tech/trueforge', { branch: 'feat/automations' }),
     // IaC `build` is a build *command* string (not CaC's builder/dockerfilePath object).
     // Non-root Dockerfile is selected via RAILWAY_DOCKERFILE_PATH below — without it,
     // Railway picks the root Dockerfile (npm install of a published version) and fails
@@ -65,7 +65,7 @@ export default defineRailway(_ctx => {
   // It talks to Postgres and hands due runs to the app over Railway's private
   // network (SERVER_URL); it needs no public domain or healthcheck.
   const controller = service('trueforge-controller', {
-    source: github('truefoundry/trueforge'),
+    source: github('Xelmar-tech/trueforge', { branch: 'feat/automations' }),
     startCommand: 'node dist/controller-main.js',
     replicas: 1,
     deploy: {
