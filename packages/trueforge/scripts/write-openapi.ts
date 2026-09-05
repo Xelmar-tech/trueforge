@@ -23,6 +23,7 @@ import { SkillCatalog } from '../src/catalog/SkillCatalog';
 import configuration from '../src/config';
 import { McpServerWithAuthStore } from '../src/db/McpServerWithAuthStore';
 import { SqliteAgentStore } from '../src/db/sqlite/agent-store/SqliteAgentStore';
+import { SqliteAutomationStore } from '../src/db/sqlite/automation-store/SqliteAutomationStore';
 import { createSqliteDb } from '../src/db/sqlite/client';
 import { SqliteEventSourceStore } from '../src/db/sqlite/event-source-store/SqliteEventSourceStore';
 import { SqliteEventStore } from '../src/db/sqlite/event-store/SqliteEventStore';
@@ -84,6 +85,7 @@ const app = createServerApp({
   scheduleStore: new SqliteScheduleStore(db),
   eventSourceStore: new SqliteEventSourceStore(db),
   eventStore: new SqliteEventStore(db),
+  automationStore: new SqliteAutomationStore(db),
   sessionStore,
   sessionMetricsStore: new SqliteSessionMetricsStore(db),
   sessions: new Sessions({ sessionStore }),

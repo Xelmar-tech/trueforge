@@ -12,6 +12,7 @@ import type { RedisClientType } from 'redis';
 import type { Logger } from 'winston';
 import { createAgentsRouter } from './apis/agents';
 import { createAuthRouter } from './apis/auth';
+import { createAutomationsRouter } from './apis/automations';
 import { createCapabilitiesRouter } from './apis/capabilities';
 import { createCatalogRouter } from './apis/catalog';
 import { createEventSourcesRouter, createGithubManifestCallbackRouter } from './apis/eventSources';
@@ -37,6 +38,7 @@ import type { SkillCatalog } from './catalog/SkillCatalog';
 import configuration, { getPublicBaseUrl, getTrueForgeAuthMode, TrueForgeAuthMode } from './config';
 import { githubConnector } from './connectors/github/webhook';
 import type { IAgentStore } from './db/agentStore';
+import type { IAutomationStore } from './db/automationStore';
 import type { IEventSourceStore } from './db/eventSourceStore';
 import type { IEventStore } from './db/eventStore';
 import type { IMcpServerWithAuthStore } from './db/mcpServerStore';
@@ -188,6 +190,7 @@ export interface ServerDeps<TTransaction> {
   scheduleStore: IScheduleStore<TTransaction>;
   eventSourceStore: IEventSourceStore<TTransaction>;
   eventStore: IEventStore<TTransaction>;
+  automationStore: IAutomationStore<TTransaction>;
   sessionStore: ISessionStore;
   sessionMetricsStore: ISessionMetricsStore;
   sessions: Sessions;
@@ -376,6 +379,21 @@ export function createServerApp<TTransaction>(deps: ServerDeps<TTransaction>) {
       createEventsRouter({
         eventStore: deps.eventStore,
         resolveRequestContext,
+      }),
+      authMiddleware,
+    ),
+  );
+  app.route(
+    '/api/v1/automations',
+    withAuth(
+      createAutomationsRouter({
+        automationStore: deps.automationStore,
+        eventStore: deps.eventStore,
+        eventSourceStore: deps.eventSourceStore,
+        resolveAgentStore: deps.resolveAgentStore,
+        withTransaction: deps.withTransaction,
+        resolveRequestContext,
+        authorizer: deps.authorizer,
       }),
       authMiddleware,
     ),

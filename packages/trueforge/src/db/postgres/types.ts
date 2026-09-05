@@ -23,6 +23,12 @@ import type {
 import type { CurrentContextUsage } from '@truefoundry/trueforge-core/core/runtime/contextUsage';
 import type { ColumnType, Generated, JSONColumnType } from 'kysely';
 import type { JsonObject } from '../../connectors/types';
+import type {
+  AutomationManifest,
+  AutomationMode,
+  AutomationRunStatus,
+  AutomationStatus,
+} from '../../schemas/automation';
 import type { EventSummary } from '../../schemas/event';
 import type {
   EventSourceKind,
@@ -554,6 +560,55 @@ export interface EventTable {
   routed_at: Date | null;
 }
 
+/**
+ * One event-driven automation.
+ * PRIMARY KEY (id); UNIQUE (tenant_id, name); FK (tenant_id, agent_name) → agent(tenant_id, name) ON DELETE CASCADE
+ */
+export interface AutomationTable {
+  /** application-generated (ulid) */
+  id: string;
+  tenant_id: string;
+  /** FK → agent(id). Immutable. */
+  agent_id: string;
+  /** Create-time snapshot of registry agent name. */
+  agent_name: string;
+  name: string;
+  /** AutomationManifest document; replaced whole on update */
+  manifest: JSONColumnType<AutomationManifest, AutomationManifest, AutomationManifest>;
+  /** mirrors manifest.status; `paused` stops matching new events */
+  status: AutomationStatus;
+  created_by_subject: JSONColumnType<CreatedBySubject, CreatedBySubject, CreatedBySubject>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+/**
+ * One coalesce window, pending or historical.
+ * PRIMARY KEY (id); UNIQUE (automation_id, subject_key) WHERE status = 'coalescing'
+ */
+export interface AutomationRunTable {
+  /** application-generated (ulid) */
+  id: string;
+  tenant_id: string;
+  /** FK → automation.id, ON DELETE CASCADE */
+  automation_id: string;
+  subject_key: string;
+  lane_key: string | null;
+  /** coalescing | triggered | waiting | completed | shadowed | failed — varchar(16) */
+  status: AutomationRunStatus;
+  mode: AutomationMode;
+  /** ledger event ids, oldest first */
+  event_ids: JSONColumnType<string[], string[], string[]>;
+  session_id: string | null;
+  scheduled_for: Date;
+  triggered_at: Date | null;
+  finished_at: Date | null;
+  outcome: JSONColumnType<JsonObject, JsonObject, JsonObject> | null;
+  created_by_subject: JSONColumnType<CreatedBySubject, CreatedBySubject, CreatedBySubject>;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface Database {
   session: SessionTable;
   turn: TurnTable;
@@ -569,6 +624,8 @@ export interface Database {
   schedule_run: ScheduleRunTable;
   event_source: EventSourceTable;
   event: EventTable;
+  automation: AutomationTable;
+  automation_run: AutomationRunTable;
   mcp_server: McpServerTable;
   oauth_token: OAuthTokenTable;
   oauth_pending_authorization: OAuthPendingAuthorizationTable;

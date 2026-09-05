@@ -13,7 +13,8 @@ import type { EventSourceKind } from '../schemas/eventSource';
 export interface WebhooksRouterDeps<TTransaction> {
   eventSourceStore: IEventSourceStore<TTransaction>;
   eventStore: IEventStore<TTransaction>;
-  connectors: Record<EventSourceKind, SourceConnector>;
+  /** Kinds without a connector (the internal `trueforge` source) accept no webhooks. */
+  connectors: Partial<Record<EventSourceKind, SourceConnector>>;
   logger: Logger;
   /** Injected for tests; defaults to the wall clock. */
   now?: () => Date;
@@ -28,9 +29,12 @@ export function createWebhooksRouter<TTransaction>(deps: WebhooksRouterDeps<TTra
     if (source === undefined) {
       return c.json({ error: { message: `Event source not found: ${sourceId}` } }, 404);
     }
+    const connector = deps.connectors[source.kind];
+    if (connector === undefined) {
+      return c.json({ error: { message: `Event source kind accepts no webhooks: ${source.kind}` } }, 404);
+    }
     const rawBody = await c.req.text();
     const secrets = await deps.eventSourceStore.getSecrets(source.id);
-    const connector = deps.connectors[source.kind];
 
     let normalized;
     try {

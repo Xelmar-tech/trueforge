@@ -34,6 +34,13 @@ export interface EventSourceRecord {
   updated_at: string;
 }
 
+/** Creator recorded on the per-tenant internal source; no person made it. */
+export const INTERNAL_SOURCE_SUBJECT: CreatedBySubject = {
+  subject_id: 'trueforge',
+  subject_type: 'system',
+  subject_display_name: 'TrueForge',
+};
+
 /** Re-parse persisted JSON so schema defaults materialize and readers validate on read. */
 export function parseStoredEventSourceManifest(manifest: unknown): EventSourceManifest {
   return EventSourceManifestSchema.parse(manifest);
@@ -103,4 +110,9 @@ export interface IEventSourceStore<TTransaction = never> {
   deleteSource(input: GetEventSourceInput, transaction?: TTransaction): Promise<void>;
   /** Stamps `last_delivery_at` and the resulting status after a webhook delivery. */
   markDelivery(input: MarkDeliveryInput, transaction?: TTransaction): Promise<void>;
+  /**
+   * The tenant's internal `trueforge` source, created on first use. Automations emit
+   * completion events into it so other automations can trigger on them.
+   */
+  ensureInternalSource(input: { tenant_id: string }, transaction?: TTransaction): Promise<EventSourceRecord>;
 }

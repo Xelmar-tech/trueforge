@@ -1,9 +1,10 @@
 import type { Kysely, Selectable, Transaction } from 'kysely';
-import type { EventSourceSecrets } from '../../../schemas/eventSource';
+import { INTERNAL_SOURCE_NAME, type EventSourceSecrets } from '../../../schemas/eventSource';
 import { newId } from '../../../utils/id';
 import { parseStoredCreatedBySubject } from '../../createdBySubject';
 import {
   EventSourceNameConflictError,
+  INTERNAL_SOURCE_SUBJECT,
   parseStoredEventSourceManifest,
   parseStoredEventSourceSecrets,
   type ActivateGithubSourceInput,
@@ -174,5 +175,47 @@ export class PostgresEventSourceStore implements IEventSourceStore<Transaction<D
       .set({ last_delivery_at: input.at, status: input.status, updated_at: now() })
       .where('id', '=', input.id)
       .execute();
+  }
+
+  async ensureInternalSource(
+    input: { tenant_id: string },
+    transaction?: Transaction<Database>,
+  ): Promise<EventSourceRecord> {
+    const db = transaction ?? this.#db;
+    const existing = await db
+      .selectFrom('event_source')
+      .select(PUBLIC_COLUMNS)
+      .where('tenant_id', '=', input.tenant_id)
+      .where('kind', '=', 'trueforge')
+      .executeTakeFirst();
+    if (existing !== undefined) {
+      return toRecord(existing);
+    }
+    // Two loops racing here both insert; the name index lets exactly one win.
+    await db
+      .insertInto('event_source')
+      .values({
+        id: newId(),
+        tenant_id: input.tenant_id,
+        kind: 'trueforge',
+        name: INTERNAL_SOURCE_NAME,
+        status: 'active',
+        manifest: json({ kind: 'trueforge' }),
+        secrets: null,
+        manifest_state: null,
+        last_delivery_at: null,
+        created_by_subject: json(INTERNAL_SOURCE_SUBJECT),
+        created_at: now(),
+        updated_at: now(),
+      })
+      .onConflict(oc => oc.columns(['tenant_id', 'name']).doNothing())
+      .execute();
+    const row = await db
+      .selectFrom('event_source')
+      .select(PUBLIC_COLUMNS)
+      .where('tenant_id', '=', input.tenant_id)
+      .where('kind', '=', 'trueforge')
+      .executeTakeFirstOrThrow();
+    return toRecord(row);
   }
 }

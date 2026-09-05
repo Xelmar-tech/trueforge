@@ -10,30 +10,32 @@ Branch: `feat/automations`.
 
 ## 0. Baseline
 
-- [ ] `pnpm install`, root gate (lint, typecheck, tests) green on the untouched fork
-- [ ] state docs committed
+- [x] `pnpm install`, root gate (lint, typecheck, tests) green on the untouched fork
+- [x] state docs committed
 
 ## 1. Event ingress
 
-- [ ] `connector_source` + `event` tables (pg + sqlite migrations, schema types)
-- [ ] `schemas/event.ts`, `schemas/source.ts`
-- [ ] `db/eventStore.ts`, `db/sourceStore.ts` + pg + sqlite implementations
-- [ ] `connectors/types.ts`, `connectors/github/` (verify via `@octokit/webhooks`, normalize)
-- [ ] `POST /api/v1/webhooks/:source_id` mounted before auth
-- [ ] `GET /api/v1/sources`, `POST /api/v1/sources/github/manifest`, `GET /api/v1/sources/github/callback`
-- [ ] `GET /api/v1/events` (ledger listing with filters, for the picker)
+- [x] `event_source` + `event` tables (pg + sqlite migrations, schema types)
+- [x] `schemas/event.ts`, `schemas/eventSource.ts`
+- [x] `db/eventStore.ts`, `db/eventSourceStore.ts` + pg + sqlite implementations
+- [x] `connectors/types.ts`, `connectors/github/` (HMAC verify with node:crypto, normalize)
+- [x] `POST /api/v1/webhooks/:source_id` mounted before auth
+- [x] `GET /api/v1/event-sources`, `POST /api/v1/event-sources/github/manifest`, public callback
+- [x] `GET /api/v1/events` (ledger listing with filters, for the picker)
 - [ ] Settings → Event sources UI
 - [ ] Proof: real delivery → event row
 
 ## 2. Automations core
 
-- [ ] `automation` + `automation_run` tables (coalescing partial unique index)
-- [ ] `schemas/automation.ts` (typed `when` AST, lane parts, mode)
-- [ ] `db/automationStore.ts` + pg + sqlite
-- [ ] CRUD API + SDK regen
-- [ ] controller loops: `event-coalesce`, `automation-dispatch`, `run-finalize`
-- [ ] built-in per-source GitHub MCP server (acts as the App)
-- [ ] Proof: burst of 4 events → 1 run → 1 session with observation
+- [x] `automation` + `automation_run` tables (coalescing partial unique index)
+- [x] `schemas/automation.ts` (typed `when` conditions, lane parts, mode)
+- [x] `db/automationStore.ts` + pg + sqlite
+- [x] CRUD + runs + replay API
+- [ ] SDK regen for automations
+- [x] controller loops: `event-coalesce`, `automation-dispatch`, `run-finalize`
+- [x] completion events emitted into the per-tenant internal `trueforge` source
+- [ ] GitHub actions for agents (acting as the App) — see DECISIONS.md
+- [x] Proof (unit): burst of 4 events → 1 run with 4 event ids; hand-off creates 1 session + 1 turn
 
 ## 3. UI
 

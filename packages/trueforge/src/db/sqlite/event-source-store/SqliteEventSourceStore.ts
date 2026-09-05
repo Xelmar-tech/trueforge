@@ -1,15 +1,17 @@
 import type { CreatedBySubject } from '@truefoundry/trueforge-core/agent-session';
 import type { ExpressionBuilder, Kysely, Transaction } from 'kysely';
-import type {
-  EventSourceKind,
-  EventSourceManifest,
-  EventSourceSecrets,
-  EventSourceStatus,
+import {
+  INTERNAL_SOURCE_NAME,
+  type EventSourceKind,
+  type EventSourceManifest,
+  type EventSourceSecrets,
+  type EventSourceStatus,
 } from '../../../schemas/eventSource';
 import { newId } from '../../../utils/id';
 import { parseStoredCreatedBySubject } from '../../createdBySubject';
 import {
   EventSourceNameConflictError,
+  INTERNAL_SOURCE_SUBJECT,
   parseStoredEventSourceManifest,
   parseStoredEventSourceSecrets,
   type ActivateGithubSourceInput,
@@ -205,5 +207,47 @@ export class SqliteEventSourceStore implements IEventSourceStore<Transaction<Dat
       .set({ last_delivery_at: input.at.toISOString(), status: input.status, updated_at: nowIso() })
       .where('id', '=', input.id)
       .execute();
+  }
+
+  async ensureInternalSource(
+    input: { tenant_id: string },
+    transaction?: Transaction<Database>,
+  ): Promise<EventSourceRecord> {
+    const db = transaction ?? this.#db;
+    const existing = await db
+      .selectFrom('event_source')
+      .select(publicColumns)
+      .where('tenant_id', '=', input.tenant_id)
+      .where('kind', '=', 'trueforge')
+      .executeTakeFirst();
+    if (existing !== undefined) {
+      return toRecord(existing);
+    }
+    const timestamp = nowIso();
+    await db
+      .insertInto('event_source')
+      .values({
+        id: newId(),
+        tenant_id: input.tenant_id,
+        kind: 'trueforge',
+        name: INTERNAL_SOURCE_NAME,
+        status: 'active',
+        manifest: jsonbBind({ kind: 'trueforge' }),
+        secrets: null,
+        manifest_state: null,
+        last_delivery_at: null,
+        created_by_subject: jsonbBind(INTERNAL_SOURCE_SUBJECT),
+        created_at: timestamp,
+        updated_at: timestamp,
+      })
+      .onConflict(oc => oc.columns(['tenant_id', 'name']).doNothing())
+      .execute();
+    const row = await db
+      .selectFrom('event_source')
+      .select(publicColumns)
+      .where('tenant_id', '=', input.tenant_id)
+      .where('kind', '=', 'trueforge')
+      .executeTakeFirstOrThrow();
+    return toRecord(row);
   }
 }

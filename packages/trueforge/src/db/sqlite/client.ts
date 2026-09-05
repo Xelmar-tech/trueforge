@@ -149,6 +149,8 @@ const JSON_RESULT_COLUMNS = new Set([
   'secrets',
   'summary',
   'payload',
+  'event_ids',
+  'outcome',
 ]);
 
 /** Top-level row field only — `$[0]."body"`, not `$[0]."body"."content"`. */

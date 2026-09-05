@@ -2,7 +2,10 @@ import { z } from '@hono/zod-openapi';
 import { CreatedBySubjectSchema } from '@truefoundry/trueforge-core/agent-session';
 import { NameSchema } from './common';
 
-export const EventSourceKindSchema = z.enum(['github']).openapi('EventSourceKind');
+/** `trueforge` is the per-tenant internal source that automations emit into; it accepts no webhooks. */
+export const EventSourceKindSchema = z.enum(['github', 'trueforge']).openapi('EventSourceKind');
+
+export const INTERNAL_SOURCE_NAME = 'trueforge';
 
 /**
  * - `pending`  created, waiting for the GitHub App manifest callback
@@ -35,6 +38,7 @@ export const EventSourceManifestSchema = z
         app: GithubAppConfigSchema.nullable(),
       })
       .strict(),
+    z.object({ kind: z.literal('trueforge') }).strict(),
   ])
   .openapi('EventSourceManifest');
 

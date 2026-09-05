@@ -11,6 +11,7 @@ export enum OpenApiTag {
   SCHEDULES = 'Schedules',
   EVENT_SOURCES = 'Event Sources',
   EVENTS = 'Events',
+  AUTOMATIONS = 'Automations',
   AGENT_SESSIONS = 'Agent Sessions',
 }
 
@@ -27,5 +28,6 @@ export const OPENAPI_DOCUMENT_TAGS: { name: OpenApiTag }[] = [
   { name: OpenApiTag.SCHEDULES },
   { name: OpenApiTag.EVENT_SOURCES },
   { name: OpenApiTag.EVENTS },
+  { name: OpenApiTag.AUTOMATIONS },
   { name: OpenApiTag.AGENT_SESSIONS },
 ];

@@ -14,7 +14,10 @@
  */
 import configuration from './config';
 import { runController } from './controller';
+import { PostgresAutomationStore } from './db/postgres/automation-store/PostgresAutomationStore';
 import { createDb } from './db/postgres/client';
+import { PostgresEventSourceStore } from './db/postgres/event-source-store/PostgresEventSourceStore';
+import { PostgresEventStore } from './db/postgres/event-store/PostgresEventStore';
 import { PostgresScheduleStore } from './db/postgres/schedule-store/PostgresScheduleStore';
 import { createControllerLogger } from './logger';
 import { PACKAGE_VERSION } from './packageVersion';
@@ -53,6 +56,9 @@ try {
 
   runController({
     scheduleStore: new PostgresScheduleStore(db),
+    eventStore: new PostgresEventStore(db),
+    eventSourceStore: new PostgresEventSourceStore(db),
+    automationStore: new PostgresAutomationStore(db),
     withTransaction: callback => db.transaction().execute(callback),
     logger,
     baseUrl: configuration.SERVER_URL,
