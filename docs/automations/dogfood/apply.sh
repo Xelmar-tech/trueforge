@@ -9,7 +9,7 @@ set -euo pipefail
 
 : "${BASE_URL:?public URL of the deployment}"
 : "${SOURCE_ID:?GitHub event source id}"
-: "${CONNECTOR:?name of the source's MCP connector (Settings → Connectors)}"
+: "${CONNECTOR:?MCP connector name of the source (Settings, Connectors)}"
 MODEL="${MODEL:-llm-router/gpt-5.5}"
 MODE="${MODE:-shadow}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
