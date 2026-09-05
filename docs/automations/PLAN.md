@@ -22,7 +22,7 @@ Branch: `feat/automations`.
 - [x] `POST /api/v1/webhooks/:source_id` mounted before auth
 - [x] `GET /api/v1/event-sources`, `POST /api/v1/event-sources/github/manifest`, public callback
 - [x] `GET /api/v1/events` (ledger listing with filters, for the picker)
-- [ ] Settings → Event sources UI
+- [x] Settings → Event sources UI (manifest flow, health, delete)
 - [ ] Proof: real delivery → event row
 
 ## 2. Automations core
@@ -31,7 +31,7 @@ Branch: `feat/automations`.
 - [x] `schemas/automation.ts` (typed `when` conditions, lane parts, mode)
 - [x] `db/automationStore.ts` + pg + sqlite
 - [x] CRUD + runs + replay API
-- [ ] SDK regen for automations
+- [x] SDK regen for automations
 - [x] controller loops: `event-coalesce`, `automation-dispatch`, `run-finalize`
 - [x] completion events emitted into the per-tenant internal `trueforge` source
 - [ ] GitHub actions for agents (acting as the App) — see DECISIONS.md
@@ -39,16 +39,17 @@ Branch: `feat/automations`.
 
 ## 3. UI
 
-- [ ] `automations` place / shell flag / nav slot
-- [ ] `AutomationsPage`, `AutomationFormDrawer`, condition builder, `EventPicker`
-- [ ] `AutomationServer` port (assistant-ui-runtime fork) + adapter
+- [x] `automations` place / shell flag / nav slot
+- [x] `AutomationsPage`, `AutomationFormDrawer`, condition builder, event picker (recent events of the kind)
+- [x] `AutomationServer` port (defined in trueforge-ui `server/types.ts`, see DECISIONS) + adapter
 - [ ] Proof: create from UI, see run
 
 ## 4. Shadow + replay
 
-- [ ] approval override for shadow runs
-- [ ] `POST /api/v1/automations/:id/replay`
-- [ ] `ReplayPanel`, session header strip
+- [x] approval override for shadow runs
+- [x] `POST /api/v1/automations/:id/replay`
+- [x] `TestAutomationScreen` (replay + poll)
+- [ ] session header strip for automation runs
 - [ ] Proof: replay → shadowed, would_have captured, nothing written
 
 ## 5. Dogfood

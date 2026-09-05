@@ -24,6 +24,14 @@ Deviations from the design documents, and choices the documents left open.
   finalize loop scans up to 50 turns and takes the newest `createdAt`.
 - **Replay subject.** A replay run's subject is `<subject>~replay:<event_id>` so it can
   never collide with a live coalesce window for the same subject.
+- **UI port types.** `AutomationServer` and its DTOs are declared in
+  `packages/trueforge-ui/src/server/types.ts` under a "fork addition" banner instead of the
+  sibling `assistant-ui-runtime` package. Hosts still import from one module; moving the
+  declarations upstream is a copy. `ServerContext` widens `AgentUIServer` with the optional
+  port (`UiServer`) so the runtime type is untouched.
+- **Event picker scope.** The drawer's picker lists the latest 25 recorded events of the
+  chosen kind; conditions are applied server-side when a run starts, not client-side in the
+  picker (listing rows carry no payload).
 - **Agents acting as the App.** Deferred to step 5: the dogfood agents will use a GitHub MCP
   server configured in TrueForge Settings → Connectors. A built-in per-source MCP server that
   mints installation tokens is the follow-up once the flow is proven end to end.
