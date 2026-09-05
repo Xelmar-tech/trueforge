@@ -20,9 +20,9 @@
     .nav{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:8px;color:var(--ink-2);font-weight:500;border:1px solid transparent}
     .nav.active{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:700}
     .th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:0 14px;height:40px;display:flex;align-items:center}
-    .td{padding:0 14px;height:46px;display:flex;align-items:center;border-top:1px solid var(--line);min-width:0;font-size:13px;gap:8px}
+    .td{padding:0 14px;height:46px;display:flex;align-items:center;border-top:1px solid var(--line);min-width:0;font-size:13px;gap:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .filter{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:500}
-    .code{font-family:var(--mono);font-size:12px;line-height:1.7;white-space:pre;color:var(--ink-2)}
+    .code{font-family:var(--mono);font-size:11px;line-height:1.65;white-space:pre-wrap;word-break:break-all;color:var(--ink-2)}
   </style>
 </helmet>
 <div style="width:1440px;height:900px;display:flex;background:#F7F5F0;overflow:hidden">
@@ -52,9 +52,9 @@
       </div>
     </header>
 
-    <section style="flex:1;display:grid;grid-template-columns:minmax(0, 1fr) 400px;overflow:hidden">
+    <section style="flex:1;display:grid;grid-template-columns:minmax(0, 1fr) 360px;overflow:hidden">
       <div class="card" style="margin:24px 0 24px 32px;overflow:hidden;border-radius:10px">
-        <div style="display:grid;grid-template-columns:90px 190px minmax(0, 1fr) 150px 130px">
+        <div style="display:grid;grid-template-columns:84px 176px minmax(0, 1fr) 128px 110px">
           <div class="th">Time</div><div class="th">Kind</div><div class="th">Subject</div><div class="th">Source</div><div class="th">Routed to</div>
           <div class="td mono" style="color:#8A847A;font-size:12px">15:37:43</div><div class="td"><span class="chip">plan.reviewed</span></div><div class="td">…dogfood#1 · Plan reviewed: 2 tickets ready</div><div class="td" style="color:#5F5A52">Foreman internal</div><div class="td" style="color:#8A847A">—</div>
           <div class="td mono" style="color:#8A847A;font-size:12px">15:37:30</div><div class="td"><span class="chip">issue_comment.created</span></div><div class="td">…dogfood#1 · by xelmar-foreman[bot]</div><div class="td" style="color:#5F5A52">xelmar-foreman</div><div class="td" style="color:#8A847A">—</div>
@@ -81,10 +81,10 @@
         <div class="micro">Payload</div>
         <div class="card" style="padding:12px 14px;flex:1;overflow:hidden"><div class="code">{
   "automation_name": "plan-mission",
-  "automation_run_id": "01m1s3ch16j31pqpp2an2e0rqb",
-  "session_id": "01m1s3dedz5r4y2n65gr3zcfhp",
+  "automation_run_id": "01m1s3ch16j3…",
+  "session_id": "01m1s3dedz5r…",
   "subject_key": "Xelmar-tech/…dogfood#1",
-  "source_event_ids": ["01m1s3cgt0rbhtfvkzhvbtrh4h"],
+  "source_event_ids": ["01m1s3cgt0rb…"],
   "source_summary": {
     "repository": "Xelmar-tech/…dogfood",
     "number": 1,

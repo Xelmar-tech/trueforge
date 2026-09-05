@@ -24,7 +24,7 @@
     .nav{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:8px;color:var(--ink-2);font-weight:500;border:1px solid transparent}
     .nav.active{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:700}
     .th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:0 16px;height:40px;display:flex;align-items:center}
-    .td{padding:0 16px;height:64px;display:flex;align-items:center;border-top:1px solid var(--line);min-width:0;gap:8px}
+    .td{padding:12px 16px;min-height:64px;box-sizing:border-box;display:flex;align-items:center;border-top:1px solid var(--line);min-width:0;gap:8px}
     .filter{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);font-weight:500}
     .runs{display:flex;gap:4px}
     .run{width:10px;height:18px;border-radius:3px}
@@ -49,7 +49,7 @@
 
   <main style="flex:1;display:flex;flex-direction:column;min-width:0">
     <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid #E6E1D8;flex-shrink:0">
-      <div style="display:flex;align-items:baseline;gap:12px"><div style="font-size:22px;font-weight:800;letter-spacing:-.025em">Automations</div><div style="color:#8A847A;font-size:13px">3 armed · 0 in shadow · 0 paused</div></div>
+      <div style="display:flex;align-items:baseline;gap:12px"><div style="font-size:22px;font-weight:800;letter-spacing:-.025em">Automations</div><div style="color:#8A847A;font-size:13px">3 armed · 0 in shadow · 1 paused</div></div>
       <span class="btn btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>New automation</span>
     </header>
 
@@ -62,7 +62,7 @@
       </div>
 
       <div class="card" style="overflow:hidden">
-        <div style="display:grid;grid-template-columns:260px minmax(0, 1fr) 170px 110px 150px 130px">
+        <div style="display:grid;grid-template-columns:250px minmax(0, 1fr) 150px 100px 120px 120px">
           <div class="th">Name</div><div class="th">Wakes on</div><div class="th">Agent</div><div class="th">Mode</div><div class="th">Last runs</div><div class="th"></div>
 
           <div class="td" style="flex-direction:column;align-items:flex-start;justify-content:center;gap:2px"><span style="font-weight:700">plan-mission</span><span style="font-size:12px;color:#8A847A">coalesce 30s · lane repo/planning · emits plan.published</span></div>
