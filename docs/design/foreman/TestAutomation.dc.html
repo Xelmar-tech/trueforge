@@ -1,0 +1,85 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root{--paper:#F7F5F0;--surface:#FFFFFF;--ink:#171614;--ink-2:#5F5A52;--ink-3:#8A847A;--line:#E6E1D8;--line-2:#D4CDC0;--signal:#E4572E;--signal-ink:#B23F1B;--signal-soft:#FBEAE3;--warn:#B9791A;--warn-soft:#FBF0DC;--ok:#1F8A5B;--ok-soft:#E3F3EA;--font:"Schibsted Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+    a{color:var(--signal-ink);text-decoration:none} a:hover{color:var(--signal)}
+    .micro{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+    .mono{font-family:var(--mono)}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:8px;font-weight:600;font-size:13px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink)}
+    .btn-primary{background:var(--signal);border-color:var(--signal);color:#fff}
+    .btn-ink{background:var(--ink);border-color:var(--ink);color:#F7F5F0}
+    .btn-ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+    .pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+    .dot{width:7px;height:7px;border-radius:999px;background:currentColor}
+    .chip{font-family:var(--mono);font-size:12px;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap}
+    .radio{width:18px;height:18px;border-radius:999px;border:1.5px solid #D4CDC0;flex-shrink:0;box-sizing:border-box}
+    .radio.on{border:5px solid #171614}
+    .step{display:flex;gap:14px;align-items:flex-start}
+    .stepline{width:24px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+    .node{width:12px;height:12px;border-radius:999px;background:#171614;margin-top:4px}
+    .rail{width:1.5px;flex:1;background:#E6E1D8;min-height:22px}
+  </style>
+</helmet>
+<div style="width:1440px;height:900px;display:flex;flex-direction:column;background:#F7F5F0;overflow:hidden">
+  <header style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid #E6E1D8;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:12px"><span class="btn btn-ghost" style="padding:0 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5F5A52" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></span><div style="display:flex;flex-direction:column;line-height:1.15"><span class="micro">Automations / plan-mission</span><span style="font-size:18px;font-weight:800;letter-spacing:-.02em">Test in shadow</span></div></div>
+    <div style="display:flex;gap:10px;align-items:center"><span class="pill" style="background:#FBF0DC;color:#B9791A"><span class="dot"></span>Shadow</span><span class="btn">Edit configuration</span><span class="btn btn-primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"></path></svg>Arm automation</span></div>
+  </header>
+
+  <div style="flex:1;display:grid;grid-template-columns:480px minmax(0, 1fr);overflow:hidden">
+    <div style="border-right:1px solid #E6E1D8;padding:28px 28px;display:flex;flex-direction:column;gap:20px;overflow:hidden">
+      <div style="display:flex;flex-direction:column;gap:6px"><div style="font-weight:700;font-size:16px">Replay a recorded event</div><div style="font-size:13px;color:#5F5A52">Nothing is written. The agent runs with every tool behind approval and pauses at its first call, so you see what it would do.</div></div>
+      <div class="card" style="padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+        <div style="display:grid;grid-template-columns:110px minmax(0, 1fr);gap:6px 12px;font-size:13px">
+          <span class="micro" style="align-self:center">Wakes on</span><span><span class="chip">issues.labeled</span> <span style="color:#8A847A">where</span> <span class="chip">label.name is ready-for-planning</span></span>
+          <span class="micro" style="align-self:center">Agent</span><span>foreman-planner · <span class="mono">llm-router/gpt-5.5</span></span>
+          <span class="micro" style="align-self:center">Lane</span><span class="mono" style="font-size:12px">{repository.full_name}/planning</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="micro">Recent issues.labeled events from xelmar-foreman</div>
+        <div class="card" style="padding:12px 14px;display:flex;gap:12px;align-items:flex-start;border-color:#171614"><div class="radio on"></div><div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">#1 Mission: smoke test the TrueForge automations pipeline</span><span style="font-size:12px;color:#8A847A">Sep 5, 15:35</span></div><div style="font-size:12px;color:#5F5A52">ready-for-planning · by AaronAbuUsama · matches</div></div></div>
+        <div class="card" style="padding:12px 14px;display:flex;gap:12px;align-items:flex-start"><div class="radio"></div><div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">#3 Add the contribution review checklist</span><span style="font-size:12px;color:#8A847A">Sep 5, 15:33</span></div><div style="font-size:12px;color:#5F5A52">draft · by xelmar-foreman[bot] · would not match</div></div></div>
+        <div class="card" style="padding:12px 14px;display:flex;gap:12px;align-items:flex-start"><div class="radio"></div><div style="display:flex;flex-direction:column;gap:2px;flex:1"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">#2 Create the CONTRIBUTING.md foundation</span><span style="font-size:12px;color:#8A847A">Sep 5, 15:33</span></div><div style="font-size:12px;color:#5F5A52">draft · by xelmar-foreman[bot] · would not match</div></div></div>
+      </div>
+      <span class="btn btn-ink" style="height:44px;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F7F5F0" stroke-width="1.75" stroke-linejoin="round"><path d="M8 6v12l10-6z"></path></svg>Replay in shadow</span>
+    </div>
+
+    <div style="padding:28px 32px;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px"><div style="font-weight:700;font-size:16px">Replay result</div><span class="pill" style="background:#FBF0DC;color:#B9791A"><span class="dot"></span>Shadowed · 14s</span></div>
+        <a href="#" style="font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px">Open session<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6 10"></path></svg></a>
+      </div>
+      <div class="card" style="padding:18px 20px;display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:16px;font-size:13px">
+        <div style="display:flex;flex-direction:column;gap:4px"><span class="micro">Subject</span><span class="mono" style="font-size:12px">Xelmar-tech/…dogfood#1 ~replay</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><span class="micro">Lane</span><span class="mono" style="font-size:12px">Xelmar-tech/…dogfood/planning</span></div>
+        <div style="display:flex;flex-direction:column;gap:4px"><span class="micro">Session</span><span class="mono" style="font-size:12px">01m1s332afc5emttsdy0achsz9</span></div>
+      </div>
+
+      <div class="card" style="padding:22px 24px;display:flex;flex-direction:column;gap:0;flex:1">
+        <div class="step"><div class="stepline"><div class="node"></div><div class="rail"></div></div><div style="display:flex;flex-direction:column;gap:2px;padding-bottom:18px"><div style="font-weight:600">Woke on 1 event</div><div style="font-size:12px;color:#5F5A52">issues.labeled · #1 · ready-for-planning · coalesce window skipped for replay</div></div></div>
+        <div class="step"><div class="stepline"><div class="node"></div><div class="rail"></div></div><div style="display:flex;flex-direction:column;gap:2px;padding-bottom:18px"><div style="font-weight:600">Read the task and the event payloads</div><div style="font-size:12px;color:#5F5A52">Listed 8 tools on xelmar-foreman · 16,828 tokens</div></div></div>
+        <div class="step"><div class="stepline"><div class="node" style="background:#B9791A"></div></div><div style="display:flex;flex-direction:column;gap:10px;flex:1"><div style="font-weight:600;color:#B9791A">Paused before its first tool calls</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="border:1px solid #E6E1D8;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#F7F5F0"><span class="mono" style="font-size:12px">get_issue(repository: "Xelmar-tech/trueforge-automations-dogfood", number: 1)</span><span class="micro" style="color:#B9791A">would call</span></div>
+            <div style="border:1px solid #E6E1D8;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#F7F5F0"><span class="mono" style="font-size:12px">list_sub_issues(repository: "Xelmar-tech/trueforge-automations-dogfood", number: 1)</span><span class="micro" style="color:#B9791A">would call</span></div>
+          </div>
+          <div style="font-size:13px;color:#5F5A52">Reads only, so far. Arm the automation to let it continue on live events, or replay another event.</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

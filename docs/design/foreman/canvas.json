@@ -1,0 +1,122 @@
+{
+  "pages": [
+    { "id": "page-1", "name": "Screens" },
+    { "id": "page-2", "name": "Directions" }
+  ],
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1000, "title": "Brand board", "page": "page-1" },
+    { "file": "SignIn.dc.html", "x": 0, "y": 1140, "w": 1440, "h": 900, "title": "Sign in", "page": "page-1" },
+    {
+      "file": "SignUp.dc.html",
+      "x": 1520,
+      "y": 1140,
+      "w": 1440,
+      "h": 900,
+      "title": "Create workspace",
+      "page": "page-1"
+    },
+    {
+      "file": "Onboarding.dc.html",
+      "x": 3040,
+      "y": 1140,
+      "w": 1440,
+      "h": 900,
+      "title": "Onboarding · Connect GitHub",
+      "page": "page-1"
+    },
+    { "file": "Overview.dc.html", "x": 0, "y": 2160, "w": 1440, "h": 900, "title": "Overview", "page": "page-1" },
+    {
+      "file": "Automations.dc.html",
+      "x": 1520,
+      "y": 2160,
+      "w": 1440,
+      "h": 900,
+      "title": "Automations",
+      "page": "page-1"
+    },
+    {
+      "file": "AutomationEditor.dc.html",
+      "x": 3040,
+      "y": 2160,
+      "w": 1440,
+      "h": 900,
+      "title": "Automation editor",
+      "page": "page-1"
+    },
+    {
+      "file": "TestAutomation.dc.html",
+      "x": 0,
+      "y": 3180,
+      "w": 1440,
+      "h": 900,
+      "title": "Test in shadow",
+      "page": "page-1"
+    },
+    { "file": "RunDetail.dc.html", "x": 1520, "y": 3180, "w": 1440, "h": 900, "title": "Run detail", "page": "page-1" },
+    { "file": "Ledger.dc.html", "x": 3040, "y": 3180, "w": 1440, "h": 900, "title": "Ledger", "page": "page-1" },
+    { "file": "Agents.dc.html", "x": 0, "y": 4200, "w": 1440, "h": 900, "title": "Agents", "page": "page-1" },
+    {
+      "file": "Connections.dc.html",
+      "x": 1520,
+      "y": 4200,
+      "w": 1440,
+      "h": 900,
+      "title": "Connections",
+      "page": "page-1"
+    },
+    {
+      "file": "Settings.dc.html",
+      "x": 3040,
+      "y": 4200,
+      "w": 1440,
+      "h": 900,
+      "title": "Settings · Members",
+      "page": "page-1"
+    },
+    {
+      "file": "DirectionB.dc.html",
+      "x": 0,
+      "y": 0,
+      "w": 720,
+      "h": 450,
+      "title": "Direction B — Control room",
+      "page": "page-2"
+    },
+    {
+      "file": "DirectionC.dc.html",
+      "x": 800,
+      "y": 0,
+      "w": 720,
+      "h": 450,
+      "title": "Direction C — Swiss precision",
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "brief",
+      "x": 1520,
+      "y": 0,
+      "w": 420,
+      "text": "Factory Foreman — redesign v1\n\nDirection A (this page): industrial editorial. Warm paper, graphite ink, one signal orange, Schibsted Grotesk + JetBrains Mono. Deliberately nothing from TrueForge: no dark rail, no indigo, no glass.\n\nRow 2: auth is new — TrueForge only had an OIDC redirect. Sign in / create workspace / onboarding are designed from scratch.\nRows 3–5: every app surface, with real data from today's dogfood run.\n\nPage 'Directions' holds two low-fi alternates (B dark control room, C Swiss) if A is not it.",
+      "page": "page-1"
+    },
+    {
+      "id": "naming",
+      "x": 1980,
+      "y": 0,
+      "w": 360,
+      "text": "Name\n\nUsed here: product 'Foreman', full name 'Factory Foreman', workspace URL foreman.app/<slug>.\n\nAlternates if you want a fresher name: 'Shopfloor' (the place work happens), 'Gantry' (what moves work along the line). Text is editable in place; the mark works with any of them.",
+      "page": "page-1"
+    },
+    {
+      "id": "auth-note",
+      "x": 4560,
+      "y": 1140,
+      "w": 300,
+      "text": "Auth model assumed: GitHub OAuth as the primary sign-in (the same org that owns the App), magic-link email as the fallback, optional enterprise IdP. No passwords.",
+      "page": "page-1"
+    }
+  ],
+  "launch": { "view": "canvas", "page": "page-1" }
+}

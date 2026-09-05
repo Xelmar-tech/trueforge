@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root{--paper:#F7F5F0;--surface:#FFFFFF;--ink:#171614;--ink-2:#5F5A52;--ink-3:#8A847A;--line:#E6E1D8;--line-2:#D4CDC0;--signal:#E4572E;--signal-ink:#B23F1B;--ok:#1F8A5B;--ok-soft:#E3F3EA;--font:"Schibsted Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+    a{color:var(--signal-ink);text-decoration:none} a:hover{color:var(--signal)}
+    .micro{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+    .mono{font-family:var(--mono)}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:44px;padding:0 18px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink)}
+    .btn-ink{background:var(--ink);border-color:var(--ink);color:#F7F5F0}
+    .btn-primary{background:var(--signal);border-color:var(--signal);color:#fff}
+    .btn-ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+    .step{display:flex;align-items:center;gap:12px;padding:12px 0}
+    .stepnum{width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+  </style>
+</helmet>
+<div style="width:1440px;height:900px;box-sizing:border-box;background:#F7F5F0;display:flex;flex-direction:column">
+  <div style="height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:1px solid #E6E1D8">
+    <div style="display:flex;align-items:center;gap:10px"><svg width="26" height="26" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg><span style="font-weight:800;letter-spacing:-.02em;font-size:16px">Foreman</span><span style="color:#8A847A">/</span><span style="color:#5F5A52">Set up Xelmar</span></div>
+    <span class="btn btn-ghost" style="height:36px">Skip for now</span>
+  </div>
+  <div style="flex:1;display:grid;grid-template-columns:320px minmax(0, 1fr);gap:0">
+    <div style="border-right:1px solid #E6E1D8;padding:40px 32px;display:flex;flex-direction:column;gap:4px">
+      <div class="micro" style="margin-bottom:12px">Setup</div>
+      <div class="step"><div class="stepnum" style="background:#E3F3EA;color:#1F8A5B"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#1F8A5B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"></path></svg></div><div><div style="font-weight:600">Workspace</div><div style="font-size:12px;color:#8A847A">Xelmar · 1 member</div></div></div>
+      <div class="step"><div class="stepnum" style="background:#171614;color:#F7F5F0">2</div><div><div style="font-weight:700">Connect GitHub</div><div style="font-size:12px;color:#8A847A">Create the App, pick repositories</div></div></div>
+      <div class="step"><div class="stepnum" style="border:1px solid #D4CDC0;color:#8A847A">3</div><div><div style="font-weight:600;color:#5F5A52">Model access</div><div style="font-size:12px;color:#8A847A">Add an API key or gateway</div></div></div>
+      <div class="step"><div class="stepnum" style="border:1px solid #D4CDC0;color:#8A847A">4</div><div><div style="font-weight:600;color:#5F5A52">First automation</div><div style="font-size:12px;color:#8A847A">Start in shadow</div></div></div>
+    </div>
+
+    <div style="padding:48px 64px;display:flex;flex-direction:column;gap:28px;max-width:860px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="micro">Step 2 of 4</div>
+        <div style="font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.1">Connect GitHub</div>
+        <div style="color:#5F5A52;font-size:15px;max-width:640px">Foreman creates a private GitHub App owned by your organization. Agents act as that App, so nothing they do is attributed to a person. You choose which repositories it can see.</div>
+      </div>
+
+      <div class="card" style="padding:24px 28px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:700;font-size:16px">GitHub App</div><div style="color:#5F5A52;font-size:13px">Owner: <span class="mono">Xelmar-tech</span> · Name: <span class="mono">xelmar-foreman</span></div></div>
+          <span class="btn btn-ink">Create the App on GitHub<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#F7F5F0" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h7v7M13 3L6 10"></path></svg></span>
+        </div>
+        <div style="height:1px;background:#E6E1D8"></div>
+        <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:20px">
+          <div style="display:flex;flex-direction:column;gap:6px"><div class="micro">Permissions</div><div style="font-size:13px">Issues, pull requests, contents: <b>write</b><br>Checks, metadata: <b>read</b></div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div class="micro">Events</div><div class="mono" style="font-size:12px;line-height:1.7">issues · issue_comment · label<br>pull_request · pull_request_review<br>check_suite · push</div></div>
+          <div style="display:flex;flex-direction:column;gap:6px"><div class="micro">Webhook</div><div style="font-size:13px">Delivered to your workspace's endpoint and verified with the App's secret. Nothing to paste.</div></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:20px 28px;display:flex;align-items:center;justify-content:space-between;opacity:.6">
+        <div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:700">Install on repositories</div><div style="color:#5F5A52;font-size:13px">Available after the App exists. Start with one repository; add more any time.</div></div>
+        <span class="btn" style="color:#8A847A">Install</span>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px">
+        <span class="btn btn-ghost">Back</span>
+        <div style="display:flex;gap:10px"><span class="btn" style="color:#8A847A">Continue</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Archivo:wght@500;700;800&display=swap">
+  <style>
+    body{margin:0;background:#0E0F12;color:#E9E6DD;font-family:"Archivo","Helvetica Neue",Arial,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased}
+    a{color:#F2B441} a:hover{color:#FFD36A}
+    .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+    .box{border:1px solid #2A2C33;border-radius:4px;background:#14161B}
+    .lbl{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7C8090}
+  </style>
+</helmet>
+<div style="width:720px;height:450px;box-sizing:border-box;padding:20px;display:flex;flex-direction:column;gap:12px;background:#0E0F12">
+  <div style="display:flex;justify-content:space-between;align-items:baseline">
+    <div style="font-weight:800;font-size:16px;letter-spacing:-.01em">Direction B — Control room</div>
+    <div style="font-size:12px;color:#7C8090">Dark, amber signal, square corners, dense mono readouts</div>
+  </div>
+  <div style="display:flex;gap:12px;flex:1">
+    <div class="box" style="width:150px;padding:12px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:18px;height:18px;background:#F2B441"></div><span style="font-weight:800">FOREMAN</span></div>
+      <div class="lbl" style="margin-top:8px">Floor</div>
+      <div class="mono" style="font-size:12px;color:#E9E6DD;background:#1D2027;padding:4px 6px">▸ automations</div>
+      <div class="mono" style="font-size:12px;color:#7C8090;padding:4px 6px">runs</div>
+      <div class="mono" style="font-size:12px;color:#7C8090;padding:4px 6px">ledger</div>
+      <div class="mono" style="font-size:12px;color:#7C8090;padding:4px 6px">agents</div>
+      <div class="mono" style="font-size:12px;color:#7C8090;padding:4px 6px">connections</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:12px">
+        <div class="box" style="padding:12px"><div class="lbl">Runs · 24h</div><div class="mono" style="font-size:26px;color:#F2B441">07</div></div>
+        <div class="box" style="padding:12px"><div class="lbl">Shadow · waiting</div><div class="mono" style="font-size:26px">02</div></div>
+        <div class="box" style="padding:12px"><div class="lbl">Sources</div><div class="mono" style="font-size:26px;color:#6BD39A">OK</div></div>
+      </div>
+      <div class="box" style="flex:1;padding:12px;display:flex;flex-direction:column;gap:6px">
+        <div class="lbl">Live ledger</div>
+        <div class="mono" style="font-size:11px;line-height:1.9;color:#B9BCC7">15:37:43 <span style="color:#F2B441">plan.reviewed</span>     dogfood#1<br>15:37:26 issues.labeled     dogfood#3 ready-for-agent<br>15:36:58 <span style="color:#F2B441">plan.published</span>    dogfood#1 → 2 runs<br>15:35:53 issues.labeled     dogfood#1 ready-for-planning → plan-mission<br>15:33:29 issues.opened      dogfood#3</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#7C8090">Motivation: feels like an operations console; status reads at a glance in a NOC. Tradeoff: heavy for a product people configure by hand all day; dark themes are also where TrueForge lives.</div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root{--paper:#F7F5F0;--surface:#FFFFFF;--ink:#171614;--ink-2:#5F5A52;--ink-3:#8A847A;--line:#E6E1D8;--line-2:#D4CDC0;--signal:#E4572E;--signal-ink:#B23F1B;--signal-soft:#FBEAE3;--ok:#1F8A5B;--ok-soft:#E3F3EA;--warn:#B9791A;--warn-soft:#FBF0DC;--bad:#C7392B;--bad-soft:#FAE5E2;--info:#2D6CDF;--info-soft:#E4ECFB;--font:"Schibsted Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,monospace}
+    body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+    a{color:var(--signal-ink)} a:hover{color:var(--signal)}
+    .micro{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+    .mono{font-family:var(--mono)}
+    .card{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+    .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink)}
+    .btn-primary{background:var(--signal);border-color:var(--signal);color:#fff}
+    .btn-ink{background:var(--ink);border-color:var(--ink);color:#F7F5F0}
+    .btn-ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+    .pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px 0 8px;border-radius:999px;font-size:12px;font-weight:600}
+    .dot{width:7px;height:7px;border-radius:999px;background:currentColor}
+    .input{height:40px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);padding:0 12px;display:flex;align-items:center;color:var(--ink-3);font-size:14px}
+    .swatch{height:72px;border-radius:10px;border:1px solid rgba(0,0,0,.06)}
+  </style>
+</helmet>
+<div style="width:1440px;height:1000px;box-sizing:border-box;padding:56px 64px;display:flex;flex-direction:column;gap:36px;background:#F7F5F0">
+  <div style="display:flex;justify-content:space-between;align-items:flex-end">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="micro">Brand board · v1</div>
+      <div style="font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1">Factory Foreman</div>
+      <div style="color:#5F5A52;font-size:16px;max-width:720px">The trigger engine for a software factory. Events come in from GitHub, agents go to work as the factory, and the ledger keeps the receipts.</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <span class="pill" style="background:#FBEAE3;color:#B23F1B"><span class="dot"></span>Armed</span>
+      <span class="pill" style="background:#FBF0DC;color:#B9791A"><span class="dot"></span>Shadow</span>
+      <span class="pill" style="background:#E3F3EA;color:#1F8A5B"><span class="dot"></span>Completed</span>
+      <span class="pill" style="background:#E4ECFB;color:#2D6CDF"><span class="dot"></span>Running</span>
+      <span class="pill" style="background:#FAE5E2;color:#C7392B"><span class="dot"></span>Failed</span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:24px">
+    <div class="card" style="padding:28px;display:flex;flex-direction:column;gap:22px">
+      <div class="micro">Mark · the trigger point</div>
+      <div style="display:flex;align-items:center;gap:28px">
+        <svg width="112" height="112" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <svg width="56" height="56" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+          <svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <svg width="56" height="56" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#E4572E"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#171614"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#F7F5F0"></path></svg>
+          <svg width="56" height="56" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#F7F5F0" stroke="#D4CDC0"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#171614"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        </div>
+      </div>
+      <div style="color:#5F5A52;font-size:13px">A stencil F with the crossbar ending in a diamond: the event that sets the line moving. Ink on paper by default; orange and outline variants for dark and mono contexts.</div>
+    </div>
+
+    <div class="card" style="padding:28px;display:flex;flex-direction:column;gap:22px">
+      <div class="micro">Wordmark &amp; lockups</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <svg width="36" height="36" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        <div style="font-size:30px;font-weight:800;letter-spacing:-.035em">Foreman</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#171614"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#F7F5F0"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        <div style="display:flex;flex-direction:column;line-height:1.05"><span style="font-size:15px;font-weight:800;letter-spacing:-.02em">Foreman</span><span class="micro" style="letter-spacing:.14em">Factory</span></div>
+      </div>
+      <div style="background:#171614;border-radius:10px;padding:18px 20px;display:flex;align-items:center;gap:12px">
+        <svg width="28" height="28" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#F7F5F0"></rect><path d="M8.5 6.5h11.5v3.3H12.1v3.4h6.2v3.3h-6.2v5H8.5z" fill="#171614"></path><path d="M20.2 12.4l2.9 2.9-2.9 2.9-2.9-2.9z" fill="#E4572E"></path></svg>
+        <div style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:#F7F5F0">Factory Foreman</div>
+      </div>
+      <div style="color:#5F5A52;font-size:13px">"Foreman" is the product; "Factory Foreman" is the full name on auth pages, legal and marketing. Never "the Foreman".</div>
+    </div>
+
+    <div class="card" style="padding:28px;display:flex;flex-direction:column;gap:16px">
+      <div class="micro">Type · Schibsted Grotesk + JetBrains Mono</div>
+      <div style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1.05">Display 34 / 800</div>
+      <div style="font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15">Title 22 / 700</div>
+      <div style="font-size:16px;font-weight:600">Heading 16 / 600</div>
+      <div style="font-size:14px;color:#171614">Body 14 / 400 — short sentences, active voice, one term per concept.</div>
+      <div style="font-size:13px;color:#5F5A52">Secondary 13 / 400</div>
+      <div class="mono" style="font-size:13px">issues.labeled · owner/repo#1 · 01m1s35z</div>
+      <div class="micro">Microlabel 11 / mono / tracked</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:24px">
+    <div class="card" style="padding:28px;display:flex;flex-direction:column;gap:18px">
+      <div class="micro">Color · warm paper, graphite ink, one signal</div>
+      <div style="display:grid;grid-template-columns:repeat(6, minmax(0, 1fr));gap:12px">
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#F7F5F0"></div><div style="font-size:12px;font-weight:600">Paper</div><div class="mono" style="font-size:11px;color:#8A847A">#F7F5F0</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#FFFFFF"></div><div style="font-size:12px;font-weight:600">Surface</div><div class="mono" style="font-size:11px;color:#8A847A">#FFFFFF</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#171614"></div><div style="font-size:12px;font-weight:600">Ink</div><div class="mono" style="font-size:11px;color:#8A847A">#171614</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#5F5A52"></div><div style="font-size:12px;font-weight:600">Ink 2</div><div class="mono" style="font-size:11px;color:#8A847A">#5F5A52</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#E6E1D8"></div><div style="font-size:12px;font-weight:600">Line</div><div class="mono" style="font-size:11px;color:#8A847A">#E6E1D8</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#E4572E"></div><div style="font-size:12px;font-weight:600">Signal</div><div class="mono" style="font-size:11px;color:#8A847A">#E4572E</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4, minmax(0, 1fr));gap:12px">
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#1F8A5B;height:40px"></div><div style="font-size:12px;font-weight:600">Completed</div><div class="mono" style="font-size:11px;color:#8A847A">#1F8A5B</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#B9791A;height:40px"></div><div style="font-size:12px;font-weight:600">Shadow · waiting</div><div class="mono" style="font-size:11px;color:#8A847A">#B9791A</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#2D6CDF;height:40px"></div><div style="font-size:12px;font-weight:600">Running</div><div class="mono" style="font-size:11px;color:#8A847A">#2D6CDF</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="swatch" style="background:#C7392B;height:40px"></div><div style="font-size:12px;font-weight:600">Failed</div><div class="mono" style="font-size:11px;color:#8A847A">#C7392B</div></div>
+      </div>
+      <div style="color:#5F5A52;font-size:13px">Orange is reserved for the one primary action on a screen and for "armed". Everything else is ink, paper and lines. No gradients, no glass.</div>
+    </div>
+
+    <div class="card" style="padding:28px;display:flex;flex-direction:column;gap:18px">
+      <div class="micro">Controls · 40px, 8px radius, 1px lines</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <span class="btn btn-primary">Arm automation</span>
+        <span class="btn btn-ink">Connect GitHub</span>
+        <span class="btn">Replay in shadow</span>
+        <span class="btn btn-ghost">Cancel</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:12px">
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="micro">Field</div><div class="input">label.name</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div class="micro">Operator</div><div class="input" style="justify-content:space-between;color:#171614">is <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#8A847A" stroke-width="1.75"><path d="M4 6l4 4 4-4"></path></svg></div></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="mono" style="font-size:12px;background:#F7F5F0;border:1px solid #E6E1D8;border-radius:6px;padding:4px 8px">issues.labeled</span>
+        <span class="mono" style="font-size:12px;background:#F7F5F0;border:1px solid #E6E1D8;border-radius:6px;padding:4px 8px">plan.published</span>
+        <span class="mono" style="font-size:12px;background:#F7F5F0;border:1px solid #E6E1D8;border-radius:6px;padding:4px 8px">Xelmar-tech/dogfood#1</span>
+      </div>
+      <div style="color:#5F5A52;font-size:13px">Event kinds, subjects and ids are always mono chips. Conditions are built from fields, operators and values — never typed as expressions.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
