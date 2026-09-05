@@ -66,6 +66,28 @@
             },
             "default": "./dist/cjs/api/resources/server/exports.js"
         },
+        "./eventSources": {
+            "import": {
+                "types": "./dist/esm/api/resources/eventSources/exports.d.mts",
+                "default": "./dist/esm/api/resources/eventSources/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/eventSources/exports.d.ts",
+                "default": "./dist/cjs/api/resources/eventSources/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/eventSources/exports.js"
+        },
+        "./events": {
+            "import": {
+                "types": "./dist/esm/api/resources/events/exports.d.mts",
+                "default": "./dist/esm/api/resources/events/exports.mjs"
+            },
+            "require": {
+                "types": "./dist/cjs/api/resources/events/exports.d.ts",
+                "default": "./dist/cjs/api/resources/events/exports.js"
+            },
+            "default": "./dist/cjs/api/resources/events/exports.js"
+        },
         "./mcpServers": {
             "import": {
                 "types": "./dist/esm/api/resources/mcpServers/exports.d.mts",

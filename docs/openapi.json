@@ -978,6 +978,41 @@
         ],
         "type": "object"
       },
+      "CreateGithubManifestRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceName"
+              },
+              {
+                "description": "Source name, unique per tenant. Also used as the App name suffix."
+              }
+            ]
+          },
+          "owner": {
+            "description": "Organization login to create the App under. Omit to create it under the calling user.",
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreateGithubManifestResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/GithubManifestStart"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
       "CreateMCPServerRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1194,6 +1229,10 @@
         "properties": {},
         "type": "object"
       },
+      "DeleteEventSourceResponse": {
+        "properties": {},
+        "type": "object"
+      },
       "DeleteScheduleResponse": {
         "properties": {},
         "type": "object"
@@ -1209,6 +1248,258 @@
             "type": "boolean"
           }
         },
+        "type": "object"
+      },
+      "Event": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "description": "Provider delivery id; unique per source.",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "description": "Connector event kind, e.g. `issues.labeled`.",
+            "type": "string"
+          },
+          "received_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "routed_at": {
+            "description": "When the coalesce loop matched this event against automations.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/EventSourceKind"
+          },
+          "subject_key": {
+            "description": "Stable key of the thing the event is about, e.g. `owner/repo#61`.",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/EventSummary"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "source_kind",
+          "kind",
+          "subject_key",
+          "delivery_id",
+          "summary",
+          "received_at",
+          "routed_at"
+        ],
+        "type": "object"
+      },
+      "EventDetail": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_id": {
+            "description": "Provider delivery id; unique per source.",
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "description": "Connector event kind, e.g. `issues.labeled`.",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": {},
+            "description": "Raw provider payload as delivered.",
+            "type": "object"
+          },
+          "received_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "routed_at": {
+            "description": "When the coalesce loop matched this event against automations.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "source_kind": {
+            "$ref": "#/components/schemas/EventSourceKind"
+          },
+          "subject_key": {
+            "description": "Stable key of the thing the event is about, e.g. `owner/repo#61`.",
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/EventSummary"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "source_kind",
+          "kind",
+          "subject_key",
+          "delivery_id",
+          "summary",
+          "received_at",
+          "routed_at",
+          "payload"
+        ],
+        "type": "object"
+      },
+      "EventSource": {
+        "additionalProperties": false,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "created_by_subject": {
+            "$ref": "#/components/schemas/CreatedBySubject"
+          },
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventSourceKind"
+          },
+          "last_delivery_at": {
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "manifest": {
+            "$ref": "#/components/schemas/EventSourceManifest"
+          },
+          "name": {
+            "$ref": "#/components/schemas/ResourceName"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventSourceStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "webhook_url": {
+            "description": "URL GitHub delivers webhooks to for this source.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "name",
+          "status",
+          "manifest",
+          "webhook_url",
+          "last_delivery_at",
+          "created_by_subject",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "EventSourceKind": {
+        "enum": [
+          "github"
+        ],
+        "type": "string"
+      },
+      "EventSourceManifest": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "properties": {
+              "app": {
+                "$ref": "#/components/schemas/GithubAppConfig"
+              },
+              "kind": {
+                "enum": [
+                  "github"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind",
+              "app"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "EventSourceStatus": {
+        "enum": [
+          "pending",
+          "active",
+          "error"
+        ],
+        "type": "string"
+      },
+      "EventSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "actor": {
+            "description": "Login of the user or App that caused the event.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "label": {
+            "description": "Label name for label events.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "number": {
+            "description": "Issue or pull request number when applicable.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "repository": {
+            "description": "`owner/repo` when the event belongs to a repository.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "description": "Issue, pull request, or commit title when applicable.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "repository",
+          "number",
+          "title",
+          "actor",
+          "label"
+        ],
         "type": "object"
       },
       "ExtendedChunkDeltaToolCall": {
@@ -1339,6 +1630,28 @@
         "properties": {
           "data": {
             "$ref": "#/components/schemas/CapabilitiesData"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "GetEventResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EventDetail"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "GetEventSourceResponse": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/EventSource"
           }
         },
         "required": [
@@ -1564,6 +1877,77 @@
         ],
         "type": "object"
       },
+      "GithubAppConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "app_id": {
+            "description": "GitHub App id.",
+            "exclusiveMinimum": 0,
+            "type": "integer"
+          },
+          "app_slug": {
+            "description": "GitHub App URL slug.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "client_id": {
+            "description": "GitHub App OAuth client id.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "html_url": {
+            "description": "Settings page of the App on GitHub.",
+            "format": "uri",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Login of the org or user that owns the App.",
+            "minLength": 1,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "app_id",
+          "app_slug",
+          "client_id",
+          "html_url",
+          "owner"
+        ],
+        "type": [
+          "object",
+          "null"
+        ]
+      },
+      "GithubManifestStart": {
+        "additionalProperties": false,
+        "properties": {
+          "action_url": {
+            "format": "uri",
+            "type": "string"
+          },
+          "manifest": {
+            "additionalProperties": {},
+            "description": "GitHub App manifest, POSTed as the `manifest` form field.",
+            "type": "object"
+          },
+          "source_id": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "state",
+          "action_url",
+          "manifest"
+        ],
+        "type": "object"
+      },
       "GoogleGeminiModelProvider": {
         "additionalProperties": false,
         "properties": {
@@ -1711,6 +2095,38 @@
         },
         "required": [
           "data"
+        ],
+        "type": "object"
+      },
+      "ListEventSourcesResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EventSource"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "type": "object"
+      },
+      "ListEventsResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Event"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/TokenPagination"
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
         ],
         "type": "object"
       },
@@ -4866,6 +5282,27 @@
         ],
         "type": "object"
       },
+      "WebhookAccepted": {
+        "additionalProperties": false,
+        "properties": {
+          "created": {
+            "description": "False when this delivery id had already been recorded.",
+            "type": "boolean"
+          },
+          "event_id": {
+            "description": "Ledger id of the event; null when the delivery carried no event.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "event_id",
+          "created"
+        ],
+        "type": "object"
+      },
       "ZaiModelProvider": {
         "additionalProperties": false,
         "properties": {
@@ -5830,6 +6267,400 @@
           "skills"
         ],
         "x-fern-sdk-method-name": "list"
+      }
+    },
+    "/api/v1/event-sources": {
+      "get": {
+        "description": "List the connected event sources for the tenant, newest first. Credentials are never returned.",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEventSourcesResponse"
+                }
+              }
+            },
+            "description": "Connected event sources."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthenticated."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Admin role required."
+          }
+        },
+        "summary": "List event sources",
+        "tags": [
+          "Event Sources"
+        ],
+        "x-fern-sdk-group-name": [
+          "event_sources"
+        ],
+        "x-fern-sdk-method-name": "list"
+      }
+    },
+    "/api/v1/event-sources/github/callback": {
+      "get": {
+        "description": "Browser redirect target after GitHub creates the App. Exchanges `code` for the App credentials and redirects to Settings. Not called by the SDK — browsers hit this URL directly.",
+        "parameters": [
+          {
+            "description": "One-time code issued by GitHub after the App was created.",
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": {
+              "description": "One-time code issued by GitHub after the App was created.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "The `state` returned by the manifest start call.",
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "description": "The `state` returned by the manifest start call.",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Settings with `isSuccess` (and `reason` when it failed) appended."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown or expired `state`, or GitHub rejected the code."
+          }
+        },
+        "summary": "GitHub App manifest callback",
+        "tags": [
+          "Event Sources"
+        ],
+        "x-excluded": true,
+        "x-fern-ignore": true
+      }
+    },
+    "/api/v1/event-sources/github/manifest": {
+      "post": {
+        "description": "Create a pending GitHub event source and return the App manifest the browser must POST to GitHub. GitHub redirects back to the callback, which stores the created App.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGithubManifestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateGithubManifestResponse"
+                }
+              }
+            },
+            "description": "Pending source created; POST `manifest` to `action_url`."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid request, or the server has no public base URL to receive webhooks on."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "An event source with this name already exists."
+          }
+        },
+        "summary": "Start the GitHub App manifest flow",
+        "tags": [
+          "Event Sources"
+        ],
+        "x-fern-sdk-group-name": [
+          "event_sources"
+        ],
+        "x-fern-sdk-method-name": "create_github_manifest"
+      }
+    },
+    "/api/v1/event-sources/{source_id}": {
+      "delete": {
+        "description": "Delete an event source and every event it received. The GitHub App itself is not deleted.",
+        "parameters": [
+          {
+            "description": "Immutable event source identifier.",
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable event source identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteEventSourceResponse"
+                }
+              }
+            },
+            "description": "Deleted, or already absent."
+          }
+        },
+        "summary": "Delete an event source",
+        "tags": [
+          "Event Sources"
+        ],
+        "x-fern-sdk-group-name": [
+          "event_sources"
+        ],
+        "x-fern-sdk-method-name": "delete"
+      },
+      "get": {
+        "description": "Fetch one event source by id. Credentials are never returned.",
+        "parameters": [
+          {
+            "description": "Immutable event source identifier.",
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable event source identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEventSourceResponse"
+                }
+              }
+            },
+            "description": "The event source."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "Get an event source",
+        "tags": [
+          "Event Sources"
+        ],
+        "x-fern-sdk-group-name": [
+          "event_sources"
+        ],
+        "x-fern-sdk-method-name": "get"
+      }
+    },
+    "/api/v1/events": {
+      "get": {
+        "description": "List received events, newest first, without payloads. Filter by source, kind, subject, or time.",
+        "parameters": [
+          {
+            "description": "Page size. Defaults to 25",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "description": "Page size. Defaults to 25",
+              "maximum": 25,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Opaque token from a previous response `next_page_token`.",
+            "in": "query",
+            "name": "page_token",
+            "required": false,
+            "schema": {
+              "description": "Opaque token from a previous response `next_page_token`.",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only events from this source.",
+            "in": "query",
+            "name": "source_id",
+            "required": false,
+            "schema": {
+              "description": "Only events from this source.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only events of this connector kind, e.g. `issues.labeled`.",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "description": "Only events of this connector kind, e.g. `issues.labeled`.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only events about this subject, e.g. `owner/repo#61`.",
+            "in": "query",
+            "name": "subject_key",
+            "required": false,
+            "schema": {
+              "description": "Only events about this subject, e.g. `owner/repo#61`.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only events received at or after this instant.",
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "description": "Only events received at or after this instant.",
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListEventsResponse"
+                }
+              }
+            },
+            "description": "Paginated matching events."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Invalid query parameters or page token."
+          }
+        },
+        "summary": "List events",
+        "tags": [
+          "Events"
+        ],
+        "x-fern-pagination": {
+          "cursor": "$request.page_token",
+          "next_cursor": "$response.pagination.next_page_token",
+          "results": "$response.data"
+        },
+        "x-fern-sdk-group-name": [
+          "events"
+        ],
+        "x-fern-sdk-method-name": "list"
+      }
+    },
+    "/api/v1/events/{event_id}": {
+      "get": {
+        "description": "Fetch one event with its full provider payload.",
+        "parameters": [
+          {
+            "description": "Immutable event identifier.",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "description": "Immutable event identifier.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetEventResponse"
+                }
+              }
+            },
+            "description": "The event with payload."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Not found."
+          }
+        },
+        "summary": "Get an event",
+        "tags": [
+          "Events"
+        ],
+        "x-fern-sdk-group-name": [
+          "events"
+        ],
+        "x-fern-sdk-method-name": "get"
       }
     },
     "/api/v1/mcp-servers": {
@@ -8666,6 +9497,73 @@
         ],
         "x-fern-sdk-method-name": "list"
       }
+    },
+    "/api/v1/webhooks/{source_id}": {
+      "post": {
+        "description": "Verifies the delivery signature against the source secret and records the event. Providers call this URL; it is not part of the SDK.",
+        "parameters": [
+          {
+            "description": "Event source the provider was configured with.",
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "description": "Event source the provider was configured with.",
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAccepted"
+                }
+              }
+            },
+            "description": "Delivery verified and recorded (or already recorded)."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Malformed delivery."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Signature missing or invalid."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown source."
+          }
+        },
+        "summary": "Receive a provider webhook",
+        "tags": [
+          "Events"
+        ],
+        "x-excluded": true,
+        "x-fern-ignore": true
+      }
     }
   },
   "security": [
@@ -8700,6 +9598,12 @@
     },
     {
       "name": "Schedules"
+    },
+    {
+      "name": "Event Sources"
+    },
+    {
+      "name": "Events"
     },
     {
       "name": "Agent Sessions"
